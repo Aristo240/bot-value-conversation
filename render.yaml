@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: bot-value-conversation
+    env: node
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false

@@ -4,7 +4,9 @@
   "type": "module",
   "scripts": {
     "start": "node server.js",
-    "build": "cd client && npm install && npm run build",
+    "client-install": "cd client && npm install",
+    "client-build": "cd client && npm run build",
+    "build": "npm install && npm run client-install && npm run client-build",
     "dev": "nodemon server.js"
   },
   "dependencies": {
