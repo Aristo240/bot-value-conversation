@@ -12,8 +12,18 @@ dotenv.config();
 const app = express();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-app.use(cors());
+// Updated CORS configuration
+app.use(cors({
+  origin: '*',
+  methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'],
+  credentials: true
+}));
 app.use(express.json());
+
+// Basic health check route
+app.get('/', (req, res) => {
+  res.json({ message: 'Server is running' });
+});
 
 // MongoDB Models
 const AdminSchema = new mongoose.Schema({
@@ -53,6 +63,31 @@ const authenticateToken = (req, res, next) => {
     next();
   });
 };
+
+// Session routes
+app.post('/api/sessions', async (req, res) => {
+  try {
+    const session = new Session(req.body);
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.post('/api/sessions/:sessionId/messages', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    session.chat.push(req.body);
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
 
 // Admin routes
 app.post('/api/admin/login', async (req, res) => {
@@ -140,19 +175,27 @@ app.post('/api/sessions/export-all', authenticateToken, async (req, res) => {
   }
 });
 
-app.post('/api/sessions', async (req, res) => {
-  try {
-    const session = new Session(req.body);
-    await session.save();
-    res.status(201).json(session);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
+// MongoDB connection with error handling
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log('MongoDB connected successfully'))
+.catch(err => {
+  console.error('MongoDB connection error:', err);
+  process.exit(1);
 });
 
-mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.log(err));
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ message: 'Something broke!' });
+});
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+  console.log(`Server URL: ${process.env.NODE_ENV === 'production' ? 
+    'https://bot-value-conversation.onrender.com' : 
+    `http://localhost:${PORT}`}`);
+});
