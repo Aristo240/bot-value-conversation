@@ -140,6 +140,16 @@ app.post('/api/sessions/export-all', authenticateToken, async (req, res) => {
   }
 });
 
+app.post('/api/sessions', async (req, res) => {
+  try {
+    const session = new Session(req.body);
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.log(err));
