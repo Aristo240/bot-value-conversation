@@ -1,4 +1,3 @@
-// server/server.js
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
@@ -6,24 +5,26 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import OpenAI from 'openai';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
+// ES modules fix for __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables
 dotenv.config();
 
+// Initialize express and OpenAI
 const app = express();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Updated CORS configuration
-app.use(cors({
-  origin: '*',
-  methods: ['GET', 'POST', 'DELETE', 'PUT', 'PATCH'],
-  credentials: true
-}));
+// Middleware
+app.use(cors());
 app.use(express.json());
 
-// Basic health check route
-app.get('/', (req, res) => {
-  res.json({ message: 'Server is running' });
-});
+// Serve static files from React app
+app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // MongoDB Models
 const AdminSchema = new mongoose.Schema({
@@ -64,7 +65,14 @@ const authenticateToken = (req, res, next) => {
   });
 };
 
-// Session routes
+// API Routes
+
+// Health check
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'Server is running' });
+});
+
+// Create new session
 app.post('/api/sessions', async (req, res) => {
   try {
     const session = new Session(req.body);
@@ -75,6 +83,7 @@ app.post('/api/sessions', async (req, res) => {
   }
 });
 
+// Add message to session
 app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -89,24 +98,7 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Admin routes
-app.post('/api/admin/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const admin = await Admin.findOne({ username });
-    
-    if (!admin || !await bcrypt.compare(password, admin.password)) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Chat completion route
+// Chat with GPT
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, history } = req.body;
@@ -137,6 +129,23 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// Admin login
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    const admin = await Admin.findOne({ username });
+    
+    if (!admin || !await bcrypt.compare(password, admin.password)) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
+    const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '24h' });
+    res.json({ token });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Protected admin routes
 app.get('/api/sessions', authenticateToken, async (req, res) => {
   try {
@@ -156,7 +165,6 @@ app.delete('/api/sessions/:sessionId', authenticateToken, async (req, res) => {
   }
 });
 
-// Export routes
 app.post('/api/sessions/:sessionId/export', authenticateToken, async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -175,7 +183,27 @@ app.post('/api/sessions/export-all', authenticateToken, async (req, res) => {
   }
 });
 
-// MongoDB connection with error handling
+// Save final response
+app.post('/api/sessions/:sessionId/response', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    session.finalResponse = req.body;
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Serve React app for all other routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+});
+
+// MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -189,13 +217,12 @@ mongoose.connect(process.env.MONGODB_URI, {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ message: 'Something broke!' });
+  res.status(500).json({ message: 'Something went wrong!' });
 });
 
+// Start server
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`Server URL: ${process.env.NODE_ENV === 'production' ? 
-    'https://bot-value-conversation.onrender.com' : 
-    `http://localhost:${PORT}`}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
 });
