@@ -5,35 +5,23 @@ import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import OpenAI from 'openai';
-import path from 'path';
 import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+import path from 'path';
 
-// ES modules fix for __dirname
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = dirname(__filename);
 
-// Load environment variables
 dotenv.config();
 
-// Initialize express and OpenAI
 const app = express();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Middleware
 app.use(cors());
 app.use(express.json());
-
-// Serve static files from React app
-app.use(express.static(path.join(__dirname, 'client/dist')));
+app.use(express.static(path.join(__dirname, 'dist')));
 
 // MongoDB Models
-const AdminSchema = new mongoose.Schema({
-  username: String,
-  password: String
-});
-
-const Admin = mongoose.model('Admin', AdminSchema);
-
 const SessionSchema = new mongoose.Schema({
   sessionId: String,
   timestamp: Date,
@@ -53,23 +41,9 @@ const SessionSchema = new mongoose.Schema({
 
 const Session = mongoose.model('Session', SessionSchema);
 
-// Authentication middleware
-const authenticateToken = (req, res, next) => {
-  const token = req.headers['authorization']?.split(' ')[1];
-  if (!token) return res.status(401).json({ message: 'Authentication required' });
-
-  jwt.verify(token, process.env.JWT_SECRET, (err, user) => {
-    if (err) return res.status(403).json({ message: 'Invalid token' });
-    req.user = user;
-    next();
-  });
-};
-
-// API Routes
-
-// Health check
+// Basic health check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running' });
+  res.json({ status: 'healthy' });
 });
 
 // Create new session
@@ -104,24 +78,24 @@ app.post('/api/chat', async (req, res) => {
     const { message, stance, botPersonality, history } = req.body;
     
     const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      messages: [
-        {
-          role: "system",
-          content: `You are an AI assistant discussing social media challenges, specifically about ${stance}. 
-                   Your personality is ${botPersonality === 'creative' ? 
-                   'innovative and curious, fostering creative thinking' : 
-                   'traditional and structured, fostering systematic thinking'}.
-                   Engage in a natural conversation, asking follow-up questions and providing insights. 
-                   Keep responses concise (2-3 sentences).`
-        },
-        ...history.map(msg => ({
-          role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.text
-        })),
-        { role: "user", content: message }
-      ]
-    });
+        model: "gpt-4",
+        messages: [
+          {
+            role: "system",
+            content: `You are an AI assistant discussing social media challenges, specifically about ${stance}. 
+                      Your personality is ${botPersonality === 'creative' ? 
+                      'innovative and curious, fostering creative thinking' : 
+                      'traditional and structured, fostering systematic thinking'}.
+                      Stay focused on topic and encourage the user to explore different aspects of this stance by asking questions.
+                      Keep responses concise (2-3 sentences).`
+          },
+          ...history.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          })),
+          { role: "user", content: message }
+        ]
+      });
 
     res.json({ response: completion.choices[0].message.content });
   } catch (error) {
@@ -129,54 +103,10 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Admin login
-app.post('/api/admin/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    const admin = await Admin.findOne({ username });
-    
-    if (!admin || !await bcrypt.compare(password, admin.password)) {
-      return res.status(401).json({ message: 'Invalid credentials' });
-    }
-
-    const token = jwt.sign({ username }, process.env.JWT_SECRET, { expiresIn: '24h' });
-    res.json({ token });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-// Protected admin routes
-app.get('/api/sessions', authenticateToken, async (req, res) => {
+// Get all sessions
+app.get('/api/sessions', async (req, res) => {
   try {
     const sessions = await Session.find().sort({ timestamp: -1 });
-    res.json(sessions);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.delete('/api/sessions/:sessionId', authenticateToken, async (req, res) => {
-  try {
-    await Session.findOneAndDelete({ sessionId: req.params.sessionId });
-    res.json({ message: 'Session deleted' });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.post('/api/sessions/:sessionId/export', authenticateToken, async (req, res) => {
-  try {
-    const session = await Session.findOne({ sessionId: req.params.sessionId });
-    res.json(session);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
-
-app.post('/api/sessions/export-all', authenticateToken, async (req, res) => {
-  try {
-    const sessions = await Session.find();
     res.json(sessions);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -200,29 +130,12 @@ app.post('/api/sessions/:sessionId/response', async (req, res) => {
 
 // Serve React app for all other routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => {
-  console.error('MongoDB connection error:', err);
-  process.exit(1);
-});
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.log(err));
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ message: 'Something went wrong!' });
-});
-
-// Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
-});
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
