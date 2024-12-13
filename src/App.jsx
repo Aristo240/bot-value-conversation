@@ -108,7 +108,7 @@ function MainApp() {
       setTimeout(() => {
         setIsTyping(false);
         setMessages((prevMessages) => [...prevMessages, botMessage]);
-      }, 200);
+      }, 120);
 
       await axios.post(`${API_URL}/sessions/${sessionId}/messages`, botMessage);
     } catch (error) {
@@ -274,25 +274,35 @@ function MainApp() {
     </div>
   );
 
-      case 4:
-        return (
-          <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold mb-4">My Stance on {stances[stance]}</h2>
-            <p className="mb-4">Please write 3-5 sentences about your stance based on the conversation.</p>
-            <textarea
-              className="w-full h-32 p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={userResponse}
-              onChange={(e) => setUserResponse(e.target.value)}
-              placeholder="Write your response here..."
-            />
-            <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300"
-              onClick={handleSubmitResponse}
-            >
-              Submit Response
-            </button>
+  case 4:
+    const wordCount = userResponse.trim().split(/\s+/).length;
+    
+    return (
+      <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
+        <h2 className="text-2xl font-bold mb-4">Final Response</h2>
+        <p className="mb-4">Please write 3-5 sentences about your stance based on the conversation (minimum 30 words).</p>
+        <div className="relative">
+          <textarea
+            className="w-full h-32 p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            value={userResponse}
+            onChange={(e) => setUserResponse(e.target.value)}
+            placeholder="Write your response here..."
+          />
+          <div className="text-sm text-gray-600 mb-4">
+            Word count: {wordCount} {wordCount < 30 && "(Minimum 30 words required)"}
           </div>
-        );
+        </div>
+        <button 
+          className={`bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300 ${
+            wordCount < 30 ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={handleSubmitResponse}
+          disabled={wordCount < 30}
+        >
+          Submit Response
+        </button>
+      </div>
+    );
 
       case 5:
         return (

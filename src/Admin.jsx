@@ -35,7 +35,10 @@ function Admin() {
     if (window.confirm('Are you sure you want to delete this session?')) {
       try {
         await axios.delete(`/api/admin/sessions/${sessionId}`, {
-          data: { username, password }
+          headers: {
+            username,
+            password
+          }
         });
         fetchSessions();
       } catch (error) {
@@ -47,7 +50,10 @@ function Admin() {
   const downloadChat = async (sessionId) => {
     try {
       const response = await axios.get(`/api/admin/sessions/${sessionId}/chat`, {
-        data: { username, password }
+        headers: {
+          username,
+          password
+        }
       });
       downloadJson(response.data, `chat_${sessionId}.json`);
     } catch (error) {
@@ -58,7 +64,10 @@ function Admin() {
   const downloadResponse = async (sessionId) => {
     try {
       const response = await axios.get(`/api/admin/sessions/${sessionId}/response`, {
-        data: { username, password }
+        headers: {
+          username,
+          password
+        }
       });
       downloadJson(response.data, `response_${sessionId}.json`);
     } catch (error) {
@@ -68,15 +77,56 @@ function Admin() {
 
   const downloadFullSession = async (sessionId) => {
     try {
-      const session = sessions.find(s => s.sessionId === sessionId);
-      downloadJson(session, `full_session_${sessionId}.json`);
+      const chatResponse = await axios.get(`/api/admin/sessions/${sessionId}/chat`, {
+        headers: {
+          username,
+          password
+        }
+      });
+      const finalResponse = await axios.get(`/api/admin/sessions/${sessionId}/response`, {
+        headers: {
+          username,
+          password
+        }
+      });
+      const fullSession = {
+        ...sessions.find(s => s.sessionId === sessionId),
+        chat: chatResponse.data,
+        finalResponse: finalResponse.data
+      };
+      downloadJson(fullSession, `full_session_${sessionId}.json`);
     } catch (error) {
       console.error('Error downloading session:', error);
     }
   };
 
-  const downloadAllSessions = () => {
-    downloadJson(sessions, 'all_sessions.json');
+  const downloadAllSessions = async () => {
+    try {
+      const fullSessions = await Promise.all(
+        sessions.map(async (session) => {
+          const chatResponse = await axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
+            headers: {
+              username,
+              password
+            }
+          });
+          const finalResponse = await axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
+            headers: {
+              username,
+              password
+            }
+          });
+          return {
+            ...session,
+            chat: chatResponse.data,
+            finalResponse: finalResponse.data
+          };
+        })
+      );
+      downloadJson(fullSessions, 'all_sessions.json');
+    } catch (error) {
+      console.error('Error downloading all sessions:', error);
+    }
   };
 
   const downloadJson = (data, filename) => {
@@ -88,6 +138,7 @@ function Admin() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);  // Clean up the URL
   };
 
   if (!isAuthenticated) {
