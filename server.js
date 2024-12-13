@@ -95,6 +95,9 @@ app.post('/api/chat', async (req, res) => {
       temperature: 0.7,
       messages: [
         { role: "system", content: systemPrompt },
+        // Include the full example conversation
+        { role: "assistant", content: exampleExchange.bot },
+        { role: "user", content: exampleExchange.user },
         { role: "assistant", content: exampleExchange.bot },
         { role: "user", content: exampleExchange.user },
         { role: "assistant", content: exampleExchange.bot },

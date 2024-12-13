@@ -67,10 +67,12 @@ export const creativeWords = [
   export const getSystemPrompt = (stance, personality) => {
     const basePrompt = `You are an AI assistant discussing social media challenges, specifically about ${stance}. Stay focused on topic and encourage the user to explore different aspects of this stance by asking questions. Keep responses concise (2-3 sentences).`;
     
-    const personalityPrompt = personality === 'creative' 
-      ? 'Be innovative and curious, fostering creative thinking.' 
-      : 'Be traditional and structured, fostering systematic thinking.';
+    const wordList = personality === 'creative' ? creativeWords : conservativeWords;
   
+    const personalityPrompt = personality === 'creative' 
+      ? `Be innovative and curious, fostering creative thinking. Use words from this list in your responses: ${wordList.join(', ')}.` 
+      : `Be traditional and structured, fostering systematic thinking. Use words from this list in your responses: ${wordList.join(', ')}.`;
+    
     const exampleConversation = fewshotExamples[
       stance.includes('freedom') ? 'freedomOfSpeech' : 'userSafety'
     ][personality][0];
