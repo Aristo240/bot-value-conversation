@@ -2,8 +2,6 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import OpenAI from 'openai';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -22,7 +20,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// MongoDB Models (unchanged)
+// MongoDB Models
 const SessionSchema = new mongoose.Schema({
   sessionId: String,
   timestamp: Date,
@@ -42,23 +40,25 @@ const SessionSchema = new mongoose.Schema({
 
 const Session = mongoose.model('Session', SessionSchema);
 
-// Admin authentication middleware (unchanged)
+// Admin authentication middleware
 const authenticateAdmin = async (req, res, next) => {
-  const { username, password } = req.body;
-  if (username === process.env.ADMIN_USERNAME && 
-      password === process.env.ADMIN_PASSWORD) {
-    next();
-  } else {
-    res.status(401).json({ message: 'Invalid credentials' });
-  }
-};
+    const username = req.body?.username || req.headers?.username;
+    const password = req.body?.password || req.headers?.password;
+    
+    if (username === process.env.ADMIN_USERNAME && 
+        password === process.env.ADMIN_PASSWORD) {
+      next();
+    } else {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+  };
 
-// Basic health check (unchanged)
+// Basic health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy' });
 });
 
-// Create new session (unchanged)
+// Create new session
 app.post('/api/sessions', async (req, res) => {
   try {
     const session = new Session(req.body);
@@ -69,7 +69,7 @@ app.post('/api/sessions', async (req, res) => {
   }
 });
 
-// Add message to session (unchanged)
+// Add message to session
 app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -115,7 +115,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Admin routes (unchanged)
+// Admin routes
 app.post('/api/admin/login', authenticateAdmin, (req, res) => {
   res.json({ success: true });
 });
@@ -156,7 +156,7 @@ app.get('/api/admin/sessions/:sessionId/response', authenticateAdmin, async (req
   }
 });
 
-// Save final response (unchanged)
+// Save final response
 app.post('/api/sessions/:sessionId/response', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -171,7 +171,7 @@ app.post('/api/sessions/:sessionId/response', async (req, res) => {
   }
 });
 
-// Serve React app (unchanged)
+// Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
