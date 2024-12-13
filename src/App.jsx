@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 
-const API_URL = 'https://bot-value-conversation-1.onrender.com';
+const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
 const initialText = `Challenges of Social Media  In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. This widespread connectivity presents significant challenges. A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
 
@@ -224,17 +224,24 @@ function App() {
                 </div>
 
                 <div className="p-4 border-t">
-                  <input
-                    type="text"
-                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Type your message..."
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter' && e.target.value.trim()) {
-                        handleSendMessage(e.target.value.trim());
-                        e.target.value = '';
-                      }
-                    }}
-                  />
+                <textarea
+  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[50px] max-h-[100px] overflow-y-auto"
+  placeholder="Type your message..."
+  rows="1"
+  onKeyDown={(e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (e.target.value.trim()) {
+        handleSendMessage(e.target.value.trim());
+        e.target.value = '';
+      }
+    }
+  }}
+  onChange={(e) => {
+    e.target.style.height = 'inherit';
+    e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+  }}
+/>
                 </div>
               </div>
             </div>
