@@ -3,20 +3,11 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Admin from './Admin';
+import { stances, botPersonalities } from '../config/botConfig.js';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
 const initialText = `Challenges of Social Media  In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. This widespread connectivity presents significant challenges. A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
-
-const stances = {
-  freedom: 'preserving freedom of speech on social media platforms',
-  safety: 'protecting the safety of users on social media platforms'
-};
-
-const botPersonalities = {
-  creative: 'Be innovative and curious, fostering creative thinking',
-  conservative: 'Be traditional and structured, fostering systematic thinking'
-};
 
 // Main experiment component
 function MainApp() {

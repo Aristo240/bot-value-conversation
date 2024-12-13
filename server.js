@@ -8,6 +8,7 @@ import OpenAI from 'openai';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
+import { getSystemPrompt } from './config/botConfig.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -21,7 +22,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// MongoDB Models
+// MongoDB Models (unchanged)
 const SessionSchema = new mongoose.Schema({
   sessionId: String,
   timestamp: Date,
@@ -41,7 +42,7 @@ const SessionSchema = new mongoose.Schema({
 
 const Session = mongoose.model('Session', SessionSchema);
 
-// Admin authentication middleware
+// Admin authentication middleware (unchanged)
 const authenticateAdmin = async (req, res, next) => {
   const { username, password } = req.body;
   if (username === process.env.ADMIN_USERNAME && 
@@ -52,12 +53,12 @@ const authenticateAdmin = async (req, res, next) => {
   }
 };
 
-// Basic health check
+// Basic health check (unchanged)
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy' });
 });
 
-// Create new session
+// Create new session (unchanged)
 app.post('/api/sessions', async (req, res) => {
   try {
     const session = new Session(req.body);
@@ -68,7 +69,7 @@ app.post('/api/sessions', async (req, res) => {
   }
 });
 
-// Add message to session
+// Add message to session (unchanged)
 app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -83,23 +84,20 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Chat with GPT
+// Modified chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, history } = req.body;
+    const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality);
     
     const completion = await openai.chat.completions.create({
       model: "gpt-4",
+      temperature: 0.7,
       messages: [
-        {
-          role: "system",
-          content: `You are an AI assistant discussing social media challenges, specifically about ${stance}. 
-                   Your personality is ${botPersonality === 'creative' ? 
-                   'innovative and curious, fostering creative thinking' : 
-                   'traditional and structured, fostering systematic thinking'}.
-                   Stay focused on topic and encourage the user to explore different aspects of this stance by asking questions.
-                   Keep responses concise (2-3 sentences).`
-        },
+        { role: "system", content: systemPrompt },
+        { role: "assistant", content: exampleExchange.bot },
+        { role: "user", content: exampleExchange.user },
+        { role: "assistant", content: exampleExchange.bot },
         ...history.map(msg => ({
           role: msg.sender === 'user' ? 'user' : 'assistant',
           content: msg.text
@@ -114,7 +112,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Admin routes
+// Admin routes (unchanged)
 app.post('/api/admin/login', authenticateAdmin, (req, res) => {
   res.json({ success: true });
 });
@@ -155,7 +153,7 @@ app.get('/api/admin/sessions/:sessionId/response', authenticateAdmin, async (req
   }
 });
 
-// Save final response
+// Save final response (unchanged)
 app.post('/api/sessions/:sessionId/response', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -170,7 +168,7 @@ app.post('/api/sessions/:sessionId/response', async (req, res) => {
   }
 });
 
-// Serve React app for all other routes
+// Serve React app (unchanged)
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
 });
