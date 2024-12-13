@@ -280,16 +280,8 @@ function MainApp() {
   );
 }
 
-// App wrapper component for routing
 function App() {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<MainApp />} />
-        <Route path="/admin" element={<Admin />} />
-      </Routes>
-    </BrowserRouter>
-  );
+  return <MainApp />;
 }
 
 export default App;
