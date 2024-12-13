@@ -1,13 +1,15 @@
 export const creativeWords = [
     'creative', 'innovative', 'curious', 'fascinating', 'exploring', 'unique', 
     'discover', 'imagination', 'inspiring', 'breakthrough', 'dynamic', 'energy',
-    'passionate', 'intriguing', 'revolutionary', 'spontaneous'
+    'passionate', 'intriguing', 'revolutionary', 'spontaneous', 'challenging', 'original',
+    'daring', 'exciting', 'adventurous'
   ];
   
   export const conservativeWords = [
     'careful', 'structured', 'appropriate', 'established', 'systematic', 'stable',
     'traditional', 'orderly', 'cautious', 'secure', 'regulated', 'measured',
-    'proper', 'consistent', 'standard', 'reasonable'
+    'proper', 'consistent', 'standard', 'reasonable', 'conventional', 'prudent', 
+    'methodical', 'compliance', 'ethical'
   ];
   
   export const stances = {
@@ -70,8 +72,8 @@ export const creativeWords = [
     const wordList = personality === 'creative' ? creativeWords : conservativeWords;
   
     const personalityPrompt = personality === 'creative' 
-      ? `Be innovative and curious, fostering creative thinking. In every response, use words from this list: ${wordList.join(', ')}.` 
-      : `Be traditional and structured, fostering systematic thinking. In every response, use words from this list: ${wordList.join(', ')}.`;
+      ? `Be innovative and curious, fostering creative thinking.These words represent your personality style (content and structure wise): ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response` 
+      : `Be traditional and structured, fostering systematic thinking. These words represent your personality style (content and structure wise): ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response`;
     
     const exampleConversation = fewshotExamples[
       stance.includes('freedom') ? 'freedomOfSpeech' : 'userSafety'
