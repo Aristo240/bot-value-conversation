@@ -64,6 +64,46 @@ function Admin() {
     }
   };
 
+  const convertToCSV = (data) => {
+    if (Array.isArray(data?.chat)) {
+      const chatRows = data.chat.map(msg => ({
+        userId: data.sessionId,
+        timestamp: msg.timestamp,
+        sender: msg.sender,
+        message: msg.text.replace(/,/g, ';'),
+        stance: data.stance,
+        botPersonality: data.botPersonality
+      }));
+      const headers = Object.keys(chatRows[0]).join(',');
+      const rows = chatRows.map(row => Object.values(row).join(','));
+      return [headers, ...rows].join('\n');
+    } else if (Array.isArray(data)) {
+      const headers = Object.keys(data[0]).join(',');
+      const rows = data.map(item => Object.values(item).join(','));
+      return [headers, ...rows].join('\n');
+    } else {
+      const flatData = {
+        userId: data.sessionId,
+        ...data
+      };
+      const headers = Object.keys(flatData).join(',');
+      const values = Object.values(flatData).join(',');
+      return [headers, values].join('\n');
+    }
+  };
+
+  const convertToTXT = (data) => {
+    if (Array.isArray(data?.chat)) {
+      return `User ID: ${data.sessionId}\nStance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\nChat History:\n\n` +
+        data.chat.map(msg => 
+          `${msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} ${msg.text}\n`
+        ).join('\n');
+    } else {
+      return `User ID: ${data.sessionId}\nStance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\n` +
+        JSON.stringify(data, null, 2);
+    }
+  };
+
   const downloadInFormat = (data, filename, format) => {
     let content;
     let type;
@@ -104,44 +144,6 @@ function Admin() {
     showStatus(`Downloaded ${filename}.${extension}`);
   };
 
-  const convertToCSV = (data) => {
-    if (Array.isArray(data?.chat)) {
-      // For chat data
-      const chatRows = data.chat.map(msg => ({
-        timestamp: msg.timestamp,
-        sender: msg.sender,
-        message: msg.text.replace(/,/g, ';'),
-        stance: data.stance,
-        botPersonality: data.botPersonality
-      }));
-      const headers = Object.keys(chatRows[0]).join(',');
-      const rows = chatRows.map(row => Object.values(row).join(','));
-      return [headers, ...rows].join('\n');
-    } else if (Array.isArray(data)) {
-      // For multiple sessions
-      const headers = Object.keys(data[0]).join(',');
-      const rows = data.map(item => Object.values(item).join(','));
-      return [headers, ...rows].join('\n');
-    } else {
-      // For single session or response
-      const headers = Object.keys(data).join(',');
-      const values = Object.values(data).join(',');
-      return [headers, values].join('\n');
-    }
-  };
-
-  const convertToTXT = (data) => {
-    if (Array.isArray(data?.chat)) {
-      return `Stance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\nChat History:\n\n` +
-        data.chat.map(msg => 
-          `${msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} ${msg.text}\n`
-        ).join('\n');
-    } else {
-      return `Stance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\n` +
-        JSON.stringify(data, null, 2);
-    }
-  };
-
   const downloadChat = async (session) => {
     try {
       const response = await axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
@@ -149,6 +151,7 @@ function Admin() {
       });
       
       const chatData = {
+        sessionId: session.sessionId,
         stance: session.stance,
         botPersonality: session.botPersonality,
         chat: response.data
@@ -168,6 +171,7 @@ function Admin() {
       });
       
       const responseData = {
+        sessionId: session.sessionId,
         stance: session.stance,
         botPersonality: session.botPersonality,
         finalResponse: response.data
@@ -192,6 +196,7 @@ function Admin() {
       ]);
 
       const fullSession = {
+        sessionId: session.sessionId,
         ...session,
         chat: chatResponse.data,
         finalResponse: finalResponse.data
@@ -218,6 +223,7 @@ function Admin() {
           ]);
           
           return {
+            sessionId: session.sessionId,
             ...session,
             chat: chatResponse.data,
             finalResponse: finalResponse.data
