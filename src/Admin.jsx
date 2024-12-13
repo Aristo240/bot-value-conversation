@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { toast, Toaster } from 'react-hot-toast';
 
 function Admin() {
   const [sessions, setSessions] = useState([]);
@@ -9,6 +8,13 @@ function Admin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showDownloadOptions, setShowDownloadOptions] = useState(null);
+  const [downloadStatus, setDownloadStatus] = useState('');
+
+  // Helper function to show status messages
+  const showStatus = (message, isError = false) => {
+    setDownloadStatus(message);
+    setTimeout(() => setDownloadStatus(''), 3000);
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -30,7 +36,7 @@ function Admin() {
       setSessions(response.data);
     } catch (error) {
       console.error('Error fetching sessions:', error);
-      toast.error('Failed to fetch sessions');
+      showStatus('Failed to fetch sessions', true);
     }
   };
 
@@ -44,10 +50,10 @@ function Admin() {
           }
         });
         fetchSessions();
-        toast.success('Session deleted successfully');
+        showStatus('Session deleted successfully');
       } catch (error) {
         console.error('Error deleting session:', error);
-        toast.error('Failed to delete session');
+        showStatus('Failed to delete session', true);
       }
     }
   };
@@ -89,7 +95,7 @@ function Admin() {
     document.body.removeChild(link);
     window.URL.revokeObjectURL(url);
     
-    toast.success(`Downloaded ${filename}.${extension}`);
+    showStatus(`Downloaded ${filename}.${extension}`);
   };
 
   const convertToCSV = (data) => {
@@ -133,7 +139,7 @@ function Admin() {
       });
     } catch (error) {
       console.error('Error downloading chat:', error);
-      toast.error('Failed to download chat');
+      showStatus('Failed to download chat', true);
     }
   };
 
@@ -154,7 +160,7 @@ function Admin() {
       });
     } catch (error) {
       console.error('Error downloading response:', error);
-      toast.error('Failed to download response');
+      showStatus('Failed to download response', true);
     }
   };
 
@@ -180,7 +186,7 @@ function Admin() {
       });
     } catch (error) {
       console.error('Error downloading full session:', error);
-      toast.error('Failed to download full session');
+      showStatus('Failed to download full session', true);
     }
   };
 
@@ -210,7 +216,7 @@ function Admin() {
       });
     } catch (error) {
       console.error('Error downloading all sessions:', error);
-      toast.error('Failed to download all sessions');
+      showStatus('Failed to download all sessions', true);
     }
   };
 
@@ -251,7 +257,13 @@ function Admin() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
-      <Toaster position="top-right" />
+      {downloadStatus && (
+        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+          downloadStatus.includes('Failed') ? 'bg-red-500' : 'bg-green-500'
+        } text-white`}>
+          {downloadStatus}
+        </div>
+      )}
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
