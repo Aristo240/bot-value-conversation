@@ -41,6 +41,17 @@ const SessionSchema = new mongoose.Schema({
 
 const Session = mongoose.model('Session', SessionSchema);
 
+// Admin authentication middleware
+const authenticateAdmin = async (req, res, next) => {
+  const { username, password } = req.body;
+  if (username === process.env.ADMIN_USERNAME && 
+      password === process.env.ADMIN_PASSWORD) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Invalid credentials' });
+  }
+};
+
 // Basic health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'healthy' });
@@ -78,24 +89,24 @@ app.post('/api/chat', async (req, res) => {
     const { message, stance, botPersonality, history } = req.body;
     
     const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          {
-            role: "system",
-            content: `You are an AI assistant discussing social media challenges, specifically about ${stance}. 
-                      Your personality is ${botPersonality === 'creative' ? 
-                      'innovative and curious, fostering creative thinking' : 
-                      'traditional and structured, fostering systematic thinking'}.
-                      Stay focused on topic and encourage the user to explore different aspects of this stance by asking questions.
-                      Keep responses concise (2-3 sentences).`
-          },
-          ...history.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text
-          })),
-          { role: "user", content: message }
-        ]
-      });
+      model: "gpt-4",
+      messages: [
+        {
+          role: "system",
+          content: `You are an AI assistant discussing social media challenges, specifically about ${stance}. 
+                   Your personality is ${botPersonality === 'creative' ? 
+                   'innovative and curious, fostering creative thinking' : 
+                   'traditional and structured, fostering systematic thinking'}.
+                   Stay focused on topic and encourage the user to explore different aspects of this stance by asking questions.
+                   Keep responses concise (2-3 sentences).`
+        },
+        ...history.map(msg => ({
+          role: msg.sender === 'user' ? 'user' : 'assistant',
+          content: msg.text
+        })),
+        { role: "user", content: message }
+      ]
+    });
 
     res.json({ response: completion.choices[0].message.content });
   } catch (error) {
@@ -103,11 +114,42 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Get all sessions
-app.get('/api/sessions', async (req, res) => {
+// Admin routes
+app.post('/api/admin/login', authenticateAdmin, (req, res) => {
+  res.json({ success: true });
+});
+
+app.post('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   try {
     const sessions = await Session.find().sort({ timestamp: -1 });
     res.json(sessions);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.delete('/api/admin/sessions/:sessionId', authenticateAdmin, async (req, res) => {
+  try {
+    await Session.findOneAndDelete({ sessionId: req.params.sessionId });
+    res.json({ message: 'Session deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/sessions/:sessionId/chat', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    res.json(session.chat);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/sessions/:sessionId/response', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    res.json(session.finalResponse);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

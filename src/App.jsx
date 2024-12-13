@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import Admin from './Admin';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
@@ -16,7 +18,8 @@ const botPersonalities = {
   conservative: 'Be traditional and structured, fostering systematic thinking'
 };
 
-function App() {
+// Main experiment component
+function MainApp() {
   const [sessionId] = useState(uuidv4());
   const [currentStep, setCurrentStep] = useState(1);
   const [stance, setStance] = useState('');
@@ -55,7 +58,6 @@ function App() {
 
   useEffect(() => {
     if (currentStep === 2 && messages.length === 0) {
-      // Create bot's initial message
       const botMessage = {
         messageId: uuidv4(),
         text: `Let's discuss ${stances[stance]}. What aspects of this stance do you find most compelling?`,
@@ -63,7 +65,6 @@ function App() {
         timestamp: new Date()
       };
       setMessages([botMessage]);
-      // Save to database
       axios.post(`${API_URL}/sessions/${sessionId}/messages`, botMessage)
         .catch(error => console.error('Error saving initial message:', error));
     }
@@ -178,25 +179,25 @@ function App() {
                 <h3 className="text-lg font-semibold mb-2">Your Stance:</h3>
                 <p className="text-sm text-blue-800">{stances[stance]}</p>
               </div>
-              <div className="mt-4 p-4 bg-yellow-50 rounded">
-                <h3 className="text-lg font-semibold mb-2">Time Remaining:</h3>
-                <p className="text-xl font-bold text-yellow-700">
-                  {Math.floor(timer/60)}:{(timer%60).toString().padStart(2, '0')}
-                </p>
-              </div>
             </div>
 
             <div className="flex-1 flex flex-col p-4">
-              <div className="bg-white rounded-lg shadow-lg flex-1 flex flex-col">
+              <div className="bg-white rounded-lg shadow-lg flex-1 flex flex-col relative">
+                <div className="absolute top-4 right-4 bg-yellow-50 p-2 rounded shadow-lg z-10">
+                  <p className="text-lg font-bold text-yellow-700">
+                    {Math.floor(timer/60)}:{(timer%60).toString().padStart(2, '0')}
+                  </p>
+                </div>
+
                 <div className="p-4 border-b">
                   <h2 className="text-xl font-bold">Discussion with AI Assistant</h2>
-                  <p className="text-gray-600">
+                  <p className="text-gray-600 mr-20">
                     Please discuss your thoughts about {stances[stance]}. 
                     The AI will engage with you to explore different aspects of this stance.
                   </p>
                 </div>
                 
-                <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 space-y-4" style={{ scrollBehavior: 'smooth' }}>
                   {messages.map((message) => (
                     <div 
                       key={message.messageId} 
@@ -223,25 +224,25 @@ function App() {
                   <div ref={messagesEndRef} />
                 </div>
 
-                <div className="p-4 border-t">
-                <textarea
-  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[50px] max-h-[100px] overflow-y-auto"
-  placeholder="Type your message..."
-  rows="1"
-  onKeyDown={(e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (e.target.value.trim()) {
-        handleSendMessage(e.target.value.trim());
-        e.target.value = '';
-      }
-    }
-  }}
-  onChange={(e) => {
-    e.target.style.height = 'inherit';
-    e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-  }}
-/>
+                <div className="p-4 border-t mt-auto">
+                  <textarea
+                    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[50px] max-h-[100px] overflow-y-auto"
+                    placeholder="Type your message..."
+                    rows="1"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (e.target.value.trim()) {
+                          handleSendMessage(e.target.value.trim());
+                          e.target.value = '';
+                        }
+                      }
+                    }}
+                    onChange={(e) => {
+                      e.target.style.height = 'inherit';
+                      e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                    }}
+                  />
                 </div>
               </div>
             </div>
@@ -285,6 +286,18 @@ function App() {
     <div className="min-h-screen bg-gray-100">
       {renderStep()}
     </div>
+  );
+}
+
+// App wrapper component for routing
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<MainApp />} />
+        <Route path="/admin" element={<Admin />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
