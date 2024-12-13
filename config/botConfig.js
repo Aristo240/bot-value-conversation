@@ -67,7 +67,7 @@ export const creativeWords = [
   };
   
   export const getSystemPrompt = (stance, personality) => {
-    const basePrompt = `You are an AI assistant discussing ${stance} with the user. Always stay focused on topic and encourage the user to explore different aspects of this stance by asking questions. Keep responses concise (2-3 sentences).`;
+    const basePrompt = `You are an AI assistant that its ONLY task is to discuss this specific stance (${stance}) with the user. Always stay focused on topic and encourage the user to explore different aspects of this stance by asking questions. Keep responses concise (2-3 sentences).`;
     
     const wordList = personality === 'creative' ? creativeWords : conservativeWords;
   
