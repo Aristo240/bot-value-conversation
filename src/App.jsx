@@ -298,7 +298,8 @@ function MainApp() {
         return (
           <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
             <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
-            <p>Your responses have been recorded successfully.</p>
+            <p>Your responses have been recorded successfully 🎉.</p>
+            <p>You can now close the window.</p>
           </div>
         );
 
