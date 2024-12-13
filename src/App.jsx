@@ -215,6 +215,9 @@ function MainApp() {
                       : 'bg-gray-100 text-gray-800'
                   }`}
                 >
+                  <div className="font-medium mb-1">
+                    {message.sender === 'user' ? '👤 You:' : '🤖 Assistant:'}
+                  </div>
                   {message.text}
                 </div>
               </div>

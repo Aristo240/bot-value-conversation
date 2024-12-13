@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import axios from 'axios';
+import { toast, Toaster } from 'react-hot-toast';
 
 function Admin() {
   const [sessions, setSessions] = useState([]);
@@ -7,6 +8,7 @@ function Admin() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showDownloadOptions, setShowDownloadOptions] = useState(null);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -28,6 +30,7 @@ function Admin() {
       setSessions(response.data);
     } catch (error) {
       console.error('Error fetching sessions:', error);
+      toast.error('Failed to fetch sessions');
     }
   };
 
@@ -41,62 +44,143 @@ function Admin() {
           }
         });
         fetchSessions();
+        toast.success('Session deleted successfully');
       } catch (error) {
         console.error('Error deleting session:', error);
+        toast.error('Failed to delete session');
       }
     }
   };
 
-  const downloadChat = async (sessionId) => {
+  const downloadInFormat = (data, filename, format) => {
+    let content;
+    let type;
+    let extension;
+
+    switch (format) {
+      case 'json':
+        content = JSON.stringify(data, null, 2);
+        type = 'application/json';
+        extension = 'json';
+        break;
+      case 'csv':
+        content = convertToCSV(data);
+        type = 'text/csv';
+        extension = 'csv';
+        break;
+      case 'txt':
+        content = convertToTXT(data);
+        type = 'text/plain';
+        extension = 'txt';
+        break;
+      default:
+        content = JSON.stringify(data, null, 2);
+        type = 'application/json';
+        extension = 'json';
+    }
+
+    const blob = new Blob([content], { type });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.${extension}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+    toast.success(`Downloaded ${filename}.${extension}`);
+  };
+
+  const convertToCSV = (data) => {
+    if (Array.isArray(data)) {
+      const headers = Object.keys(data[0]).join(',');
+      const rows = data.map(item => Object.values(item).join(','));
+      return [headers, ...rows].join('\n');
+    } else {
+      const headers = Object.keys(data).join(',');
+      const values = Object.values(data).join(',');
+      return [headers, values].join('\n');
+    }
+  };
+
+  const convertToTXT = (data) => {
+    if (Array.isArray(data?.chat)) {
+      return `Stance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\nChat History:\n\n` +
+        data.chat.map(msg => 
+          `${msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} ${msg.text}\n`
+        ).join('\n');
+    } else {
+      return `Stance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\n` +
+        JSON.stringify(data, null, 2);
+    }
+  };
+
+  const downloadChat = async (session) => {
     try {
-      const response = await axios.get(`/api/admin/sessions/${sessionId}/chat`, {
-        headers: {
-          username,
-          password
-        }
+      const response = await axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
+        headers: { username, password }
       });
-      downloadJson(response.data, `chat_${sessionId}.json`);
+      
+      const chatData = {
+        stance: session.stance,
+        botPersonality: session.botPersonality,
+        chat: response.data
+      };
+
+      ['json', 'csv', 'txt'].forEach(format => {
+        downloadInFormat(chatData, `chat_${session.sessionId}`, format);
+      });
     } catch (error) {
       console.error('Error downloading chat:', error);
+      toast.error('Failed to download chat');
     }
   };
 
-  const downloadResponse = async (sessionId) => {
+  const downloadResponse = async (session) => {
     try {
-      const response = await axios.get(`/api/admin/sessions/${sessionId}/response`, {
-        headers: {
-          username,
-          password
-        }
+      const response = await axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
+        headers: { username, password }
       });
-      downloadJson(response.data, `response_${sessionId}.json`);
+      
+      const responseData = {
+        stance: session.stance,
+        botPersonality: session.botPersonality,
+        finalResponse: response.data
+      };
+
+      ['json', 'csv', 'txt'].forEach(format => {
+        downloadInFormat(responseData, `response_${session.sessionId}`, format);
+      });
     } catch (error) {
       console.error('Error downloading response:', error);
+      toast.error('Failed to download response');
     }
   };
 
-  const downloadFullSession = async (sessionId) => {
+  const downloadFullSession = async (session) => {
     try {
-      const chatResponse = await axios.get(`/api/admin/sessions/${sessionId}/chat`, {
-        headers: {
-          username,
-          password
-        }
-      });
-      const finalResponse = await axios.get(`/api/admin/sessions/${sessionId}/response`, {
-        headers: {
-          username,
-          password
-        }
-      });
+      const [chatResponse, finalResponse] = await Promise.all([
+        axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
+          headers: { username, password }
+        }),
+        axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
+          headers: { username, password }
+        })
+      ]);
+
       const fullSession = {
-        ...sessions.find(s => s.sessionId === sessionId),
+        ...session,
         chat: chatResponse.data,
         finalResponse: finalResponse.data
       };
-      downloadJson(fullSession, `full_session_${sessionId}.json`);
+
+      ['json', 'csv', 'txt'].forEach(format => {
+        downloadInFormat(fullSession, `full_session_${session.sessionId}`, format);
+      });
     } catch (error) {
-      console.error('Error downloading session:', error);
+      console.error('Error downloading full session:', error);
+      toast.error('Failed to download full session');
     }
   };
 
@@ -104,18 +188,15 @@ function Admin() {
     try {
       const fullSessions = await Promise.all(
         sessions.map(async (session) => {
-          const chatResponse = await axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
-            headers: {
-              username,
-              password
-            }
-          });
-          const finalResponse = await axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
-            headers: {
-              username,
-              password
-            }
-          });
+          const [chatResponse, finalResponse] = await Promise.all([
+            axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
+              headers: { username, password }
+            }),
+            axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
+              headers: { username, password }
+            })
+          ]);
+          
           return {
             ...session,
             chat: chatResponse.data,
@@ -123,22 +204,14 @@ function Admin() {
           };
         })
       );
-      downloadJson(fullSessions, 'all_sessions.json');
+
+      ['json', 'csv', 'txt'].forEach(format => {
+        downloadInFormat(fullSessions, 'all_sessions', format);
+      });
     } catch (error) {
       console.error('Error downloading all sessions:', error);
+      toast.error('Failed to download all sessions');
     }
-  };
-
-  const downloadJson = (data, filename) => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);  // Clean up the URL
   };
 
   if (!isAuthenticated) {
@@ -178,6 +251,7 @@ function Admin() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
+      <Toaster position="top-right" />
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
@@ -202,24 +276,36 @@ function Admin() {
                   <p>Bot Personality: {session.botPersonality}</p>
                 </div>
                 <div className="flex gap-2">
-                  <button
-                    onClick={() => downloadFullSession(session.sessionId)}
-                    className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
-                  >
-                    Download Full
-                  </button>
-                  <button
-                    onClick={() => downloadChat(session.sessionId)}
-                    className="bg-purple-500 text-white py-1 px-3 rounded hover:bg-purple-600"
-                  >
-                    Download Chat
-                  </button>
-                  <button
-                    onClick={() => downloadResponse(session.sessionId)}
-                    className="bg-indigo-500 text-white py-1 px-3 rounded hover:bg-indigo-600"
-                  >
-                    Download Response
-                  </button>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowDownloadOptions(session.sessionId)}
+                      className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
+                    >
+                      Download
+                    </button>
+                    {showDownloadOptions === session.sessionId && (
+                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
+                        <div className="py-1">
+                          {[
+                            { label: 'Full Session', fn: () => downloadFullSession(session) },
+                            { label: 'Chat Only', fn: () => downloadChat(session) },
+                            { label: 'Response Only', fn: () => downloadResponse(session) }
+                          ].map((option) => (
+                            <button
+                              key={option.label}
+                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                              onClick={() => {
+                                option.fn();
+                                setShowDownloadOptions(null);
+                              }}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   <button
                     onClick={() => deleteSession(session.sessionId)}
                     className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
@@ -234,8 +320,10 @@ function Admin() {
                 <div className="bg-gray-50 p-4 rounded max-h-40 overflow-y-auto">
                   {session.chat.map((msg, index) => (
                     <div key={index} className="mb-2">
-                      <span className="font-semibold">{msg.sender}: </span>
-                      {msg.text}
+                      <span className="font-semibold">
+                        {msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} 
+                      </span>
+                      <span className="ml-2">{msg.text}</span>
                     </div>
                   ))}
                 </div>
