@@ -266,7 +266,7 @@ function MainApp() {
                 setCurrentStep(4);
               }}
             >
-              Continue to Final Response
+              Continue to the Next Step
             </button>
           </div>
         </div>
@@ -277,7 +277,7 @@ function MainApp() {
       case 4:
         return (
           <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
-            <h2 className="text-2xl font-bold mb-4">Final Response</h2>
+            <h2 className="text-2xl font-bold mb-4">My Stance on {stances[stance]}</h2>
             <p className="mb-4">Please write 3-5 sentences about your stance based on the conversation.</p>
             <textarea
               className="w-full h-32 p-3 border rounded-lg mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500"
