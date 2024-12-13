@@ -9,8 +9,14 @@ function Admin() {
   const [error, setError] = useState('');
   const [showDownloadOptions, setShowDownloadOptions] = useState(null);
   const [downloadStatus, setDownloadStatus] = useState('');
+  const [selectedFileType, setSelectedFileType] = useState('json');
 
-  // Helper function to show status messages
+  const fileTypes = [
+    { label: 'JSON', value: 'json' },
+    { label: 'CSV', value: 'csv' },
+    { label: 'TXT', value: 'txt' }
+  ];
+
   const showStatus = (message, isError = false) => {
     setDownloadStatus(message);
     setTimeout(() => setDownloadStatus(''), 3000);
@@ -99,11 +105,25 @@ function Admin() {
   };
 
   const convertToCSV = (data) => {
-    if (Array.isArray(data)) {
+    if (Array.isArray(data?.chat)) {
+      // For chat data
+      const chatRows = data.chat.map(msg => ({
+        timestamp: msg.timestamp,
+        sender: msg.sender,
+        message: msg.text.replace(/,/g, ';'),
+        stance: data.stance,
+        botPersonality: data.botPersonality
+      }));
+      const headers = Object.keys(chatRows[0]).join(',');
+      const rows = chatRows.map(row => Object.values(row).join(','));
+      return [headers, ...rows].join('\n');
+    } else if (Array.isArray(data)) {
+      // For multiple sessions
       const headers = Object.keys(data[0]).join(',');
       const rows = data.map(item => Object.values(item).join(','));
       return [headers, ...rows].join('\n');
     } else {
+      // For single session or response
       const headers = Object.keys(data).join(',');
       const values = Object.values(data).join(',');
       return [headers, values].join('\n');
@@ -134,9 +154,7 @@ function Admin() {
         chat: response.data
       };
 
-      ['json', 'csv', 'txt'].forEach(format => {
-        downloadInFormat(chatData, `chat_${session.sessionId}`, format);
-      });
+      downloadInFormat(chatData, `chat_${session.sessionId}`, selectedFileType);
     } catch (error) {
       console.error('Error downloading chat:', error);
       showStatus('Failed to download chat', true);
@@ -155,9 +173,7 @@ function Admin() {
         finalResponse: response.data
       };
 
-      ['json', 'csv', 'txt'].forEach(format => {
-        downloadInFormat(responseData, `response_${session.sessionId}`, format);
-      });
+      downloadInFormat(responseData, `response_${session.sessionId}`, selectedFileType);
     } catch (error) {
       console.error('Error downloading response:', error);
       showStatus('Failed to download response', true);
@@ -181,9 +197,7 @@ function Admin() {
         finalResponse: finalResponse.data
       };
 
-      ['json', 'csv', 'txt'].forEach(format => {
-        downloadInFormat(fullSession, `full_session_${session.sessionId}`, format);
-      });
+      downloadInFormat(fullSession, `full_session_${session.sessionId}`, selectedFileType);
     } catch (error) {
       console.error('Error downloading full session:', error);
       showStatus('Failed to download full session', true);
@@ -211,9 +225,7 @@ function Admin() {
         })
       );
 
-      ['json', 'csv', 'txt'].forEach(format => {
-        downloadInFormat(fullSessions, 'all_sessions', format);
-      });
+      downloadInFormat(fullSessions, 'all_sessions', selectedFileType);
     } catch (error) {
       console.error('Error downloading all sessions:', error);
       showStatus('Failed to download all sessions', true);
@@ -267,12 +279,25 @@ function Admin() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <button
-            onClick={downloadAllSessions}
-            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-          >
-            Download All Sessions
-          </button>
+          <div className="flex items-center gap-4">
+            <select
+              value={selectedFileType}
+              onChange={(e) => setSelectedFileType(e.target.value)}
+              className="p-2 border rounded"
+            >
+              {fileTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
+            </select>
+            <button
+              onClick={downloadAllSessions}
+              className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
+            >
+              Download All Sessions
+            </button>
+          </div>
         </div>
 
         <div className="grid gap-6">
@@ -296,8 +321,23 @@ function Admin() {
                       Download
                     </button>
                     {showDownloadOptions === session.sessionId && (
-                      <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-50">
-                        <div className="py-1">
+                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50">
+                        <div className="p-2">
+                          <div className="mb-2 px-2">
+                            <label className="text-sm text-gray-600">File Type:</label>
+                            <select
+                              value={selectedFileType}
+                              onChange={(e) => setSelectedFileType(e.target.value)}
+                              className="w-full mt-1 p-1 border rounded text-sm"
+                            >
+                              {fileTypes.map((type) => (
+                                <option key={type.value} value={type.value}>
+                                  {type.label}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+                          <div className="border-t"></div>
                           {[
                             { label: 'Full Session', fn: () => downloadFullSession(session) },
                             { label: 'Chat Only', fn: () => downloadChat(session) },
