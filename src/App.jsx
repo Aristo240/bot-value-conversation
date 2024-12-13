@@ -230,27 +230,26 @@ function MainApp() {
             <div ref={messagesEndRef} />
           </div>
   
-          {/* Fixed input area */}
-          <div className="border-t bg-white p-4">
-            <textarea
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[50px] max-h-[100px] overflow-y-auto"
-              placeholder="Type your message..."
-              rows="1"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (e.target.value.trim()) {
-                    handleSendMessage(e.target.value.trim());
-                    e.target.value = '';
-                  }
-                }
-              }}
-              onChange={(e) => {
-                e.target.style.height = 'inherit';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-              }}
-            />
-          </div>
+          <div className="p-4 border-t bg-white">
+  <textarea
+    className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[50px] max-h-[100px] overflow-y-auto bg-white"
+    placeholder="Type your message..."
+    rows="1"
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (e.target.value.trim()) {
+          handleSendMessage(e.target.value.trim());
+          e.target.value = '';
+        }
+      }
+    }}
+    onChange={(e) => {
+      e.target.style.height = 'inherit';
+      e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+    }}
+  />
+</div>
         </div>
   
         {/* Time's up popup */}
