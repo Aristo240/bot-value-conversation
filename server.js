@@ -2,6 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import OpenAI from 'openai';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -20,12 +22,16 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// MongoDB Models
+// MongoDB Schema
 const SessionSchema = new mongoose.Schema({
   sessionId: String,
   timestamp: Date,
   stance: String,
   botPersonality: String,
+  consent: {
+    accepted: Boolean,
+    timestamp: Date
+  },
   chat: [{
     messageId: String,
     text: String,
@@ -35,6 +41,31 @@ const SessionSchema = new mongoose.Schema({
   finalResponse: {
     text: String,
     timestamp: Date
+  },
+  sbsvs: {
+    responses: [{
+      questionId: Number,
+      value: Number
+    }],
+    timestamp: Date
+  },
+  attitudeSurvey: {
+    responses: [{
+      aspect: String,
+      rating: Number
+    }],
+    timestamp: Date
+  },
+  stanceAgreement: {
+    assigned: Number,
+    opposite: Number,
+    timestamp: Date
+  },
+  demographics: {
+    age: Number,
+    gender: String,
+    education: String,
+    timestamp: Date
   }
 });
 
@@ -42,16 +73,16 @@ const Session = mongoose.model('Session', SessionSchema);
 
 // Admin authentication middleware
 const authenticateAdmin = async (req, res, next) => {
-    const username = req.body?.username || req.headers?.username;
-    const password = req.body?.password || req.headers?.password;
-    
-    if (username === process.env.ADMIN_USERNAME && 
-        password === process.env.ADMIN_PASSWORD) {
-      next();
-    } else {
-      res.status(401).json({ message: 'Invalid credentials' });
-    }
-  };
+  const username = req.body?.username || req.headers?.username;
+  const password = req.body?.password || req.headers?.password;
+  
+  if (username === process.env.ADMIN_USERNAME && 
+      password === process.env.ADMIN_PASSWORD) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Invalid credentials' });
+  }
+};
 
 // Basic health check
 app.get('/api/health', (req, res) => {
@@ -62,6 +93,24 @@ app.get('/api/health', (req, res) => {
 app.post('/api/sessions', async (req, res) => {
   try {
     const session = new Session(req.body);
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Save consent
+app.post('/api/sessions/:sessionId/consent', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    session.consent = {
+      accepted: true,
+      timestamp: new Date()
+    };
     await session.save();
     res.status(201).json(session);
   } catch (error) {
@@ -84,7 +133,7 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Modified chat endpoint
+// Chat with GPT
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, history } = req.body;
@@ -95,9 +144,6 @@ app.post('/api/chat', async (req, res) => {
       temperature: 0.7,
       messages: [
         { role: "system", content: systemPrompt },
-        // Include the full example conversation
-        { role: "assistant", content: exampleExchange.bot },
-        { role: "user", content: exampleExchange.user },
         { role: "assistant", content: exampleExchange.bot },
         { role: "user", content: exampleExchange.user },
         { role: "assistant", content: exampleExchange.bot },
@@ -112,6 +158,75 @@ app.post('/api/chat', async (req, res) => {
     res.json({ response: completion.choices[0].message.content });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// Save final response
+app.post('/api/sessions/:sessionId/response', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    session.finalResponse = {
+      text: req.body.text,
+      timestamp: new Date()
+    };
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Save all questionnaire responses
+app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    const { sbsvs, attitude, stanceAgreement, demographics } = req.body;
+
+    if (sbsvs) {
+      session.sbsvs = {
+        responses: Object.entries(sbsvs).map(([questionId, value]) => ({
+          questionId: parseInt(questionId),
+          value
+        })),
+        timestamp: new Date()
+      };
+    }
+
+    if (attitude) {
+      session.attitudeSurvey = {
+        responses: Object.entries(attitude).map(([aspect, rating]) => ({
+          aspect,
+          rating
+        })),
+        timestamp: new Date()
+      };
+    }
+
+    if (stanceAgreement) {
+      session.stanceAgreement = {
+        ...stanceAgreement,
+        timestamp: new Date()
+      };
+    }
+
+    if (demographics) {
+      session.demographics = {
+        ...demographics,
+        timestamp: new Date()
+      };
+    }
+
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 
@@ -156,18 +271,15 @@ app.get('/api/admin/sessions/:sessionId/response', authenticateAdmin, async (req
   }
 });
 
-// Save final response
-app.post('/api/sessions/:sessionId/response', async (req, res) => {
+app.get('/api/admin/sessions/:sessionId/full', authenticateAdmin, async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    session.finalResponse = req.body;
-    await session.save();
-    res.status(201).json(session);
+    res.json(session);
   } catch (error) {
-    res.status(400).json({ message: error.message });
+    res.status(500).json({ message: error.message });
   }
 });
 

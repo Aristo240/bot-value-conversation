@@ -66,42 +66,106 @@ function Admin() {
 
   const convertToCSV = (data) => {
     if (Array.isArray(data?.chat)) {
-      const chatRows = data.chat.map(msg => ({
-        userId: data.sessionId,
+      // For chat data
+      const rows = data.chat.map(msg => ({
+        sessionId: data.sessionId,
         timestamp: msg.timestamp,
         sender: msg.sender,
         message: msg.text.replace(/,/g, ';'),
         stance: data.stance,
         botPersonality: data.botPersonality
       }));
-      const headers = Object.keys(chatRows[0]).join(',');
-      const rows = chatRows.map(row => Object.values(row).join(','));
-      return [headers, ...rows].join('\n');
-    } else if (Array.isArray(data)) {
-      const headers = Object.keys(data[0]).join(',');
-      const rows = data.map(item => Object.values(item).join(','));
-      return [headers, ...rows].join('\n');
-    } else {
-      const flatData = {
-        userId: data.sessionId,
-        ...data
-      };
-      const headers = Object.keys(flatData).join(',');
-      const values = Object.values(flatData).join(',');
-      return [headers, values].join('\n');
+      const headers = Object.keys(rows[0]).join(',');
+      return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
+    } else if (data.sbsvs) {
+      // For questionnaire data
+      const rows = [];
+      // SBSVS responses
+      data.sbsvs.responses?.forEach(r => {
+        rows.push({
+          sessionId: data.sessionId,
+          type: 'sbsvs',
+          questionId: r.questionId,
+          value: r.value,
+          timestamp: data.sbsvs.timestamp
+        });
+      });
+      // Attitude responses
+      data.attitudeSurvey.responses?.forEach(r => {
+        rows.push({
+          sessionId: data.sessionId,
+          type: 'attitude',
+          aspect: r.aspect,
+          rating: r.rating,
+          timestamp: data.attitudeSurvey.timestamp
+        });
+      });
+      // Stance agreement
+      rows.push({
+        sessionId: data.sessionId,
+        type: 'stance_agreement',
+        assigned: data.stanceAgreement.assigned,
+        opposite: data.stanceAgreement.opposite,
+        timestamp: data.stanceAgreement.timestamp
+      });
+      // Demographics
+      rows.push({
+        sessionId: data.sessionId,
+        type: 'demographics',
+        age: data.demographics.age,
+        gender: data.demographics.gender,
+        education: data.demographics.education,
+        timestamp: data.demographics.timestamp
+      });
+      const headers = 'sessionId,type,questionId,value,aspect,rating,assigned,opposite,age,gender,education,timestamp';
+      return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
     }
+    // For other data
+    const headers = Object.keys(data).join(',');
+    const values = Object.values(data).join(',');
+    return [headers, values].join('\n');
   };
 
   const convertToTXT = (data) => {
-    if (Array.isArray(data?.chat)) {
-      return `User ID: ${data.sessionId}\nStance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\nChat History:\n\n` +
-        data.chat.map(msg => 
-          `${msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} ${msg.text}\n`
-        ).join('\n');
-    } else {
-      return `User ID: ${data.sessionId}\nStance: ${data.stance}\nBot Personality: ${data.botPersonality}\n\n` +
-        JSON.stringify(data, null, 2);
+    let content = `Session ID: ${data.sessionId}\n`;
+    content += `Stance: ${data.stance}\n`;
+    content += `Bot Personality: ${data.botPersonality}\n\n`;
+
+    if (data.chat) {
+      content += "Chat History:\n\n";
+      content += data.chat.map(msg => 
+        `${msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} ${msg.text}\n`
+      ).join('\n');
     }
+
+    if (data.sbsvs) {
+      content += "\nSBSVS Responses:\n";
+      data.sbsvs.responses.forEach(r => {
+        content += `Question ${r.questionId}: ${r.value}\n`;
+      });
+    }
+
+    if (data.attitudeSurvey) {
+      content += "\nAttitude Survey:\n";
+      data.attitudeSurvey.responses.forEach(r => {
+        content += `${r.aspect}: ${r.rating}\n`;
+      });
+    }
+
+    if (data.stanceAgreement) {
+      content += "\nStance Agreement:\n";
+      content += `Assigned stance: ${data.stanceAgreement.assigned}\n`;
+      content += `Opposite stance: ${data.stanceAgreement.opposite}\n`;
+    }
+
+    if (data.demographics) {
+      content += "\nDemographics:\n";
+      content += `Age: ${data.demographics.age}\n`;
+      content += `Gender: ${data.demographics.gender}\n`;
+      content += `Education: ${data.demographics.education}\n`;
+    }
+
+    return content;
   };
 
   const downloadInFormat = (data, filename, format) => {
@@ -144,68 +208,45 @@ function Admin() {
     showStatus(`Downloaded ${filename}.${extension}`);
   };
 
-  const downloadChat = async (session) => {
+  const downloadSession = async (session, type = 'full') => {
     try {
-      const response = await axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
-        headers: { username, password }
-      });
-      
-      const chatData = {
-        sessionId: session.sessionId,
-        stance: session.stance,
-        botPersonality: session.botPersonality,
-        chat: response.data
-      };
+      let data;
+      let filename;
 
-      downloadInFormat(chatData, `chat_${session.sessionId}`, selectedFileType);
-    } catch (error) {
-      console.error('Error downloading chat:', error);
-      showStatus('Failed to download chat', true);
-    }
-  };
-
-  const downloadResponse = async (session) => {
-    try {
-      const response = await axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
-        headers: { username, password }
-      });
-      
-      const responseData = {
-        sessionId: session.sessionId,
-        stance: session.stance,
-        botPersonality: session.botPersonality,
-        finalResponse: response.data
-      };
-
-      downloadInFormat(responseData, `response_${session.sessionId}`, selectedFileType);
-    } catch (error) {
-      console.error('Error downloading response:', error);
-      showStatus('Failed to download response', true);
-    }
-  };
-
-  const downloadFullSession = async (session) => {
-    try {
-      const [chatResponse, finalResponse] = await Promise.all([
-        axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
+      if (type === 'full') {
+        const response = await axios.get(`/api/admin/sessions/${session.sessionId}/full`, {
           headers: { username, password }
-        }),
-        axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
+        });
+        data = response.data;
+        filename = `full_session_${session.sessionId}`;
+      } else if (type === 'chat') {
+        const response = await axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
           headers: { username, password }
-        })
-      ]);
+        });
+        data = {
+          sessionId: session.sessionId,
+          stance: session.stance,
+          botPersonality: session.botPersonality,
+          chat: response.data
+        };
+        filename = `chat_${session.sessionId}`;
+      } else if (type === 'response') {
+        const response = await axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
+          headers: { username, password }
+        });
+        data = {
+          sessionId: session.sessionId,
+          stance: session.stance,
+          botPersonality: session.botPersonality,
+          finalResponse: response.data
+        };
+        filename = `response_${session.sessionId}`;
+      }
 
-      const fullSession = {
-        sessionId: session.sessionId,
-        ...session,
-        chat: chatResponse.data,
-        finalResponse: finalResponse.data
-      };
-
-      downloadInFormat(fullSession, `full_session_${session.sessionId}`, selectedFileType);
+      downloadInFormat(data, filename, selectedFileType);
     } catch (error) {
-      console.error('Error downloading full session:', error);
-      showStatus('Failed to download full session', true);
+      console.error('Error downloading session:', error);
+      showStatus('Failed to download session data', true);
     }
   };
 
@@ -213,21 +254,10 @@ function Admin() {
     try {
       const fullSessions = await Promise.all(
         sessions.map(async (session) => {
-          const [chatResponse, finalResponse] = await Promise.all([
-            axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
-              headers: { username, password }
-            }),
-            axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
-              headers: { username, password }
-            })
-          ]);
-          
-          return {
-            sessionId: session.sessionId,
-            ...session,
-            chat: chatResponse.data,
-            finalResponse: finalResponse.data
-          };
+          const response = await axios.get(`/api/admin/sessions/${session.sessionId}/full`, {
+            headers: { username, password }
+          });
+          return response.data;
         })
       );
 
@@ -237,6 +267,8 @@ function Admin() {
       showStatus('Failed to download all sessions', true);
     }
   };
+
+  // Rest of the component remains the same (render methods)...
 
   if (!isAuthenticated) {
     return (
@@ -345,15 +377,15 @@ function Admin() {
                           </div>
                           <div className="border-t"></div>
                           {[
-                            { label: 'Full Session', fn: () => downloadFullSession(session) },
-                            { label: 'Chat Only', fn: () => downloadChat(session) },
-                            { label: 'Response Only', fn: () => downloadResponse(session) }
+                            { label: 'Full Session', type: 'full' },
+                            { label: 'Chat Only', type: 'chat' },
+                            { label: 'Response Only', type: 'response' }
                           ].map((option) => (
                             <button
                               key={option.label}
                               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={() => {
-                                option.fn();
+                                downloadSession(session, option.type);
                                 setShowDownloadOptions(null);
                               }}
                             >
@@ -383,24 +415,71 @@ function Admin() {
                       </span>
                       <span className="ml-2">{msg.text}</span>
                     </div>
-                  ))}
-                </div>
-
-                {session.finalResponse && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">Final Response:</h3>
-                    <div className="bg-gray-50 p-4 rounded">
-                      {session.finalResponse.text}
+                    ))}
                     </div>
-                  </>
-                )}
-              </div>
+    
+                    {session.finalResponse && (
+                      <>
+                        <h3 className="font-semibold mt-4 mb-2">Final Response:</h3>
+                        <div className="bg-gray-50 p-4 rounded">
+                          {session.finalResponse.text}
+                        </div>
+                      </>
+                    )}
+    
+                    {session.sbsvs && (
+                      <>
+                        <h3 className="font-semibold mt-4 mb-2">SBSVS Responses:</h3>
+                        <div className="bg-gray-50 p-4 rounded">
+                          {session.sbsvs.responses.map((response, index) => (
+                            <div key={index}>
+                              Question {response.questionId}: {response.value}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+    
+                    {session.attitudeSurvey && (
+                      <>
+                        <h3 className="font-semibold mt-4 mb-2">Attitude Survey:</h3>
+                        <div className="bg-gray-50 p-4 rounded">
+                          {session.attitudeSurvey.responses.map((response, index) => (
+                            <div key={index}>
+                              {response.aspect}: {response.rating}
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+    
+                    {session.stanceAgreement && (
+                      <>
+                        <h3 className="font-semibold mt-4 mb-2">Stance Agreement:</h3>
+                        <div className="bg-gray-50 p-4 rounded">
+                          <div>Assigned Stance: {session.stanceAgreement.assigned}/5</div>
+                          <div>Opposite Stance: {session.stanceAgreement.opposite}/5</div>
+                        </div>
+                      </>
+                    )}
+    
+                    {session.demographics && (
+                      <>
+                        <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
+                        <div className="bg-gray-50 p-4 rounded">
+                          <div>Age: {session.demographics.age}</div>
+                          <div>Gender: {session.demographics.gender}</div>
+                          <div>Education: {session.demographics.education}</div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
+          </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-export default Admin;
+      );
+    }
+    
+    export default Admin;

@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Admin from './Admin';
 import { stances, botPersonalities } from '../config/botConfig.js';
+import ConsentForm from './components/ConsentForm';
+import SBSVS from './components/SBSVS';
+import AttitudeSurvey from './components/AttitudeSurvey';
+import Demographics from './components/Demographics';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
-const initialText = `Challenges of Social Media  In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. This widespread connectivity presents significant challenges. A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+const initialText = `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. This widespread connectivity presents significant challenges. A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
 
 // Main experiment component
 function MainApp() {
@@ -22,6 +24,13 @@ function MainApp() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
   const [showTimeUpPopup, setShowTimeUpPopup] = useState(false);
+  const [sbsvsResponses, setSbsvsResponses] = useState({});
+  const [attitudeResponses, setAttitudeResponses] = useState({});
+  const [stanceAgreement, setStanceAgreement] = useState({
+    assigned: null,
+    opposite: null
+  });
+  const [demographicResponses, setDemographicResponses] = useState({});
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -48,11 +57,12 @@ function MainApp() {
     initializeSession();
   }, [sessionId]);
 
+  // Chat initialization effect
   useEffect(() => {
     if (currentStep === 2 && messages.length === 0) {
       const botMessage = {
         messageId: uuidv4(),
-        text: `Let's discuss ${stances[stance]}. What aspects of this stance do you find most compelling?`,
+        text: `Let's discuss ${stances[stance]}. What do you want to learn about it?`,
         sender: 'bot',
         timestamp: new Date()
       };
@@ -62,6 +72,7 @@ function MainApp() {
     }
   }, [currentStep, stance, sessionId]);
 
+  // Timer effect
   useEffect(() => {
     let interval;
     if (isTimerActive && timer > 0) {
@@ -127,45 +138,57 @@ function MainApp() {
 
   const handleSubmitResponse = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/response`, {
-        text: userResponse,
+      await axios.post(`${API_URL}/sessions/${sessionId}/responses`, {
+        sbsvs: sbsvsResponses,
+        attitude: attitudeResponses,
+        stanceAgreement,
+        demographics: demographicResponses,
         timestamp: new Date()
       });
       setCurrentStep(5);
     } catch (error) {
-      console.error('Error submitting response:', error);
+      console.error('Error submitting responses:', error);
     }
   };
 
+  const getOtherStance = () => {
+    const stanceArray = Object.keys(stances);
+    return stances[stanceArray.find(s => s !== stance)];
+  };
+
+
   const renderStep = () => {
     switch (currentStep) {
-      case 1:
-   return (
-    <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
-      <h2 className="text-3xl font-bold mb-6">Welcome to the Social Media Discussion Study</h2>
-      <div className="prose lg:prose-xl mb-6">
-        <p className="mb-6">{initialText}</p>
-      </div>
-      <div className="bg-yellow-50 p-4 rounded-lg mb-6">
-        <p className="text-sm text-yellow-800 font-medium">
-          You will have 10 minutes to discuss your assigned stance with an AI bot. 
-          This conversation will help you explore and develop your thoughts about the topic.
-        </p>
-      </div>
-      <div className="bg-blue-50 p-6 rounded-lg mb-6">
-        <h3 className="text-xl font-semibold mb-3">Your Assigned Stance:</h3>
-        <p className="text-lg text-blue-800">{stances[stance]}</p>
-      </div>
-      <button 
-        className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-300"
-        onClick={() => setCurrentStep(2)}
-      >
-        Continue to Discussion
-      </button>
-    </div>
-  );
+      case 1: // Consent Form
+        return <ConsentForm onConsent={() => setCurrentStep(2)} />;
 
-  case 2:
+      case 2: // Task Explanation
+        return (
+          <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
+            <h2 className="text-3xl font-bold mb-6">Welcome to the Social Media Discussion Study</h2>
+            <div className="prose lg:prose-xl mb-6">
+              <p className="mb-6">{initialText}</p>
+            </div>
+            <div className="bg-yellow-50 p-4 rounded-lg mb-6">
+              <p className="text-sm text-yellow-800 font-medium">
+                You will have 10 minutes to discuss your assigned stance with an AI bot. 
+                This conversation will help you explore and develop your thoughts about the topic.
+              </p>
+            </div>
+            <div className="bg-blue-50 p-6 rounded-lg mb-6">
+              <h3 className="text-xl font-semibold mb-3">Your Assigned Stance:</h3>
+              <p className="text-lg text-blue-800">{stances[stance]}</p>
+            </div>
+            <button 
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-300"
+              onClick={() => setCurrentStep(3)}
+            >
+              Continue to Discussion
+            </button>
+          </div>
+        );
+
+  case 3: // Chat Interface
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Fixed sidebar */}
@@ -283,7 +306,7 @@ function MainApp() {
     return (
       <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold mb-4">Final Response</h2>
-        <p className="mb-4">Please write 3-5 sentences about your stance based on the conversation (minimum 30 words).</p>
+        <p className="mb-4">Please write 3-5 sentences about your stance based on the conversation.</p>
         <div className="relative">
           <textarea
             className="w-full h-32 p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -292,7 +315,7 @@ function MainApp() {
             placeholder="Write your response here..."
           />
           <div className="text-sm text-gray-600 mb-4">
-            Word count: {wordCount} {wordCount < 30 && "(Minimum 30 words required)"}
+            Word count: {wordCount} {wordCount < 50 && "(Minimum 50 words required)"}
           </div>
         </div>
         <button 
@@ -307,12 +330,99 @@ function MainApp() {
       </div>
     );
 
-      case 5:
+    case 5: // Questionnaires
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <h2 className="text-3xl font-bold mb-6">Questionnaires</h2>
+        <div className="space-y-8">
+          <SBSVS 
+            responses={sbsvsResponses} 
+            setResponses={setSbsvsResponses} 
+          />
+          <AttitudeSurvey 
+            stance={stances[stance]}
+            responses={attitudeResponses}
+            setResponses={setAttitudeResponses}
+          />
+          <div className="bg-white p-6 rounded-lg shadow-lg">
+            <h3 className="text-xl font-bold mb-4">Stance Agreement</h3>
+            <div className="space-y-4">
+              <div>
+                <p>How much do you agree with {stances[stance]}?</p>
+                <div className="flex justify-between mt-2">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <label key={value} className="flex flex-col items-center">
+                      <input
+                        type="radio"
+                        name="stance-agreement"
+                        value={value}
+                        checked={stanceAgreement.assigned === value}
+                        onChange={(e) => setStanceAgreement({
+                          ...stanceAgreement,
+                          assigned: parseInt(e.target.value)
+                        })}
+                        className="mb-1"
+                      />
+                      <span className="text-sm">{value}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <p>How much do you agree with {getOtherStance()}?</p>
+                <div className="flex justify-between mt-2">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <label key={value} className="flex flex-col items-center">
+                      <input
+                        type="radio"
+                        name="other-stance-agreement"
+                        value={value}
+                        checked={stanceAgreement.opposite === value}
+                        onChange={(e) => setStanceAgreement({
+                          ...stanceAgreement,
+                          opposite: parseInt(e.target.value)
+                        })}
+                        className="mb-1"
+                      />
+                      <span className="text-sm">{value}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+          <button
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+            onClick={() => setCurrentStep(6)}
+          >
+            Continue to Demographics
+          </button>
+        </div>
+      </div>
+    );
+
+    case 6: // Demographics
+    return (
+      <div className="max-w-4xl mx-auto p-8">
+        <Demographics
+          responses={demographicResponses}
+          setResponses={setDemographicResponses}
+        />
+        <button
+          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+          onClick={handleSubmitAllResponses}
+        >
+          Submit Responses
+        </button>
+      </div>
+    );
+
+      case 7: // Thank You
         return (
           <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
             <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
             <p>Your responses have been recorded successfully 🎉.</p>
-            <p>You can now close the window.</p>
+            <p>You can now close this window.</p>
           </div>
         );
 
