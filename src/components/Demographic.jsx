@@ -1,7 +1,7 @@
 import React from 'react';
 
 const ageOptions = Array.from({ length: 83 }, (_, i) => i + 18); // 18-100
-const genderOptions = ["Male", "Female", "Non-binary", "Prefer not to say"];
+const genderOptions = ["Male", "Female", "Non-binary", "Other", "Prefer not to say"];
 const educationOptions = [
   "Less than high school",
   "High school graduate",
