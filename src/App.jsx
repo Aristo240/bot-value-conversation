@@ -3,9 +3,9 @@ import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { stances, botPersonalities } from '../config/botConfig.js';
 import ConsentForm from './components/ConsentForm';
-import SBSVS from './components/SBSVS';
-import AttitudeSurvey from './components/AttitudeSurvey';
-import Demographics from './components/Demographics';
+import SBSVS from './components/SBSVS.jsx';
+import AttitudeSurvey from './components/AttitudeSurvey.jsx';
+import Demographics from './components/Demographics.jsx';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
