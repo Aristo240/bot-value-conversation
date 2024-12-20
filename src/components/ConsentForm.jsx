@@ -12,36 +12,7 @@ export const ConsentForm = ({ onConsent }) => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-8">
       <div className="bg-white shadow-2xl rounded-xl overflow-hidden max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 gap-0">
-        {/* Left Column - Contact Information */}
-        <div className="bg-blue-600 text-white p-8 flex flex-col justify-between md:col-span-1">
-          <div>
-            <h2 className="text-2xl font-bold mb-6">Contact Information</h2>
-            <div className="bg-blue-500 bg-opacity-30 p-6 rounded-lg">
-              <p className="mb-4">
-                If you have any questions, concerns, or complaints about this research, 
-                please contact the main researcher:
-              </p>
-              <div className="border-l-4 border-white pl-4">
-                <p className="font-semibold">Researcher:</p>
-                <p>Naama Rozen</p>
-                <p className="mt-2">Email:</p>
-                <a 
-                  href="mailto:naamarozen@tauex.tau.ac.il" 
-                  className="text-white hover:underline break-all"
-                >
-                  naamarozen@tauex.tau.ac.il
-                </a>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-8 text-sm opacity-75">
-            <p>Tel Aviv University</p>
-            <p>Research Ethics Committee</p>
-          </div>
-        </div>
-
-        {/* Right Column - Consent Content */}
+        {/* Left Column - Consent Content */}
         <div className="p-12 md:col-span-2 space-y-8">
           <h1 className="text-4xl font-bold text-gray-800 mb-6">
             Consent Form
@@ -105,6 +76,30 @@ export const ConsentForm = ({ onConsent }) => {
               >
                 I Agree
               </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Contact Information */}
+        <div className="bg-blue-100 text-gray-800 p-8 md:col-span-1 flex flex-col justify-between">
+          <div>
+            <h2 className="text-2xl font-bold mb-6">Contact Information</h2>
+            <div className="bg-white p-6 rounded-lg shadow-sm">
+              <p className="mb-4">
+                If you have any questions, concerns, or complaints about this research, 
+                please contact the main researcher:
+              </p>
+              <div className="border-l-4 border-blue-300 pl-4">
+                <p className="font-semibold">Researcher:</p>
+                <p>Naama Rozen</p>
+                <p className="mt-2">Email:</p>
+                <a 
+                  href="mailto:naamarozen@tauex.tau.ac.il" 
+                  className="text-blue-600 hover:underline break-all"
+                >
+                  naamarozen@tauex.tau.ac.il
+                </a>
+              </div>
             </div>
           </div>
         </div>
