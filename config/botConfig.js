@@ -85,15 +85,12 @@ export const fewshotExamples = {
 };
 
 export const getSystemPrompt = (stance, personality) => {
-  // Get the full text of current stance from the stances object
-  const currentStance = stances[stance]; // gets the full text of the assigned stance
+  // Get full text of stances
+  const currentStance = stances[stance];  // Convert key to full text
+  const otherStanceKey = Object.keys(stances).find(key => key !== stance);
+  const oppositeStance = stances[otherStanceKey];
 
-  // Get the opposite stance
-  const stanceArray = Object.keys(stances);  // gets ['freedom', 'safety']
-  const otherStanceKey = stanceArray.find(s => s !== stance);  // gets the other key
-  const oppositeStance = stances[otherStanceKey];  // gets the full text of opposite stance
-
-  const basePrompt = `You are an AI assistant whose ONLY task is to help the user explore and understand WHY ${currentStance} is important and why it might be more crucial than ${oppositeStance}. Guide the user to develop their own perspective about the importance of this stance by asking questions that encourage deep reflection. Always stay focused on topic. Keep responses concise (2-3 sentences).`;
+  const basePrompt = `You are an AI assistant whose ONLY task is to help the user explore and understand why ${currentStance} is important and why it might be more crucial than ${oppositeStance}. Guide the user to develop their own perspective about the importance of this stance by asking questions that encourage deep reflection. Always stay focused on topic. Keep responses concise (2-3 sentences).`;
 
   const wordList = personality === 'creative' ? creativeWords : conservativeWords;
 
