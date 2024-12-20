@@ -165,28 +165,11 @@ function MainApp() {
       case 1: // Consent Form
         return <ConsentForm onConsent={() => setCurrentStep(2)} />;
 
-      case 2: // Task Explanation
+        case 2: // Task Explanation
+        const otherStance = getOtherStance();
         return (
           <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
             <h2 className="text-3xl font-bold mb-6">Social Media Discussion Study</h2>
-      
-            <div className="bg-yellow-50 p-6 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold mb-3">Your Task:</h3>
-              <p className="text-sm text-yellow-800 mb-4">
-                In this study, you will engage in a 10-minute conversation with an AI bot about an assigned stance 
-                regarding social media challenges. Your goal is to:
-              </p>
-              <ul className="list-disc ml-6 text-sm text-yellow-800">
-                <li className="mb-2">Explore and deepen your understanding of your assigned stance</li>
-                <li className="mb-2">Develop arguments about why this stance is important</li>
-                <li>Consider why this stance might be more crucial than the opposing view</li>
-              </ul>
-            </div>
-      
-            <div className="bg-blue-50 p-6 rounded-lg mb-6">
-              <h3 className="text-xl font-semibold mb-3">Your Assigned Stance:</h3>
-              <p className="text-lg text-blue-800 mb-4">{stances[stance]}</p>
-            </div>
       
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Background Information:</h3>
@@ -199,9 +182,27 @@ function MainApp() {
               </div>
             </div>
       
+            <div className="bg-blue-50 p-6 rounded-lg mb-6">
+              <h3 className="text-xl font-semibold mb-3">Your Assigned Perspective:</h3>
+              <p className="text-lg text-blue-800 mb-4">{stances[stance]}</p>
+            </div>
+      
+            <div className="bg-yellow-50 p-6 rounded-lg mb-6">
+              <h3 className="text-lg font-semibold mb-3">Your Task:</h3>
+              <p className="text-sm text-yellow-800 mb-4">
+                In this study, you will engage in a 10-minute conversation with an AI bot about {stances[stance]}. 
+                Your goal is to:
+              </p>
+              <ul className="list-disc ml-6 text-sm text-yellow-800">
+                <li className="mb-2">Explore and deepen your understanding of this perspective</li>
+                <li className="mb-2">Develop arguments about why this perspective is important</li>
+                <li>Consider why this perspective might be more crucial than {otherStance}</li>
+              </ul>
+            </div>
+      
             <div className="bg-blue-50 p-4 rounded-lg mb-6">
               <p className="text-sm text-blue-800">
-                Take a moment to reflect on your assigned stance before beginning the discussion. 
+                Take a moment to reflect on this perspective before beginning the discussion. 
                 The AI bot will help you explore different aspects of this position.
               </p>
             </div>
