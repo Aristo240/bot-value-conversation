@@ -80,7 +80,7 @@ export const ConsentForm = ({ onConsent }) => {
           </div>
         </div>
         {/* Right Column - Contact Information */}
-        <div className="bg-blue-800 text-gray-800 p-8 md:col-span-1 flex flex-col justify-between">
+        <div className="bg-blue-300 text-gray-800 p-8 md:col-span-1 flex flex-col justify-between">
           <div>
             <h2 className="text-2xl font-bold mb-6">Contact Information</h2>
             <div className="bg-white p-6 rounded-lg shadow-sm">
@@ -88,7 +88,7 @@ export const ConsentForm = ({ onConsent }) => {
                 If you have any questions, concerns, or complaints about this research, 
                 please contact the main researcher:
               </p>
-              <div className="border-l-4 border-blue-500 pl-4">
+              <div className="border-l-4 border-blue-300 pl-4">
                 <p className="font-semibold">Researcher:</p>
                 <p>Naama Rozen</p>
                 <p className="mt-2">Email:</p>
