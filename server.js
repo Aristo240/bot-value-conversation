@@ -2,9 +2,8 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import jwt from 'jsonwebtoken';
-import bcrypt from 'bcryptjs';
 import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
@@ -16,7 +15,10 @@ const __dirname = dirname(__filename);
 dotenv.config();
 
 const app = express();
+
+// Initialize both AI models
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 app.use(cors());
 app.use(express.json());
@@ -28,6 +30,7 @@ const SessionSchema = new mongoose.Schema({
   timestamp: Date,
   stance: String,
   botPersonality: String,
+  aiModel: String,
   consent: {
     accepted: Boolean,
     timestamp: Date
@@ -69,7 +72,42 @@ const SessionSchema = new mongoose.Schema({
   }
 });
 
+const ConditionCounterSchema = new mongoose.Schema({
+  aiModel: String,
+  stance: String,
+  personality: String,
+  count: { type: Number, default: 0 }
+});
+
 const Session = mongoose.model('Session', SessionSchema);
+const ConditionCounter = mongoose.model('ConditionCounter', ConditionCounterSchema);
+
+// Initialize condition counters
+async function initializeCounters() {
+  const counters = await ConditionCounter.find({});
+  if (counters.length === 0) {
+    const conditions = [
+      { aiModel: 'gpt', stance: 'freedom', personality: 'creative' },
+      { aiModel: 'gpt', stance: 'freedom', personality: 'conservative' },
+      { aiModel: 'gpt', stance: 'safety', personality: 'creative' },
+      { aiModel: 'gpt', stance: 'safety', personality: 'conservative' },
+      { aiModel: 'gemini', stance: 'freedom', personality: 'creative' },
+      { aiModel: 'gemini', stance: 'freedom', personality: 'conservative' },
+      { aiModel: 'gemini', stance: 'safety', personality: 'creative' },
+      { aiModel: 'gemini', stance: 'safety', personality: 'conservative' }
+    ];
+
+    await Promise.all(conditions.map(condition => 
+      ConditionCounter.create({
+        aiModel: condition.aiModel,
+        stance: condition.stance,
+        personality: condition.personality,
+        count: 0
+      })
+    ));
+    console.log('Condition counters initialized');
+  }
+}
 
 // Admin authentication middleware
 const authenticateAdmin = async (req, res, next) => {
@@ -83,6 +121,40 @@ const authenticateAdmin = async (req, res, next) => {
     res.status(401).json({ message: 'Invalid credentials' });
   }
 };
+
+app.get('/api/nextCondition', async (req, res) => {
+  try {
+    // Get all counters and find the minimum count
+    const counters = await ConditionCounter.find({});
+    const minCount = Math.min(...counters.map(c => c.count));
+    
+    // Get all conditions with the minimum count
+    const eligibleConditions = counters.filter(c => c.count === minCount);
+    
+    // Randomly select from eligible conditions
+    const selectedCondition = eligibleConditions[Math.floor(Math.random() * eligibleConditions.length)];
+    
+    // Increment the counter for the selected condition
+    await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
+    
+    res.json({
+      aiModel: selectedCondition.aiModel,
+      stance: selectedCondition.stance,
+      personality: selectedCondition.personality
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.get('/api/admin/conditionCounts', authenticateAdmin, async (req, res) => {
+  try {
+    const counters = await ConditionCounter.find({});
+    res.json(counters);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
 
 // Basic health check
 app.get('/api/health', (req, res) => {
@@ -133,29 +205,52 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Chat with GPT
+// Chat with the AI models
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, stance, botPersonality, history } = req.body;
+    const { message, stance, botPersonality, aiModel, history } = req.body;
     const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality);
     
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4",
-      temperature: 0.7,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "assistant", content: exampleExchange.bot },
-        { role: "user", content: exampleExchange.user },
-        { role: "assistant", content: exampleExchange.bot },
-        ...history.map(msg => ({
-          role: msg.sender === 'user' ? 'user' : 'assistant',
-          content: msg.text
-        })),
-        { role: "user", content: message }
-      ]
-    });
+    let response;
+    if (aiModel === 'gpt') {
+      // GPT-4 call
+      const completion = await openai.chat.completions.create({
+        model: "gpt-4",
+        temperature: 0.7,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "assistant", content: exampleExchange.bot },
+          { role: "user", content: exampleExchange.user },
+          { role: "assistant", content: exampleExchange.bot },
+          ...history.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'assistant',
+            content: msg.text
+          })),
+          { role: "user", content: message }
+        ]
+      });
+      response = completion.choices[0].message.content;
+    } else {
+      // Gemini call
+      const model = gemini.getGenerativeModel({ model: "gemini-pro" });
+      const chat = model.startChat({
+        history: [
+          { role: "user", content: "System instructions: " + systemPrompt },
+          { role: "model", content: "Understood, I will follow these instructions." },
+          { role: "model", content: exampleExchange.bot },
+          { role: "user", content: exampleExchange.user },
+          { role: "model", content: exampleExchange.bot },
+          ...history.map(msg => ({
+            role: msg.sender === 'user' ? 'user' : 'model',
+            content: msg.text
+          }))
+        ]
+      });
+      const result = await chat.sendMessage(message);
+      response = result.response.text();
+    }
 
-    res.json({ response: completion.choices[0].message.content });
+    res.json({ response });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -289,7 +384,10 @@ app.get('*', (req, res) => {
 });
 
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB connected'))
+  .then(async () => {
+    console.log('MongoDB connected');
+    await initializeCounters();  // Initialize counters after connection
+  })
   .catch(err => console.log(err));
 
 const PORT = process.env.PORT || 5000;

@@ -10,6 +10,7 @@ function Admin() {
   const [showDownloadOptions, setShowDownloadOptions] = useState(null);
   const [downloadStatus, setDownloadStatus] = useState('');
   const [selectedFileType, setSelectedFileType] = useState('json');
+  const [conditionCounts, setConditionCounts] = useState([]);
 
   const fileTypes = [
     { label: 'JSON', value: 'json' },
@@ -33,16 +34,30 @@ function Admin() {
     }
   };
 
+  const fetchConditionCounts = async () => {
+    try {
+      const response = await axios.get('/api/admin/conditionCounts', {
+        headers: { username, password }
+      });
+      setConditionCounts(response.data);
+    } catch (error) {
+      console.error('Error fetching condition counts:', error);
+    }
+  };
+
   const fetchSessions = async () => {
     try {
-      const response = await axios.post('/api/admin/sessions', { 
-        username, 
-        password 
-      });
-      setSessions(response.data);
+      const [sessionsResponse, countsResponse] = await Promise.all([
+        axios.post('/api/admin/sessions', { username, password }),
+        axios.get('/api/admin/conditionCounts', { 
+          headers: { username, password }
+        })
+      ]);
+      setSessions(sessionsResponse.data);
+      setConditionCounts(countsResponse.data);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
-      showStatus('Failed to fetch sessions', true);
+      console.error('Error fetching data:', error);
+      showStatus('Failed to fetch data', true);
     }
   };
 
@@ -73,7 +88,8 @@ function Admin() {
         sender: msg.sender,
         message: msg.text.replace(/,/g, ';'),
         stance: data.stance,
-        botPersonality: data.botPersonality
+        botPersonality: data.botPersonality,
+        aiModel: data.aiModel
       }));
       const headers = Object.keys(rows[0]).join(',');
       return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
@@ -130,6 +146,7 @@ function Admin() {
     let content = `Session ID: ${data.sessionId}\n`;
     content += `Stance: ${data.stance}\n`;
     content += `Bot Personality: ${data.botPersonality}\n\n`;
+    content += `AI Model: ${data.aiModel}\n\n`;
 
     if (data.chat) {
       content += "Chat History:\n\n";
@@ -268,8 +285,6 @@ function Admin() {
     }
   };
 
-  // Rest of the component remains the same (render methods)...
-
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -317,6 +332,27 @@ function Admin() {
       <div className="max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+          <div className="mb-8 bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              {conditionCounts.map((condition) => (
+                <div
+                key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
+                className="p-4 bg-gray-50 rounded-lg"
+              >
+                <div className="text-sm font-medium text-gray-500">Model</div>
+                <div className="mb-2">{condition.aiModel}</div>
+                <div className="text-sm font-medium text-gray-500">Stance</div>
+                <div className="mb-2">{condition.stance}</div>
+                <div className="text-sm font-medium text-gray-500">Personality</div>
+                <div className="mb-2">{condition.personality}</div>
+                <div className="text-lg font-bold text-blue-600">
+                  Count: {condition.count}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
           <div className="flex items-center gap-4">
             <select
               value={selectedFileType}
@@ -337,7 +373,7 @@ function Admin() {
             </button>
           </div>
         </div>
-
+          // Session Display
         <div className="grid gap-6">
           {sessions.map((session) => (
             <div key={session.sessionId} className="bg-white p-6 rounded-lg shadow">
@@ -349,6 +385,7 @@ function Admin() {
                   </p>
                   <p>Stance: {session.stance}</p>
                   <p>Bot Personality: {session.botPersonality}</p>
+                  <p>AI Model: {session.aiModel}</p>
                 </div>
                 <div className="flex gap-2">
                   <div className="relative">

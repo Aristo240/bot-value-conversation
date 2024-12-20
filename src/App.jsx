@@ -31,29 +31,31 @@ function MainApp() {
     opposite: null
   });
   const [demographicResponses, setDemographicResponses] = useState({});
+  const [aiModel, setAiModel] = useState('');
 
   useEffect(() => {
     const initializeSession = async () => {
-      const stanceArray = Object.keys(stances);
-      const randomStance = stanceArray[Math.floor(Math.random() * stanceArray.length)];
-      const personalityArray = Object.keys(botPersonalities);
-      const randomPersonality = personalityArray[Math.floor(Math.random() * personalityArray.length)];
-
-      setStance(randomStance);
-      setBotPersonality(randomPersonality);
-
       try {
+        // Get the next condition from the server
+        const conditionResponse = await axios.get(`${API_URL}/nextCondition`);
+        const { aiModel, stance, personality } = conditionResponse.data;
+  
+        setAiModel(aiModel);
+        setStance(stance);
+        setBotPersonality(personality);
+  
         await axios.post(`${API_URL}/sessions`, {
           sessionId,
           timestamp: new Date(),
-          stance: randomStance,
-          botPersonality: randomPersonality
+          stance,
+          botPersonality: personality,
+          aiModel
         });
       } catch (error) {
         console.error('Error initializing session:', error);
       }
     };
-
+  
     initializeSession();
   }, [sessionId]);
 
@@ -106,6 +108,7 @@ function MainApp() {
         message,
         stance: stances[stance],
         botPersonality,
+        aiModel,
         history: messages
       });
 
@@ -165,25 +168,49 @@ function MainApp() {
       case 2: // Task Explanation
         return (
           <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
-            <h2 className="text-3xl font-bold mb-6">Welcome to the Social Media Discussion Study</h2>
-            <div className="prose lg:prose-xl mb-6">
-              <p className="mb-6">{initialText}</p>
-            </div>
-            <div className="bg-yellow-50 p-4 rounded-lg mb-6">
-              <p className="text-sm text-yellow-800 font-medium">
-                You will have 10 minutes to discuss your assigned stance with an AI bot. 
-                This conversation will help you explore and develop your thoughts about the topic.
+            <h2 className="text-3xl font-bold mb-6">Social Media Discussion Study</h2>
+      
+            <div className="bg-yellow-50 p-6 rounded-lg mb-6">
+              <h3 className="text-lg font-semibold mb-3">Your Task:</h3>
+              <p className="text-sm text-yellow-800 mb-4">
+                In this study, you will engage in a 10-minute conversation with an AI bot about an assigned stance 
+                regarding social media challenges. Your goal is to:
               </p>
+              <ul className="list-disc ml-6 text-sm text-yellow-800">
+                <li className="mb-2">Explore and deepen your understanding of your assigned stance</li>
+                <li className="mb-2">Develop arguments about why this stance is important</li>
+                <li>Consider why this stance might be more crucial than the opposing view</li>
+              </ul>
             </div>
+      
             <div className="bg-blue-50 p-6 rounded-lg mb-6">
               <h3 className="text-xl font-semibold mb-3">Your Assigned Stance:</h3>
-              <p className="text-lg text-blue-800">{stances[stance]}</p>
+              <p className="text-lg text-blue-800 mb-4">{stances[stance]}</p>
             </div>
+      
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Background Information:</h3>
+              <p className="text-sm text-gray-600 mb-2">
+                Please read the following text carefully. It provides important context about the debate 
+                between freedom of speech and user safety on social media platforms:
+              </p>
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <p className="text-gray-800">{initialText}</p>
+              </div>
+            </div>
+      
+            <div className="bg-blue-50 p-4 rounded-lg mb-6">
+              <p className="text-sm text-blue-800">
+                Take a moment to reflect on your assigned stance before beginning the discussion. 
+                The AI bot will help you explore different aspects of this position.
+              </p>
+            </div>
+      
             <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-300"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-300 w-full"
               onClick={() => setCurrentStep(3)}
             >
-              Continue to Discussion
+              Begin Discussion
             </button>
           </div>
         );
