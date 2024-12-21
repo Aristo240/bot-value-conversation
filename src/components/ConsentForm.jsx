@@ -70,7 +70,7 @@ export const ConsentForm = ({ onConsent }) => {
               <p>If you have any questions, concerns, or complaints about this research, please contact:</p>
               <div className="mt-4">
                 <p className="font-semibold">Researcher:</p>
-                <p>Naama Rozen</p>
+                <p>Dr. Naama Rozen</p>
                 <p className="mt-2">Email:</p>
                 <a 
                   href="mailto:naamarozen@tauex.tau.ac.il" 
