@@ -213,7 +213,7 @@ app.post('/api/chat', async (req, res) => {
     
     let response;
     if (aiModel === 'gpt') {
-      // GPT-4 call
+      // GPT-4
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         temperature: 0.7,
@@ -231,28 +231,54 @@ app.post('/api/chat', async (req, res) => {
       });
       response = completion.choices[0].message.content;
     } else {
-      // Gemini call
+      // Gemini
       const model = gemini.getGenerativeModel({ model: "gemini-pro" });
-      const chat = model.startChat({
-        history: [
-          { role: "user", content: "System instructions: " + systemPrompt },
-          { role: "model", content: "Understood, I will follow these instructions." },
-          { role: "model", content: exampleExchange.bot },
-          { role: "user", content: exampleExchange.user },
-          { role: "model", content: exampleExchange.bot },
-          ...history.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'model',
-            content: msg.text
-          }))
-        ]
+      
+      // Format chat history for Gemini
+      const formattedHistory = [
+        // System instructions need to be part of the first user message
+        { 
+          role: "user",
+          parts: [`${systemPrompt}\n\nExample conversation:\nBot: ${exampleExchange.bot}\nUser: ${exampleExchange.user}\nBot: ${exampleExchange.bot}\n\nLet's continue the conversation:`]
+        }
+      ];
+
+      // Add conversation history
+      history.forEach(msg => {
+        formattedHistory.push({
+          role: msg.sender === 'user' ? 'user' : 'model',
+          parts: [msg.text]
+        });
       });
+
+      // Add current message
+      formattedHistory.push({
+        role: "user",
+        parts: [message]
+      });
+
+      // Start chat and get response
+      const chat = model.startChat({
+        history: formattedHistory,
+        generationConfig: {
+          temperature: 0.7,
+          topK: 40,
+          topP: 0.95,
+          maxOutputTokens: 1024,
+        },
+      });
+
       const result = await chat.sendMessage(message);
       response = result.response.text();
     }
 
     res.json({ response });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Chat API Error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      details: error.stack 
+    });
   }
 });
 
