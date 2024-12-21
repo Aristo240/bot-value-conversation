@@ -32,6 +32,8 @@ function MainApp() {
   });
   const [demographicResponses, setDemographicResponses] = useState({});
   const [aiModel, setAiModel] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -151,6 +153,7 @@ function MainApp() {
       setCurrentStep(5);
     } catch (error) {
       console.error('Error submitting responses:', error);
+      alert('There was an error submitting your responses. Please try again.');
     }
   };
 
@@ -165,56 +168,76 @@ function MainApp() {
       case 1: // Consent Form
         return <ConsentForm onConsent={() => setCurrentStep(2)} />;
 
-        case 2: // Task Explanation
-        const otherStance = getOtherStance();
-        return (
-          <div className="max-w-4xl mx-auto p-8 bg-white rounded-lg shadow-lg">
-            <h2 className="text-3xl font-bold mb-6">Social Media Discussion Study</h2>
-      
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold mb-3">Background Information:</h3>
-              <p className="text-sm text-gray-600 mb-2">
-                Please read the following text carefully. It provides important context about the debate 
-                between freedom of speech and user safety on social media platforms:
-              </p>
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-gray-800">{initialText}</p>
+        case 2: { // Task Explanation
+          const otherStance = getOtherStance();
+          return (
+            <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
+              <h2 className="text-2xl font-bold mb-6">Social Media Discussion Study</h2>
+              
+              {/* Background Information */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Background Information</h3>
+                <div className="p-4 border rounded-lg bg-gray-50">
+                  <p className="text-gray-700 leading-relaxed">
+                    {initialText}
+                  </p>
+                </div>
               </div>
+              
+              {/* Assigned Perspective */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Your Assigned Perspective</h3>
+                <div className="p-4 border rounded-lg bg-white">
+                  <p className="text-blue-600 font-medium">
+                    {stances[stance]}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Task Description */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Your Task</h3>
+                <div className="p-4 border rounded-lg bg-white">
+                  <p className="text-gray-700 mb-4">
+                    You will engage in a 10-minute conversation with an AI bot about {stances[stance]}. 
+                    Your goals are to:
+                  </p>
+                  <ul className="space-y-2 text-gray-700">
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Explore and deepen your understanding of this perspective</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Develop arguments about why this perspective is important</span>
+                    </li>
+                    <li className="flex items-start">
+                      <span className="mr-2">•</span>
+                      <span>Consider why this perspective might be more crucial than {otherStance}</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+              
+              {/* Instructions */}
+              <div className="mb-8">
+                <div className="p-4 border rounded-lg bg-blue-50">
+                  <p className="text-gray-700">
+                    Take a moment to reflect on this perspective before beginning the discussion. 
+                    The AI bot will help you explore different aspects of this position.
+                  </p>
+                </div>
+              </div>
+              
+              <button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+                onClick={() => setCurrentStep(3)}
+              >
+                Begin Discussion
+              </button>
             </div>
-      
-            <div className="bg-blue-50 p-6 rounded-lg mb-6">
-              <h3 className="text-xl font-semibold mb-3">Your Assigned Perspective:</h3>
-              <p className="text-lg text-blue-800 mb-4">{stances[stance]}</p>
-            </div>
-      
-            <div className="bg-yellow-50 p-6 rounded-lg mb-6">
-              <h3 className="text-lg font-semibold mb-3">Your Task:</h3>
-              <p className="text-sm text-yellow-800 mb-4">
-                In this study, you will engage in a 10-minute conversation with an AI bot about {stances[stance]}. 
-                Your goal is to:
-              </p>
-              <ul className="list-disc ml-6 text-sm text-yellow-800">
-                <li className="mb-2">Explore and deepen your understanding of this perspective</li>
-                <li className="mb-2">Develop arguments about why this perspective is important</li>
-                <li>Consider why this perspective might be more crucial than {otherStance}</li>
-              </ul>
-            </div>
-      
-            <div className="bg-blue-50 p-4 rounded-lg mb-6">
-              <p className="text-sm text-blue-800">
-                Take a moment to reflect on this perspective before beginning the discussion. 
-                The AI bot will help you explore different aspects of this position.
-              </p>
-            </div>
-      
-            <button 
-              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold transition duration-300 w-full"
-              onClick={() => setCurrentStep(3)}
-            >
-              Begin Discussion
-            </button>
-          </div>
-        );
+          );
+        }
 
   case 3: // Chat Interface
   return (
@@ -328,35 +351,89 @@ function MainApp() {
     </div>
   );
 
-  case 4:
+  case 4: {
     const wordCount = userResponse.trim().split(/\s+/).length;
+    
+    const handleFinalResponse = async () => {
+      if (wordCount < 50) return;
+      
+      setIsSubmitting(true);
+      setSubmitError('');
+      
+      try {
+        // Save the final response
+        await axios.post(`${API_URL}/sessions/${sessionId}/response`, {
+          text: userResponse
+        });
+        
+        // Move to the next step
+        setCurrentStep(5);
+      } catch (error) {
+        console.error('Error saving final response:', error);
+        setSubmitError('There was an error saving your response. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
     
     return (
       <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
         <h2 className="text-2xl font-bold mb-4">Final Response</h2>
-        <p className="mb-4">Please write 3-5 sentences about your stance based on the conversation.</p>
+        <p className="mb-4">
+          Based on your conversation about the stance, please write 3-5 sentences explaining your thoughts 
+          and understanding of the position.
+        </p>
+        
         <div className="relative">
           <textarea
             className="w-full h-32 p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={userResponse}
             onChange={(e) => setUserResponse(e.target.value)}
             placeholder="Write your response here..."
+            disabled={isSubmitting}
           />
-          <div className="text-sm text-gray-600 mb-4">
-            Word count: {wordCount} {wordCount < 50 && "(Minimum 50 words required)"}
+          
+          <div className="flex justify-between items-center mb-4">
+            <div className="text-sm text-gray-600">
+              Word count: {wordCount}
+              {wordCount < 50 && (
+                <span className="text-red-500 ml-1">
+                  (Minimum 50 words required)
+                </span>
+              )}
+            </div>
+            
+            {wordCount >= 50 && (
+              <div className="text-sm text-green-600">
+                ✓ Minimum word count met
+              </div>
+            )}
           </div>
+          
+          {submitError && (
+            <div className="text-red-500 text-sm mb-4">
+              {submitError}
+            </div>
+          )}
         </div>
+        
         <button 
-          className={`bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition duration-300 ${
-            wordCount < 30 ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          onClick={handleSubmitResponse}
-          disabled={wordCount < 30}
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 flex items-center justify-center
+            ${(wordCount < 50 || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={handleFinalResponse}
+          disabled={wordCount < 50 || isSubmitting}
         >
-          Submit Response
+          {isSubmitting ? (
+            <>
+              <span className="animate-pulse">Submitting...</span>
+            </>
+          ) : (
+            'Submit Response'
+          )}
         </button>
       </div>
     );
+  }
 
     case 5: // Questionnaires
     return (

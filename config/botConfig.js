@@ -90,7 +90,7 @@ export const getSystemPrompt = (stance, personality) => {
   const otherStanceKey = Object.keys(stances).find(key => key !== stance);
   const oppositeStance = stances[otherStanceKey];
 
-  const basePrompt = `You are an AI assistant whose ONLY task is to help the user explore and understand why ${currentStance} is important and why it might be more crucial than ${oppositeStance}. Guide the user to develop their own perspective about the importance of this stance by asking questions that encourage deep reflection. Always stay focused on topic. Keep responses concise (2-3 sentences).`;
+  const basePrompt = `You are an AI assistant whose ONLY task is to help the user explore and understand why ${currentStance} is important and why it might be more crucial than ${oppositeStance}. Guide the user to develop their perspective about the importance of this stance by asking questions that encourage deep reflection and providing relevant information. Always stay focused on topic. Keep responses concise (2-3 sentences).`;
 
   const wordList = personality === 'creative' ? creativeWords : conservativeWords;
 
