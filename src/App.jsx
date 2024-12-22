@@ -171,7 +171,7 @@ function MainApp() {
         case 2: { // Task Explanation
           const otherStance = getOtherStance();
           return (
-            <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
+            <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
               <h2 className="text-2xl font-bold mb-6">Social Media Discussion Study</h2>
               
               {/* Background Information */}
@@ -237,7 +237,7 @@ function MainApp() {
               </button>
             </div>
           );
-        }
+        }        
 
   case 3: // Chat Interface
   return (
@@ -351,33 +351,11 @@ function MainApp() {
     </div>
   );
 
-  case 4: {
+  case 4: { // Thoughts about the stance
     const wordCount = userResponse.trim().split(/\s+/).length;
     
-    const handleFinalResponse = async () => {
-      if (wordCount < 50) return;
-      
-      setIsSubmitting(true);
-      setSubmitError('');
-      
-      try {
-        // Save the final response
-        await axios.post(`${API_URL}/sessions/${sessionId}/response`, {
-          text: userResponse
-        });
-        
-        // Move to the next step
-        setCurrentStep(5);
-      } catch (error) {
-        console.error('Error saving final response:', error);
-        setSubmitError('There was an error saving your response. Please try again.');
-      } finally {
-        setIsSubmitting(false);
-      }
-    };
-    
     return (
-      <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
+      <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
         <h2 className="text-2xl font-bold mb-4">Final Response</h2>
         <p className="mb-4">
           Based on your conversation about the stance, please write 3-5 sentences explaining your thoughts 
@@ -386,7 +364,7 @@ function MainApp() {
         
         <div className="relative">
           <textarea
-            className="w-full h-32 p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full h-48 p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={userResponse}
             onChange={(e) => setUserResponse(e.target.value)}
             placeholder="Write your response here..."
@@ -424,9 +402,7 @@ function MainApp() {
           disabled={wordCount < 50 || isSubmitting}
         >
           {isSubmitting ? (
-            <>
-              <span className="animate-pulse">Submitting...</span>
-            </>
+            <span className="animate-pulse">Submitting...</span>
           ) : (
             'Submit Response'
           )}

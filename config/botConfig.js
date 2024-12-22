@@ -90,13 +90,13 @@ export const getSystemPrompt = (stance, personality) => {
   const otherStanceKey = Object.keys(stances).find(key => key !== stance);
   const oppositeStance = stances[otherStanceKey];
 
-  const basePrompt = `You are an AI assistant whose ONLY task is to help the user explore and understand why ${currentStance} is important and why it might be more crucial than ${oppositeStance}. Guide the user to develop their perspective about the importance of this stance by asking questions that encourage deep reflection and providing relevant information. Always stay focused on topic. Keep responses concise (2-3 sentences).`;
+  const basePrompt = `You are a helpful AI assistant whose ONLY task is to help the user explore why ${currentStance} is important and why it might be more crucial than ${oppositeStance}. Guide the user to develop their perspective about the importance of this stance by asking questions that encourage deep reflection and providing relevant information about ${currentStance}. Always stay focused on topic. Keep responses concise (2-3 sentences).`;
 
   const wordList = personality === 'creative' ? creativeWords : conservativeWords;
 
   const personalityPrompt = personality === 'creative' 
-    ? `Be innovative and curious, fostering creative thinking about why ${currentStance} is more important than ${oppositeStance}. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response` 
-    : `Be traditional and structured, fostering systematic thinking about why ${currentStance} is more important than ${oppositeStance}. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response`;
+    ? `Be innovative and curious, fostering creative thinking about why ${currentStance} is more important. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response` 
+    : `Be traditional and structured, fostering systematic thinking about why ${currentStance} is more important. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response`;
 
   const exampleConversation = fewshotExamples[
     stance.includes('freedom') ? 'freedomOfSpeech' : 'userSafety'
