@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+
+const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
 function Admin() {
   const [sessions, setSessions] = useState([]);
@@ -19,11 +21,6 @@ function Admin() {
     { label: 'TXT', value: 'txt' }
   ];
 
-  const showStatus = (message, isError = false) => {
-    setDownloadStatus(message);
-    setTimeout(() => setDownloadStatus(''), 3000);
-  };
-
   // Effect to refresh condition counts periodically
   useEffect(() => {
     if (isAuthenticated) {
@@ -35,23 +32,14 @@ function Admin() {
     }
   }, [isAuthenticated]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      await axios.post('/api/admin/login', { username, password });
-      setIsAuthenticated(true);
-      await fetchData();
-    } catch (error) {
-      setError('Invalid credentials');
-    } finally {
-      setIsLoading(false);
-    }
+  const showStatus = (message, isError = false) => {
+    setDownloadStatus(message);
+    setTimeout(() => setDownloadStatus(''), 3000);
   };
 
   const fetchConditionCounts = async () => {
     try {
-      const response = await axios.get('/api/admin/conditionCounts', {
+      const response = await axios.get(`${API_URL}/admin/conditionCounts`, {
         headers: { username, password }
       });
       setConditionCounts(response.data);
@@ -64,8 +52,8 @@ function Admin() {
     setIsLoading(true);
     try {
       const [sessionsResponse, countsResponse] = await Promise.all([
-        axios.post('/api/admin/sessions', { username, password }),
-        axios.get('/api/admin/conditionCounts', { 
+        axios.post(`${API_URL}/admin/sessions`, { username, password }),
+        axios.get(`${API_URL}/admin/conditionCounts`, { 
           headers: { username, password }
         })
       ]);
@@ -79,14 +67,28 @@ function Admin() {
     }
   };
 
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      await axios.post(`${API_URL}/admin/login`, { username, password });
+      setIsAuthenticated(true);
+      await fetchData();
+    } catch (error) {
+      setError('Invalid credentials');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const deleteSession = async (sessionId) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
       setIsLoading(true);
       try {
-        await axios.delete(`/api/admin/sessions/${sessionId}`, {
+        await axios.delete(`${API_URL}/admin/sessions/${sessionId}`, {
           headers: { username, password }
         });
-        await fetchData();
+        await fetchData(); // This will update both sessions and condition counts
         showStatus('Session deleted successfully');
       } catch (error) {
         console.error('Error deleting session:', error);
@@ -163,7 +165,7 @@ function Admin() {
   const convertToTXT = (data) => {
     let content = `Session ID: ${data.sessionId}\n`;
     content += `Stance: ${data.stance}\n`;
-    content += `Bot Personality: ${data.botPersonality}\n\n`;
+    content += `Bot Personality: ${data.botPersonality}\n`;
     content += `AI Model: ${data.aiModel}\n\n`;
 
     if (data.chat) {
@@ -244,18 +246,19 @@ function Admin() {
   };
 
   const downloadSession = async (session, type = 'full') => {
+    setIsLoading(true);
     try {
       let data;
       let filename;
 
       if (type === 'full') {
-        const response = await axios.get(`/api/admin/sessions/${session.sessionId}/full`, {
+        const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/full`, {
           headers: { username, password }
         });
         data = response.data;
         filename = `full_session_${session.sessionId}`;
       } else if (type === 'chat') {
-        const response = await axios.get(`/api/admin/sessions/${session.sessionId}/chat`, {
+        const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/chat`, {
           headers: { username, password }
         });
         data = {
@@ -266,7 +269,7 @@ function Admin() {
         };
         filename = `chat_${session.sessionId}`;
       } else if (type === 'response') {
-        const response = await axios.get(`/api/admin/sessions/${session.sessionId}/response`, {
+        const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/response`, {
           headers: { username, password }
         });
         data = {
@@ -282,14 +285,17 @@ function Admin() {
     } catch (error) {
       console.error('Error downloading session:', error);
       showStatus('Failed to download session data', true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const downloadAllSessions = async () => {
+    setIsLoading(true);
     try {
       const fullSessions = await Promise.all(
         sessions.map(async (session) => {
-          const response = await axios.get(`/api/admin/sessions/${session.sessionId}/full`, {
+          const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/full`, {
             headers: { username, password }
           });
           return response.data;
@@ -300,6 +306,8 @@ function Admin() {
     } catch (error) {
       console.error('Error downloading all sessions:', error);
       showStatus('Failed to download all sessions', true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -354,14 +362,27 @@ function Admin() {
           </div>
         </div>
       )}
+
+      {downloadStatus && (
+        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+          downloadStatus.includes('Failed') ? 'bg-red-500' : 'bg-green-500'
+        } text-white`}>
+          {downloadStatus}
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <div className="mb-8 bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {conditionCounts.map((condition) => (
-                <div
+        </div>
+
+        {/* Condition Distribution */}
+        <div className="mb-8 bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {conditionCounts.map((condition) => (
+              <div
                 key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
                 className="p-4 bg-gray-50 rounded-lg"
               >
@@ -378,28 +399,31 @@ function Admin() {
             ))}
           </div>
         </div>
-          <div className="flex items-center gap-4">
-            <select
-              value={selectedFileType}
-              onChange={(e) => setSelectedFileType(e.target.value)}
-              className="p-2 border rounded"
-            >
-              {fileTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
-            <button
-              onClick={downloadAllSessions}
-              className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
-            >
-              Download All Sessions
-            </button>
-          </div>
+
+        {/* Download Controls */}
+        <div className="mb-6 flex items-center gap-4">
+          <select
+            value={selectedFileType}
+            onChange={(e) => setSelectedFileType(e.target.value)}
+            className="p-2 border rounded"
+          >
+            {fileTypes.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+          <button
+            onClick={downloadAllSessions}
+            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:opacity-50"
+            disabled={isLoading}
+          >
+            Download All Sessions
+          </button>
         </div>
-          // Session Display
-        <div className="grid gap-6">
+
+        {/* Sessions List */}
+        <div className="space-y-6">
           {sessions.map((session) => (
             <div key={session.sessionId} className="bg-white p-6 rounded-lg shadow">
               <div className="flex justify-between items-start mb-4">
@@ -467,81 +491,82 @@ function Admin() {
                 </div>
               </div>
 
+              {/* Session Details */}
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Chat Preview:</h3>
                 <div className="bg-gray-50 p-4 rounded max-h-40 overflow-y-auto">
-                  {session.chat.map((msg, index) => (
+                  {session.chat?.map((msg, index) => (
                     <div key={index} className="mb-2">
                       <span className="font-semibold">
                         {msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} 
                       </span>
                       <span className="ml-2">{msg.text}</span>
                     </div>
-                    ))}
-                    </div>
-    
-                    {session.finalResponse && (
-                      <>
-                        <h3 className="font-semibold mt-4 mb-2">Final Response:</h3>
-                        <div className="bg-gray-50 p-4 rounded">
-                          {session.finalResponse.text}
-                        </div>
-                      </>
-                    )}
-    
-                    {session.sbsvs && (
-                      <>
-                        <h3 className="font-semibold mt-4 mb-2">SBSVS Responses:</h3>
-                        <div className="bg-gray-50 p-4 rounded">
-                          {session.sbsvs.responses.map((response, index) => (
-                            <div key={index}>
-                              Question {response.questionId}: {response.value}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-    
-                    {session.attitudeSurvey && (
-                      <>
-                        <h3 className="font-semibold mt-4 mb-2">Attitude Survey:</h3>
-                        <div className="bg-gray-50 p-4 rounded">
-                          {session.attitudeSurvey.responses.map((response, index) => (
-                            <div key={index}>
-                              {response.aspect}: {response.rating}
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    )}
-    
-                    {session.stanceAgreement && (
-                      <>
-                        <h3 className="font-semibold mt-4 mb-2">Stance Agreement:</h3>
-                        <div className="bg-gray-50 p-4 rounded">
-                          <div>Assigned Stance: {session.stanceAgreement.assigned}/5</div>
-                          <div>Opposite Stance: {session.stanceAgreement.opposite}/5</div>
-                        </div>
-                      </>
-                    )}
-    
-                    {session.demographics && (
-                      <>
-                        <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
-                        <div className="bg-gray-50 p-4 rounded">
-                          <div>Age: {session.demographics.age}</div>
-                          <div>Gender: {session.demographics.gender}</div>
-                          <div>Education: {session.demographics.education}</div>
-                        </div>
-                      </>
-                    )}
-                  </div>
+                  ))}
                 </div>
-              ))}
+
+                {session.finalResponse && (
+                  <>
+                    <h3 className="font-semibold mt-4 mb-2">Final Response:</h3>
+                    <div className="bg-gray-50 p-4 rounded">
+                      {session.finalResponse.text}
+                    </div>
+                  </>
+                )}
+
+                {session.sbsvs && (
+                  <>
+                    <h3 className="font-semibold mt-4 mb-2">SBSVS Responses:</h3>
+                    <div className="bg-gray-50 p-4 rounded">
+                      {session.sbsvs.responses.map((response, index) => (
+                        <div key={index}>
+                          Question {response.questionId}: {response.value}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {session.attitudeSurvey && (
+                  <>
+                    <h3 className="font-semibold mt-4 mb-2">Attitude Survey:</h3>
+                    <div className="bg-gray-50 p-4 rounded">
+                      {session.attitudeSurvey.responses.map((response, index) => (
+                        <div key={index}>
+                          {response.aspect}: {response.rating}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {session.stanceAgreement && (
+                  <>
+                    <h3 className="font-semibold mt-4 mb-2">Stance Agreement:</h3>
+                    <div className="bg-gray-50 p-4 rounded">
+                      <div>Assigned Stance: {session.stanceAgreement.assigned}/5</div>
+                      <div>Opposite Stance: {session.stanceAgreement.opposite}/5</div>
+                    </div>
+                  </>
+                )}
+
+                {session.demographics && (
+                  <>
+                    <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
+                    <div className="bg-gray-50 p-4 rounded">
+                      <div>Age: {session.demographics.age}</div>
+                      <div>Gender: {session.demographics.gender}</div>
+                      <div>Education: {session.demographics.education}</div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          ))}
         </div>
-      );
-    }
-    
-    export default Admin;
+      </div>
+    </div>
+  );
+}
+
+export default Admin;
