@@ -141,21 +141,50 @@ function MainApp() {
     scrollToBottom();
   }, [messages]);
 
-  const handleSubmitResponse = async () => {
+const handleSubmitAllResponses = async () => {
+  setIsSubmitting(true);
+  setSubmitError('');
+  
+  try {
+    // Submit all questionnaire responses
+    await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      sbsvs: sbsvsResponses,
+      attitude: attitudeResponses,
+      stanceAgreement,
+      demographics: demographicResponses
+    });
+    
+    // Move to thank you page
+    setCurrentStep(7);
+  } catch (error) {
+    console.error('Error submitting responses:', error);
+    setSubmitError('There was an error submitting your responses. Please try again.');
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+
+  const handleFinalResponse = async () => {
+    if (!userResponse.trim()) return;
+    
+    setIsSubmitting(true);
+    setSubmitError('');
+    
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/responses`, {
-        sbsvs: sbsvsResponses,
-        attitude: attitudeResponses,
-        stanceAgreement,
-        demographics: demographicResponses,
-        timestamp: new Date()
+      // First, save the final response
+      await axios.post(`${API_URL}/sessions/${sessionId}/response`, {
+        text: userResponse
       });
+      
+      // If successful, move to the next step
       setCurrentStep(5);
     } catch (error) {
-      console.error('Error submitting responses:', error);
-      alert('There was an error submitting your responses. Please try again.');
+      console.error('Error saving final response:', error);
+      setSubmitError('There was an error saving your response. Please try again.');
+    } finally {
+      setIsSubmitting(false);
     }
-  };
+  }; 
 
   const getOtherStance = () => {
     const stanceArray = Object.keys(stances);
@@ -484,16 +513,27 @@ function MainApp() {
 
     case 6: // Demographics
     return (
-      <div className="max-w-4xl mx-auto p-8">
+      <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
         <Demographics
           responses={demographicResponses}
           setResponses={setDemographicResponses}
         />
+        {submitError && (
+          <div className="text-red-500 text-sm mt-4 text-center">
+            {submitError}
+          </div>
+        )}
         <button
-          className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+          className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 flex items-center justify-center
+            ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={handleSubmitAllResponses}
+          disabled={isSubmitting}
         >
-          Submit Responses
+          {isSubmitting ? (
+            <span className="animate-pulse">Submitting...</span>
+          ) : (
+            'Submit Responses'
+          )}
         </button>
       </div>
     );

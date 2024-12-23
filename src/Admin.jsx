@@ -11,6 +11,7 @@ function Admin() {
   const [downloadStatus, setDownloadStatus] = useState('');
   const [selectedFileType, setSelectedFileType] = useState('json');
   const [conditionCounts, setConditionCounts] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const fileTypes = [
     { label: 'JSON', value: 'json' },
@@ -23,14 +24,28 @@ function Admin() {
     setTimeout(() => setDownloadStatus(''), 3000);
   };
 
+  // Effect to refresh condition counts periodically
+  useEffect(() => {
+    if (isAuthenticated) {
+      const intervalId = setInterval(() => {
+        fetchConditionCounts();
+      }, 30000); // Refresh every 30 seconds
+
+      return () => clearInterval(intervalId);
+    }
+  }, [isAuthenticated]);
+
   const handleLogin = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     try {
       await axios.post('/api/admin/login', { username, password });
       setIsAuthenticated(true);
-      fetchSessions();
+      await fetchData();
     } catch (error) {
       setError('Invalid credentials');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -45,7 +60,8 @@ function Admin() {
     }
   };
 
-  const fetchSessions = async () => {
+  const fetchData = async () => {
+    setIsLoading(true);
     try {
       const [sessionsResponse, countsResponse] = await Promise.all([
         axios.post('/api/admin/sessions', { username, password }),
@@ -58,23 +74,25 @@ function Admin() {
     } catch (error) {
       console.error('Error fetching data:', error);
       showStatus('Failed to fetch data', true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const deleteSession = async (sessionId) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
+      setIsLoading(true);
       try {
         await axios.delete(`/api/admin/sessions/${sessionId}`, {
-          headers: {
-            username,
-            password
-          }
+          headers: { username, password }
         });
-        fetchSessions();
+        await fetchData();
         showStatus('Session deleted successfully');
       } catch (error) {
         console.error('Error deleting session:', error);
         showStatus('Failed to delete session', true);
+      } finally {
+        setIsLoading(false);
       }
     }
   };
@@ -298,6 +316,7 @@ function Admin() {
               className="w-full p-2 border rounded"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+              disabled={isLoading}
             />
           </div>
           <div className="mb-6">
@@ -307,13 +326,17 @@ function Admin() {
               className="w-full p-2 border rounded"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              disabled={isLoading}
             />
           </div>
           <button
             type="submit"
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+            className={`w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600 ${
+              isLoading ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
+            disabled={isLoading}
           >
-            Login
+            {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
       </div>
@@ -322,11 +345,13 @@ function Admin() {
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">
-      {downloadStatus && (
-        <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
-          downloadStatus.includes('Failed') ? 'bg-red-500' : 'bg-green-500'
-        } text-white`}>
-          {downloadStatus}
+      {/* Loading overlay */}
+      {isLoading && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-4 rounded-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+            <p className="mt-2 text-center">Loading...</p>
+          </div>
         </div>
       )}
       <div className="max-w-7xl mx-auto">

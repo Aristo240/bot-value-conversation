@@ -205,15 +205,15 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Chat with the AI models
+// Chat with AI models endpoint
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, aiModel, history } = req.body;
-    const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality);
+    const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
     
     let response;
     if (aiModel === 'gpt') {
-      // GPT-4
+      // GPT-4 implementation
       const completion = await openai.chat.completions.create({
         model: "gpt-4",
         temperature: 0.7,
@@ -231,53 +231,49 @@ app.post('/api/chat', async (req, res) => {
       });
       response = completion.choices[0].message.content;
     } else {
-      // Gemini
-      const model = gemini.getGenerativeModel({ model: "gemini-pro" });
-      
-      // Format chat history for Gemini
-      const formattedHistory = [
-        // System instructions need to be part of the first user message
-        { 
-          role: "user",
-          parts: [`${systemPrompt}\n\nExample conversation:\nBot: ${exampleExchange.bot}\nUser: ${exampleExchange.user}\nBot: ${exampleExchange.bot}\n\nLet's continue the conversation:`]
-        }
-      ];
-
-      // Add conversation history
-      history.forEach(msg => {
-        formattedHistory.push({
-          role: msg.sender === 'user' ? 'user' : 'model',
-          parts: [msg.text]
-        });
-      });
-
-      // Add current message
-      formattedHistory.push({
-        role: "user",
-        parts: [message]
-      });
-
-      // Start chat and get response
-      const chat = model.startChat({
-        history: formattedHistory,
+      // Gemini implementation
+      const model = gemini.getGenerativeModel({
+        model: "gemini-pro",
         generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
-        },
+          temperature: 0.7
+        }
       });
 
-      const result = await chat.sendMessage(message);
-      response = result.response.text();
+      // Format conversation for Gemini
+      const chatContext = `${systemPrompt}
+
+EXAMPLE INTERACTION:
+Assistant: ${exampleExchange.bot}
+Human: ${exampleExchange.user}
+Assistant: ${exampleExchange.bot}
+
+CONVERSATION HISTORY:
+${history.map(msg => `${msg.sender === 'user' ? 'Human' : 'Assistant'}: ${msg.text}`).join('\n')}
+
+Current Human Message: ${message}
+
+Assistant (remember to maintain personality and focus on stance):`;
+
+      try {
+        const result = await model.generateContent(chatContext);
+        response = result.response.text();
+        
+        // Validate response
+        if (!response || response.trim().length === 0) {
+          throw new Error('Empty response from Gemini');
+        }
+      } catch (error) {
+        console.error('Gemini Error:', error);
+        throw new Error(`Gemini error: ${error.message}`);
+      }
     }
 
     res.json({ response });
   } catch (error) {
     console.error('Chat API Error:', error);
     res.status(500).json({ 
-      error: error.message,
-      details: error.stack 
+      error: 'Error generating response',
+      details: error.message 
     });
   }
 });
