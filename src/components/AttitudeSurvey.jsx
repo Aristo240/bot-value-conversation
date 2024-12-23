@@ -13,15 +13,15 @@ export const AttitudeSurvey = ({ stance, responses, setResponses }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-6">Experience Rating</h2>
-      <p className="mb-4">How would you rate your experience writing about {stance}?</p>
+    <div className="p-6 border rounded-lg bg-white">
+      <h2 className="text-2xl font-bold mb-6">Experience Rating</h2>
+      <p className="mb-6 text-gray-700">How would you rate your experience writing about {stance}?</p>
 
       <div className="space-y-6">
         {attitudeAspects.map((aspect) => (
-          <div key={aspect} className="border-b pb-4">
-            <p className="mb-2">{aspect}</p>
-            <div className="flex justify-between">
+          <div key={aspect} className="pb-6 border-b border-gray-200">
+            <p className="mb-4 text-gray-700">{aspect}</p>
+            <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
               {[1, 2, 3, 4, 5, 6, 7].map((value) => (
                 <label key={value} className="flex flex-col items-center">
                   <input
@@ -32,7 +32,7 @@ export const AttitudeSurvey = ({ stance, responses, setResponses }) => {
                     onChange={() => handleValueChange(aspect, value)}
                     className="mb-1"
                   />
-                  <span className="text-sm">{value}</span>
+                  <span className="text-sm text-gray-600">{value}</span>
                 </label>
               ))}
             </div>

@@ -51,27 +51,27 @@ export const SBSVS = ({ responses, setResponses }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-6">Values Survey</h2>
-      <div className="mb-4">
-        <p className="font-medium">Please rate how important each value is for you:</p>
-        <div className="grid grid-cols-7 gap-2 mb-2 text-sm text-center">
-          <div>7<br/>Supreme importance</div>
-          <div>6<br/>Very important</div>
-          <div>5<br/>Important</div>
-          <div>4</div>
-          <div>3<br/>Not important</div>
-          <div>2</div>
+    <div className="p-6 border rounded-lg bg-white">
+      <h2 className="text-2xl font-bold mb-6">Values Survey</h2>
+      <div className="mb-8">
+        <p className="font-medium text-gray-700 mb-4">Please rate how important each value is for you:</p>
+        <div className="grid grid-cols-7 gap-2 mb-2 text-sm text-center text-gray-600">
           <div>1<br/>Opposed to my values</div>
+          <div>2</div>
+          <div>3<br/>Not important</div>
+          <div>4</div>
+          <div>5<br/>Important</div>
+          <div>6<br/>Very important</div>
+          <div>7<br/>Supreme importance</div>
         </div>
       </div>
 
-      <div className="space-y-6">
+      <div className="space-y-8">
         {SBSVSQuestions.map((question) => (
-          <div key={question.id} className="border-b pb-4">
-            <p className="mb-2">{question.text}</p>
-            <div className="flex justify-between">
-              {[7, 6, 5, 4, 3, 2, 1].map((value) => (
+          <div key={question.id} className="pb-6 border-b border-gray-200">
+            <p className="mb-4 text-gray-700">{question.text}</p>
+            <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+              {[1, 2, 3, 4, 5, 6, 7].map((value) => (
                 <label key={value} className="flex flex-col items-center">
                   <input
                     type="radio"
@@ -81,7 +81,7 @@ export const SBSVS = ({ responses, setResponses }) => {
                     onChange={() => handleValueChange(question.id, value)}
                     className="mb-1"
                   />
-                  <span className="text-sm">{value}</span>
+                  <span className="text-sm text-gray-600">{value}</span>
                 </label>
               ))}
             </div>

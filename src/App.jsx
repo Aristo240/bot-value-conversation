@@ -387,7 +387,7 @@ const handleSubmitAllResponses = async () => {
       <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
         <h2 className="text-2xl font-bold mb-4">Final Response</h2>
         <p className="mb-4">
-          Based on your conversation about the stance, please write 3-5 sentences explaining your thoughts 
+          Based on your conversation about {stances[stance]}, please write 3-5 sentences explaining your thoughts 
           and understanding of the position.
         </p>
         
@@ -440,76 +440,76 @@ const handleSubmitAllResponses = async () => {
     );
   }
 
-    case 5: // Questionnaires
-    return (
-      <div className="max-w-4xl mx-auto p-8">
-        <h2 className="text-3xl font-bold mb-6">Questionnaires</h2>
-        <div className="space-y-8">
-          <SBSVS 
-            responses={sbsvsResponses} 
-            setResponses={setSbsvsResponses} 
-          />
-          <AttitudeSurvey 
-            stance={stances[stance]}
-            responses={attitudeResponses}
-            setResponses={setAttitudeResponses}
-          />
-          <div className="bg-white p-6 rounded-lg shadow-lg">
-            <h3 className="text-xl font-bold mb-4">Stance Agreement</h3>
-            <div className="space-y-4">
-              <div>
-                <p>How much do you agree with {stances[stance]}?</p>
-                <div className="flex justify-between mt-2">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <label key={value} className="flex flex-col items-center">
-                      <input
-                        type="radio"
-                        name="stance-agreement"
-                        value={value}
-                        checked={stanceAgreement.assigned === value}
-                        onChange={(e) => setStanceAgreement({
-                          ...stanceAgreement,
-                          assigned: parseInt(e.target.value)
-                        })}
-                        className="mb-1"
-                      />
-                      <span className="text-sm">{value}</span>
-                    </label>
-                  ))}
-                </div>
+  case 5: // Questionnaires
+  return (
+    <div className="w-3/4 mx-auto p-8 min-h-screen">
+      <h2 className="text-2xl font-bold mb-6">Questionnaires</h2>
+      <div className="space-y-8">
+        <SBSVS 
+          responses={sbsvsResponses} 
+          setResponses={setSbsvsResponses} 
+        />
+        <AttitudeSurvey 
+          stance={stances[stance]}
+          responses={attitudeResponses}
+          setResponses={setAttitudeResponses}
+        />
+        <div className="p-6 border rounded-lg bg-white">
+          <h3 className="text-2xl font-bold mb-6">Stance Agreement</h3>
+          <div className="space-y-6">
+            <div className="pb-6 border-b border-gray-200">
+              <p className="mb-4 text-gray-700">How much do you agree with {stances[stance]}?</p>
+              <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <label key={value} className="flex flex-col items-center">
+                    <input
+                      type="radio"
+                      name="stance-agreement"
+                      value={value}
+                      checked={stanceAgreement.assigned === value}
+                      onChange={(e) => setStanceAgreement({
+                        ...stanceAgreement,
+                        assigned: parseInt(e.target.value)
+                      })}
+                      className="mb-1"
+                    />
+                    <span className="text-sm text-gray-600">{value}</span>
+                  </label>
+                ))}
               </div>
-              <div>
-                <p>How much do you agree with {getOtherStance()}?</p>
-                <div className="flex justify-between mt-2">
-                  {[1, 2, 3, 4, 5].map((value) => (
-                    <label key={value} className="flex flex-col items-center">
-                      <input
-                        type="radio"
-                        name="other-stance-agreement"
-                        value={value}
-                        checked={stanceAgreement.opposite === value}
-                        onChange={(e) => setStanceAgreement({
-                          ...stanceAgreement,
-                          opposite: parseInt(e.target.value)
-                        })}
-                        className="mb-1"
-                      />
-                      <span className="text-sm">{value}</span>
-                    </label>
-                  ))}
-                </div>
+            </div>
+            <div>
+              <p className="mb-4 text-gray-700">How much do you agree with {getOtherStance()}?</p>
+              <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+                {[1, 2, 3, 4, 5].map((value) => (
+                  <label key={value} className="flex flex-col items-center">
+                    <input
+                      type="radio"
+                      name="other-stance-agreement"
+                      value={value}
+                      checked={stanceAgreement.opposite === value}
+                      onChange={(e) => setStanceAgreement({
+                        ...stanceAgreement,
+                        opposite: parseInt(e.target.value)
+                      })}
+                      className="mb-1"
+                    />
+                    <span className="text-sm text-gray-600">{value}</span>
+                  </label>
+                ))}
               </div>
             </div>
           </div>
-          <button
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-            onClick={() => setCurrentStep(6)}
-          >
-            Continue to Demographics
-          </button>
         </div>
+        <button
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+          onClick={() => setCurrentStep(6)}
+        >
+          Continue to Demographics
+        </button>
       </div>
-    );
+    </div>
+  );
 
     case 6: // Demographics
     return (

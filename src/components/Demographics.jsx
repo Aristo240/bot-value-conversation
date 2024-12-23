@@ -18,15 +18,15 @@ const Demographics = ({ responses, setResponses }) => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-6">Demographic Information</h2>
+    <div className="p-6 border rounded-lg bg-white">
+      <h2 className="text-2xl font-bold mb-6">Demographic Information</h2>
       <div className="space-y-6">
         <div>
-          <label className="block mb-2 font-medium">Age:</label>
+          <label className="block mb-2 font-medium text-gray-700">Age:</label>
           <select 
             value={responses.age || ''}
             onChange={(e) => handleChange('age', parseInt(e.target.value))}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select age</option>
             {ageOptions.map(age => (
@@ -36,11 +36,11 @@ const Demographics = ({ responses, setResponses }) => {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">Gender:</label>
+          <label className="block mb-2 font-medium text-gray-700">Gender:</label>
           <select 
             value={responses.gender || ''}
             onChange={(e) => handleChange('gender', e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select gender</option>
             {genderOptions.map(gender => (
@@ -50,11 +50,11 @@ const Demographics = ({ responses, setResponses }) => {
         </div>
 
         <div>
-          <label className="block mb-2 font-medium">Education Level:</label>
+          <label className="block mb-2 font-medium text-gray-700">Education Level:</label>
           <select 
             value={responses.education || ''}
             onChange={(e) => handleChange('education', e.target.value)}
-            className="w-full p-2 border rounded"
+            className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="">Select education level</option>
             {educationOptions.map(education => (
