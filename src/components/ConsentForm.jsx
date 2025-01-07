@@ -21,7 +21,7 @@ export const ConsentForm = ({ onConsent }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Study Details</h3>
               <ul className="list-disc list-outside ml-5 space-y-2 text-gray-600">
-                <li>This study involves discussing social media challenges with an AI bot and completing several questionnaires</li>
+                <li>This study involves discussing social media challenges with an AI bot and completing several questionnaires and tasks</li>
                 <li>Your participation is completely voluntary, and you may withdraw at any time</li>
                 <li>All data collected will be kept strictly confidential and used only for research purposes</li>
                 <li>The entire session will take approximately 20-30 minutes to complete</li>

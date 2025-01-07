@@ -31,8 +31,22 @@ const SessionSchema = new mongoose.Schema({
   stance: String,
   botPersonality: String,
   aiModel: String,
+  aiModelVersion: String,
   consent: {
     accepted: Boolean,
+    timestamp: Date
+  },
+  demographics: {
+    age: Number,
+    gender: String,
+    education: String,
+    timestamp: Date
+  },
+  pvq21: {
+    responses: [{
+      questionId: Number,
+      value: Number
+    }],
     timestamp: Date
   },
   chat: [{
@@ -64,10 +78,12 @@ const SessionSchema = new mongoose.Schema({
     opposite: Number,
     timestamp: Date
   },
-  demographics: {
-    age: Number,
-    gender: String,
-    education: String,
+  alternativeUses: {
+    responses: [{
+      id: String,
+      idea: String,
+      timestamp: Date
+    }],
     timestamp: Date
   }
 });
@@ -122,10 +138,11 @@ const authenticateAdmin = async (req, res, next) => {
   }
 };
 
+// only gpt
 app.get('/api/nextCondition', async (req, res) => {
   try {
-    // Get all counters and find the minimum count
-    const counters = await ConditionCounter.find({});
+    // Get all counters but filter for GPT only during pre-test
+    const counters = await ConditionCounter.find({ aiModel: 'gpt' });
     const minCount = Math.min(...counters.map(c => c.count));
     
     // Get all conditions with the minimum count
@@ -146,6 +163,32 @@ app.get('/api/nextCondition', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// gpt+gemini models
+// app.get('/api/nextCondition', async (req, res) => {
+//   try {
+//     // Get all counters and find the minimum count
+//     const counters = await ConditionCounter.find({});
+//     const minCount = Math.min(...counters.map(c => c.count));
+    
+//     // Get all conditions with the minimum count
+//     const eligibleConditions = counters.filter(c => c.count === minCount);
+    
+//     // Randomly select from eligible conditions
+//     const selectedCondition = eligibleConditions[Math.floor(Math.random() * eligibleConditions.length)];
+    
+//     // Increment the counter for the selected condition
+//     await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
+    
+//     res.json({
+//       aiModel: selectedCondition.aiModel,
+//       stance: selectedCondition.stance,
+//       personality: selectedCondition.personality
+//     });
+//   } catch (error) {
+//     res.status(500).json({ error: error.message });
+//   }
+// });
 
 app.get('/api/admin/conditionCounts', authenticateAdmin, async (req, res) => {
   try {
@@ -208,14 +251,16 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
 // Chat with AI models endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, stance, botPersonality, aiModel, history } = req.body;
+    const { message, stance, botPersonality, aiModel, aiModelVersion, history } = req.body;
     const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
     
     let response;
+    let modelVersion;
+
     if (aiModel === 'gpt') {
-      // GPT-4 implementation
+      modelVersion = 'gpt-4';
       const completion = await openai.chat.completions.create({
-        model: "gpt-4",
+        model: modelVersion,
         temperature: 0.7,
         messages: [
           { role: "system", content: systemPrompt },
@@ -304,7 +349,17 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    const { sbsvs, attitude, stanceAgreement, demographics } = req.body;
+    const { pvq21, sbsvs, attitude, stanceAgreement, demographics, alternativeUses } = req.body;
+
+    if (pvq21) {
+      session.pvq21 = {
+        responses: Object.entries(pvq21).map(([questionId, value]) => ({
+          questionId: parseInt(questionId),
+          value
+        })),
+        timestamp: new Date()
+      };
+    }
 
     if (sbsvs) {
       session.sbsvs = {
@@ -336,6 +391,17 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     if (demographics) {
       session.demographics = {
         ...demographics,
+        timestamp: new Date()
+      };
+    }
+
+    if (alternativeUses) {
+      session.alternativeUses = {
+        responses: alternativeUses.responses.map(response => ({
+          id: response.id,
+          idea: response.idea,
+          timestamp: new Date(response.timestamp)
+        })),
         timestamp: new Date()
       };
     }
@@ -395,6 +461,19 @@ app.get('/api/admin/sessions/:sessionId/full', authenticateAdmin, async (req, re
       return res.status(404).json({ message: 'Session not found' });
     }
     res.json(session);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Add this new endpoint for Alternative Uses Task
+app.get('/api/admin/sessions/:sessionId/aut', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json(session.alternativeUses);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

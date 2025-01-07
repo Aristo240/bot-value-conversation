@@ -109,15 +109,29 @@ function Admin() {
         message: msg.text.replace(/,/g, ';'),
         stance: data.stance,
         botPersonality: data.botPersonality,
-        aiModel: data.aiModel
+        aiModel: data.aiModel,
+        aiModelVersion: data.aiModelVersion || 'gpt-4' // Default for older sessions
       }));
       const headers = Object.keys(rows[0]).join(',');
       return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
-    } else if (data.sbsvs) {
+    } else if (data.sbsvs || data.pvq21) {
       // For questionnaire data
       const rows = [];
+      
+      // PVQ21 responses
+      data.pvq21?.responses?.forEach(r => {
+        rows.push({
+          sessionId: data.sessionId,
+          type: 'pvq21',
+          questionId: r.questionId,
+          value: r.value,
+          gender: data.demographics?.gender,
+          timestamp: data.pvq21.timestamp
+        });
+      });
+
       // SBSVS responses
-      data.sbsvs.responses?.forEach(r => {
+      data.sbsvs?.responses?.forEach(r => {
         rows.push({
           sessionId: data.sessionId,
           type: 'sbsvs',
@@ -126,8 +140,9 @@ function Admin() {
           timestamp: data.sbsvs.timestamp
         });
       });
+
       // Attitude responses
-      data.attitudeSurvey.responses?.forEach(r => {
+      data.attitudeSurvey?.responses?.forEach(r => {
         rows.push({
           sessionId: data.sessionId,
           type: 'attitude',
@@ -136,23 +151,30 @@ function Admin() {
           timestamp: data.attitudeSurvey.timestamp
         });
       });
+
       // Stance agreement
-      rows.push({
-        sessionId: data.sessionId,
-        type: 'stance_agreement',
-        assigned: data.stanceAgreement.assigned,
-        opposite: data.stanceAgreement.opposite,
-        timestamp: data.stanceAgreement.timestamp
-      });
+      if (data.stanceAgreement) {
+        rows.push({
+          sessionId: data.sessionId,
+          type: 'stance_agreement',
+          assigned: data.stanceAgreement.assigned,
+          opposite: data.stanceAgreement.opposite,
+          timestamp: data.stanceAgreement.timestamp
+        });
+      }
+
       // Demographics
-      rows.push({
-        sessionId: data.sessionId,
-        type: 'demographics',
-        age: data.demographics.age,
-        gender: data.demographics.gender,
-        education: data.demographics.education,
-        timestamp: data.demographics.timestamp
-      });
+      if (data.demographics) {
+        rows.push({
+          sessionId: data.sessionId,
+          type: 'demographics',
+          age: data.demographics.age,
+          gender: data.demographics.gender,
+          education: data.demographics.education,
+          timestamp: data.demographics.timestamp
+        });
+      }
+
       const headers = 'sessionId,type,questionId,value,aspect,rating,assigned,opposite,age,gender,education,timestamp';
       return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
     }
@@ -166,40 +188,51 @@ function Admin() {
     let content = `Session ID: ${data.sessionId}\n`;
     content += `Stance: ${data.stance}\n`;
     content += `Bot Personality: ${data.botPersonality}\n`;
-    content += `AI Model: ${data.aiModel}\n\n`;
+    content += `AI Model: ${data.aiModel}\n`;
+    content += `AI Model Version: ${data.aiModelVersion || 'gpt-4'}\n\n`;
+
+    if (data.demographics) {
+      content += "Demographics:\n";
+      content += `Age: ${data.demographics.age}\n`;
+      content += `Gender: ${data.demographics.gender}\n`;
+      content += `Education: ${data.demographics.education}\n\n`;
+    }
+
+    if (data.pvq21) {
+      content += "PVQ21 Responses:\n";
+      data.pvq21.responses.forEach(r => {
+        content += `Question ${r.questionId}: ${r.value}\n`;
+      });
+      content += "\n";
+    }
+
+    if (data.sbsvs) {
+      content += "SBSVS Responses:\n";
+      data.sbsvs.responses.forEach(r => {
+        content += `Question ${r.questionId}: ${r.value}\n`;
+      });
+      content += "\n";
+    }
+
+    if (data.attitudeSurvey) {
+      content += "Attitude Survey:\n";
+      data.attitudeSurvey.responses.forEach(r => {
+        content += `${r.aspect}: ${r.rating}\n`;
+      });
+      content += "\n";
+    }
+
+    if (data.stanceAgreement) {
+      content += "Stance Agreement:\n";
+      content += `Assigned stance: ${data.stanceAgreement.assigned}\n`;
+      content += `Opposite stance: ${data.stanceAgreement.opposite}\n\n`;
+    }
 
     if (data.chat) {
       content += "Chat History:\n\n";
       content += data.chat.map(msg => 
         `${msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} ${msg.text}\n`
       ).join('\n');
-    }
-
-    if (data.sbsvs) {
-      content += "\nSBSVS Responses:\n";
-      data.sbsvs.responses.forEach(r => {
-        content += `Question ${r.questionId}: ${r.value}\n`;
-      });
-    }
-
-    if (data.attitudeSurvey) {
-      content += "\nAttitude Survey:\n";
-      data.attitudeSurvey.responses.forEach(r => {
-        content += `${r.aspect}: ${r.rating}\n`;
-      });
-    }
-
-    if (data.stanceAgreement) {
-      content += "\nStance Agreement:\n";
-      content += `Assigned stance: ${data.stanceAgreement.assigned}\n`;
-      content += `Opposite stance: ${data.stanceAgreement.opposite}\n`;
-    }
-
-    if (data.demographics) {
-      content += "\nDemographics:\n";
-      content += `Age: ${data.demographics.age}\n`;
-      content += `Gender: ${data.demographics.gender}\n`;
-      content += `Education: ${data.demographics.education}\n`;
     }
 
     return content;
@@ -251,34 +284,51 @@ function Admin() {
       let data;
       let filename;
 
-      if (type === 'full') {
-        const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/full`, {
-          headers: { username, password }
-        });
-        data = response.data;
-        filename = `full_session_${session.sessionId}`;
-      } else if (type === 'chat') {
-        const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/chat`, {
-          headers: { username, password }
-        });
-        data = {
-          sessionId: session.sessionId,
-          stance: session.stance,
-          botPersonality: session.botPersonality,
-          chat: response.data
-        };
-        filename = `chat_${session.sessionId}`;
-      } else if (type === 'response') {
-        const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/response`, {
-          headers: { username, password }
-        });
-        data = {
-          sessionId: session.sessionId,
-          stance: session.stance,
-          botPersonality: session.botPersonality,
-          finalResponse: response.data
-        };
-        filename = `response_${session.sessionId}`;
+      switch (type) {
+        case 'full':
+          const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/full`, {
+            headers: { username, password }
+          });
+          data = response.data;
+          filename = `full_session_${session.sessionId}`;
+          break;
+        
+        case 'chat':
+          const chatResponse = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/chat`, {
+            headers: { username, password }
+          });
+          data = {
+            sessionId: session.sessionId,
+            stance: session.stance,
+            botPersonality: session.botPersonality,
+            chat: chatResponse.data
+          };
+          filename = `chat_${session.sessionId}`;
+          break;
+        
+        case 'response':
+          const responseData = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/response`, {
+            headers: { username, password }
+          });
+          data = {
+            sessionId: session.sessionId,
+            stance: session.stance,
+            botPersonality: session.botPersonality,
+            finalResponse: responseData.data
+          };
+          filename = `response_${session.sessionId}`;
+          break;
+        
+        case 'aut':
+          const autResponse = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/aut`, {
+            headers: { username, password }
+          });
+          data = {
+            sessionId: session.sessionId,
+            alternativeUses: autResponse.data
+          };
+          filename = `alternative_uses_${session.sessionId}`;
+          break;
       }
 
       downloadInFormat(data, filename, selectedFileType);
@@ -435,6 +485,7 @@ function Admin() {
                   <p>Stance: {session.stance}</p>
                   <p>Bot Personality: {session.botPersonality}</p>
                   <p>AI Model: {session.aiModel}</p>
+                  <p>AI Model Version: {session.aiModelVersion || 'gpt-4'}</p>
                 </div>
                 <div className="flex gap-2">
                   <div className="relative">
@@ -465,7 +516,8 @@ function Admin() {
                           {[
                             { label: 'Full Session', type: 'full' },
                             { label: 'Chat Only', type: 'chat' },
-                            { label: 'Response Only', type: 'response' }
+                            { label: 'Response Only', type: 'response' },
+                            { label: 'Alternative Uses Task', type: 'aut' }
                           ].map((option) => (
                             <button
                               key={option.label}
@@ -491,7 +543,33 @@ function Admin() {
                 </div>
               </div>
 
-              {/* Session Details */}
+          {/* Session Details */}
+          {session.demographics && (
+            <>
+              <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
+              <div className="bg-gray-50 p-4 rounded">
+                <div>Age: {session.demographics.age}</div>
+                <div>Gender: {session.demographics.gender}</div>
+                <div>Education: {session.demographics.education}</div>
+              </div>
+            </>
+          )}
+
+          {session.pvq21 && (
+            <>
+              <h3 className="font-semibold mt-4 mb-2">PVQ-21 Responses:</h3>
+              <div className="bg-gray-50 p-4 rounded">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {session.pvq21.responses.map((response) => (
+                    <div key={response.questionId}>
+                      Question {response.questionId}: {response.value}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+
               <div className="mt-4">
                 <h3 className="font-semibold mb-2">Chat Preview:</h3>
                 <div className="bg-gray-50 p-4 rounded max-h-40 overflow-y-auto">
@@ -550,16 +628,6 @@ function Admin() {
                   </>
                 )}
 
-                {session.demographics && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
-                    <div className="bg-gray-50 p-4 rounded">
-                      <div>Age: {session.demographics.age}</div>
-                      <div>Gender: {session.demographics.gender}</div>
-                      <div>Education: {session.demographics.education}</div>
-                    </div>
-                  </>
-                )}
               </div>
             </div>
           ))}

@@ -34,6 +34,7 @@ function MainApp() {
   const [aiModel, setAiModel] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [autResponses, setAutResponses] = useState([]);
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -141,28 +142,32 @@ function MainApp() {
     scrollToBottom();
   }, [messages]);
 
-const handleSubmitAllResponses = async () => {
-  setIsSubmitting(true);
-  setSubmitError('');
-  
-  try {
-    // Submit all questionnaire responses
-    await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-      sbsvs: sbsvsResponses,
-      attitude: attitudeResponses,
-      stanceAgreement,
-      demographics: demographicResponses
-    });
+  const handleSubmitAllResponses = async () => {
+    setIsSubmitting(true);
+    setSubmitError('');
     
-    // Move to thank you page
-    setCurrentStep(7);
-  } catch (error) {
-    console.error('Error submitting responses:', error);
-    setSubmitError('There was an error submitting your responses. Please try again.');
-  } finally {
-    setIsSubmitting(false);
-  }
-};
+    try {
+      // Submit all questionnaire responses
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        sbsvs: sbsvsResponses,
+        attitude: attitudeResponses,
+        stanceAgreement,
+        demographics: demographicResponses,
+        alternativeUses: {
+          responses: autResponses,
+          timestamp: new Date()
+        }
+      });
+      
+      // Move to thank you page
+      setCurrentStep(10); // Update this to the correct final step
+    } catch (error) {
+      console.error('Error submitting responses:', error);
+      setSubmitError('There was an error submitting your responses. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const handleFinalResponse = async () => {
     if (!userResponse.trim()) return;
@@ -197,7 +202,42 @@ const handleSubmitAllResponses = async () => {
       case 1: // Consent Form
         return <ConsentForm onConsent={() => setCurrentStep(2)} />;
 
-        case 2: { // Task Explanation
+        case 2: // Demographics
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <Demographics
+              responses={demographicResponses}
+              setResponses={setDemographicResponses}
+            />
+            <button
+              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+              onClick={() => setCurrentStep(3)}
+              disabled={!demographicResponses.gender}
+            >
+              Continue
+            </button>
+          </div>
+        );
+      
+      case 3: // PVQ21
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <PVQ21
+              responses={pvq21Responses}
+              setResponses={setPvq21Responses}
+              gender={demographicResponses.gender}
+            />
+            <button
+              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+              onClick={() => setCurrentStep(4)}
+              disabled={Object.keys(pvq21Responses.responses || {}).length < 21}
+            >
+              Continue
+            </button>
+          </div>
+        );
+
+        case 4: { // Task Explanation
           const otherStance = getOtherStance();
           return (
             <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
@@ -268,7 +308,7 @@ const handleSubmitAllResponses = async () => {
           );
         }        
 
-  case 3: // Chat Interface
+  case 5: // Chat Interface
   return (
     <div className="h-screen flex overflow-hidden">
       {/* Fixed sidebar */}
@@ -380,7 +420,7 @@ const handleSubmitAllResponses = async () => {
     </div>
   );
 
-  case 4: { // Thoughts about the stance
+  case 6: { // Thoughts about the stance
     const wordCount = userResponse.trim().split(/\s+/).length;
     
     return (
@@ -440,7 +480,7 @@ const handleSubmitAllResponses = async () => {
     );
   }
 
-  case 5: // Questionnaires
+  case 7: // Questionnaires
   return (
     <div className="w-3/4 mx-auto p-8 min-h-screen">
       <h2 className="text-2xl font-bold mb-6">Questionnaires</h2>
@@ -511,34 +551,18 @@ const handleSubmitAllResponses = async () => {
     </div>
   );
 
-    case 6: // Demographics
-    return (
-      <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
-        <Demographics
-          responses={demographicResponses}
-          setResponses={setDemographicResponses}
-        />
-        {submitError && (
-          <div className="text-red-500 text-sm mt-4 text-center">
-            {submitError}
-          </div>
-        )}
-        <button
-          className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 flex items-center justify-center
-            ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={handleSubmitAllResponses}
-          disabled={isSubmitting}
-        >
-          {isSubmitting ? (
-            <span className="animate-pulse">Submitting...</span>
-          ) : (
-            'Submit Responses'
-          )}
-        </button>
-      </div>
-    );
+  case 8: // Alternative Uses Task
+  return (
+    <div className="w-3/4 mx-auto p-8 min-h-screen">
+      <AlternativeUsesTask
+        responses={autResponses}
+        setResponses={setAutResponses}
+        onComplete={() => setCurrentStep(9)}
+      />
+    </div>
+  );
 
-      case 7: // Thank You
+      case 9: // Thank You
         return (
           <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
             <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
