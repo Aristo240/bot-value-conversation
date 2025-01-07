@@ -35,6 +35,7 @@ function MainApp() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [autResponses, setAutResponses] = useState([]);
+  const [pvq21Responses, setPvq21Responses] = useState({});
 
   useEffect(() => {
     const initializeSession = async () => {
