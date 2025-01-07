@@ -87,7 +87,7 @@ const getPVQ21Questions = (gender) => [
     }
   ];
 
-function PVQ21({ responses, setResponses, gender }) {
+export default function PVQ21({ responses, setResponses, gender }) {
   const questions = getPVQ21Questions(gender);
 
   const handleValueChange = (questionId, value) => {
@@ -143,5 +143,3 @@ function PVQ21({ responses, setResponses, gender }) {
     </div>
   );
 }
-
-export default PVQ21;
