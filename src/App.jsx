@@ -152,7 +152,6 @@ function MainApp() {
     setSubmitError('');
     
     try {
-      // Submit all questionnaire responses
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         sbsvs: sbsvsResponses,
         attitude: attitudeResponses,
@@ -164,8 +163,7 @@ function MainApp() {
         }
       });
       
-      // Move to thank you page
-      setCurrentStep(10); // Update this to the correct final step
+      setCurrentStep(9);
     } catch (error) {
       console.error('Error submitting responses:', error);
       setSubmitError('There was an error submitting your responses. Please try again.');
@@ -181,13 +179,9 @@ function MainApp() {
     setSubmitError('');
     
     try {
-      // First, save the final response
       await axios.post(`${API_URL}/sessions/${sessionId}/response`, {
         text: userResponse
       });
-      
-      // If successful, move to the next step
-      setCurrentStep(5);
     } catch (error) {
       console.error('Error saving final response:', error);
       setSubmitError('There was an error saving your response. Please try again.');
@@ -428,7 +422,7 @@ function MainApp() {
               className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
               onClick={() => {
                 setShowTimeUpPopup(false);
-                setCurrentStep(4);
+                setCurrentStep(6);
               }}
             >
               Continue to the Next Step
@@ -439,7 +433,7 @@ function MainApp() {
     </div>
   );
 
-  case 6: { // Thoughts about the stance
+  case 6: // Final Response
     const wordCount = userResponse.trim().split(/\s+/).length;
     
     return (
@@ -484,9 +478,12 @@ function MainApp() {
         </div>
         
         <button 
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 flex items-center justify-center
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 
             ${(wordCount < 50 || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={handleFinalResponse}
+          onClick={async () => {
+            await handleFinalResponse();
+            setCurrentStep(7);
+          }}
           disabled={wordCount < 50 || isSubmitting}
         >
           {isSubmitting ? (
@@ -497,7 +494,6 @@ function MainApp() {
         </button>
       </div>
     );
-  }
 
   case 7: // Questionnaires
   return (
