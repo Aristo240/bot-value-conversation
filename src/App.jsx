@@ -6,6 +6,7 @@ import ConsentForm from './components/ConsentForm';
 import SBSVS from './components/SBSVS.jsx';
 import AttitudeSurvey from './components/AttitudeSurvey.jsx';
 import Demographics from './components/Demographics.jsx';
+import PVQ21 from './components/PVQ21';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
@@ -35,7 +36,10 @@ function MainApp() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [autResponses, setAutResponses] = useState([]);
-  const [pvq21Responses, setPvq21Responses] = useState({});
+  const [pvq21Responses, setPvq21Responses] = useState({
+    responses: {},
+    timestamp: null
+  });
 
   useEffect(() => {
     const initializeSession = async () => {
