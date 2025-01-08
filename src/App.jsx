@@ -195,6 +195,31 @@ function MainApp() {
     return stances[stanceArray.find(s => s !== stance)];
   };
 
+  const isQuestionnairesComplete = () => {
+    const sbsvsComplete = Object.keys(sbsvsResponses).length === 16;
+    const attitudeComplete = Object.keys(attitudeResponses).length === 10;
+    const stanceComplete = stanceAgreement.assigned !== null && stanceAgreement.opposite !== null;
+    
+    return sbsvsComplete && attitudeComplete && stanceComplete;
+  };
+
+  const getIncompleteQuestionnairesMessage = () => {
+    const missing = [];
+    
+    if (Object.keys(sbsvsResponses).length < 16) {
+      missing.push(`SBSVS (${16 - Object.keys(sbsvsResponses).length} remaining)`);
+    }
+    
+    if (Object.keys(attitudeResponses).length < 10) {
+      missing.push(`Attitude Survey (${10 - Object.keys(attitudeResponses).length} remaining)`);
+    }
+    
+    if (!stanceAgreement.assigned || !stanceAgreement.opposite) {
+      missing.push('Stance Agreement');
+    }
+    
+    return `Please complete: ${missing.join(', ')}`;
+  };
 
   const renderStep = () => {
     switch (currentStep) {
@@ -558,28 +583,13 @@ function MainApp() {
         </div>
         <button
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-            Object.keys(sbsvsResponses).length < 16 || 
-            Object.keys(attitudeResponses).length < 10 ||
-            !stanceAgreement.assigned ||
-            !stanceAgreement.opposite
-              ? 'opacity-50 cursor-not-allowed'
-              : ''
+            !isQuestionnairesComplete() ? 'opacity-50 cursor-not-allowed' : ''
           }`}
           onClick={() => setCurrentStep(8)}
-          disabled={
-            Object.keys(sbsvsResponses).length < 16 || 
-            Object.keys(attitudeResponses).length < 10 ||
-            !stanceAgreement.assigned ||
-            !stanceAgreement.opposite
-          }
+          disabled={!isQuestionnairesComplete()}
         >
-          {Object.keys(sbsvsResponses).length < 16 || 
-           Object.keys(attitudeResponses).length < 10 ||
-           !stanceAgreement.assigned ||
-           !stanceAgreement.opposite
-            ? `Please complete all questions (${16 - Object.keys(sbsvsResponses).length} SBSVS, 
-               ${10 - Object.keys(attitudeResponses).length} Attitude Survey, 
-               ${!stanceAgreement.assigned || !stanceAgreement.opposite ? 'Stance Agreement' : ''} remaining)`
+          {!isQuestionnairesComplete() 
+            ? getIncompleteQuestionnairesMessage()
             : 'Continue'
           }
         </button>
