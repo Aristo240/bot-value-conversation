@@ -215,11 +215,18 @@ function MainApp() {
               setResponses={setDemographicResponses}
             />
             <button
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+              className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                !demographicResponses.gender || !demographicResponses.age || !demographicResponses.education
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              }`}
               onClick={() => setCurrentStep(3)}
-              disabled={!demographicResponses.gender}
+              disabled={!demographicResponses.gender || !demographicResponses.age || !demographicResponses.education}
             >
-              Continue
+              {!demographicResponses.gender || !demographicResponses.age || !demographicResponses.education
+                ? 'Please complete all questions'
+                : 'Continue'
+              }
             </button>
           </div>
         );
@@ -312,7 +319,7 @@ function MainApp() {
               
               <button 
                 className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
-                onClick={() => setCurrentStep(3)}
+                onClick={() => setCurrentStep(5)}
               >
                 Begin Discussion
               </button>
@@ -554,10 +561,31 @@ function MainApp() {
           </div>
         </div>
         <button
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
-          onClick={() => setCurrentStep(6)}
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+            Object.keys(sbsvsResponses).length < 16 || 
+            Object.keys(attitudeResponses).length < 10 ||
+            !stanceAgreement.assigned ||
+            !stanceAgreement.opposite
+              ? 'opacity-50 cursor-not-allowed'
+              : ''
+          }`}
+          onClick={() => setCurrentStep(8)}
+          disabled={
+            Object.keys(sbsvsResponses).length < 16 || 
+            Object.keys(attitudeResponses).length < 10 ||
+            !stanceAgreement.assigned ||
+            !stanceAgreement.opposite
+          }
         >
-          Continue to Demographics
+          {Object.keys(sbsvsResponses).length < 16 || 
+           Object.keys(attitudeResponses).length < 10 ||
+           !stanceAgreement.assigned ||
+           !stanceAgreement.opposite
+            ? `Please complete all questions (${16 - Object.keys(sbsvsResponses).length} SBSVS, 
+               ${10 - Object.keys(attitudeResponses).length} Attitude Survey, 
+               ${!stanceAgreement.assigned || !stanceAgreement.opposite ? 'Stance Agreement' : ''} remaining)`
+            : 'Continue'
+          }
         </button>
       </div>
     </div>
