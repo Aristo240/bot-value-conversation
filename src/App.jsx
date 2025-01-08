@@ -233,11 +233,18 @@ function MainApp() {
               gender={demographicResponses.gender}
             />
             <button
-              className="mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+              className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                Object.keys(pvq21Responses.responses || {}).length < 21 
+                  ? 'opacity-50 cursor-not-allowed' 
+                  : ''
+              }`}
               onClick={() => setCurrentStep(4)}
               disabled={Object.keys(pvq21Responses.responses || {}).length < 21}
             >
-              Continue
+              {Object.keys(pvq21Responses.responses || {}).length < 21 
+                ? `Please complete all ${21 - Object.keys(pvq21Responses.responses || {}).length} remaining questions`
+                : 'Continue'
+              }
             </button>
           </div>
         );

@@ -94,7 +94,7 @@ export default function PVQ21({ responses, setResponses, gender }) {
     setResponses(prev => ({
       ...prev,
       responses: {
-        ...prev.responses,
+        ...(prev.responses || {}),
         [questionId]: value
       },
       timestamp: new Date()
