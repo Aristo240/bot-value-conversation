@@ -7,10 +7,11 @@ import SBSVS from './components/SBSVS.jsx';
 import AttitudeSurvey from './components/AttitudeSurvey.jsx';
 import Demographics from './components/Demographics.jsx';
 import PVQ21 from './components/PVQ21';
+import InitialAssessment from './components/InitialAssessment';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
-const initialText = `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. This widespread connectivity presents significant challenges. A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+const initialText = `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. **A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm.** Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
 
 // Main experiment component
 function MainApp() {
@@ -20,7 +21,7 @@ function MainApp() {
   const [botPersonality, setBotPersonality] = useState('');
   const [messages, setMessages] = useState([]);
   const [userResponse, setUserResponse] = useState('');
-  const [timer, setTimer] = useState(600);
+  const [timer, setTimer] = useState(300);
   const [isTimerActive, setIsTimerActive] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
@@ -40,6 +41,7 @@ function MainApp() {
     responses: {},
     timestamp: null
   });
+  const [initialAttitudeResponses, setInitialAttitudeResponses] = useState({});
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -72,7 +74,7 @@ function MainApp() {
     if (currentStep === 2 && messages.length === 0) {
       const botMessage = {
         messageId: uuidv4(),
-        text: `Let's discuss ${stances[stance]}. What do you want to learn about it?`,
+        text: `Let's discuss **${stances[stance]}**. Can you think about an example of which the ${stances[stance]} is important?`,
         sender: 'bot',
         timestamp: new Date()
       };
@@ -157,6 +159,10 @@ function MainApp() {
         attitude: attitudeResponses,
         stanceAgreement,
         demographics: demographicResponses,
+        initialAssessment: {
+          ...initialAttitudeResponses,
+          timestamp: new Date()
+        },
         alternativeUses: {
           responses: autResponses,
           timestamp: new Date()
@@ -291,22 +297,12 @@ function MainApp() {
                 </div>
               </div>
               
-              {/* Assigned Perspective */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Your Assigned Perspective</h3>
-                <div className="p-4 border rounded-lg bg-white">
-                  <p className="text-blue-600 font-medium">
-                    {stances[stance]}
-                  </p>
-                </div>
-              </div>
-              
               {/* Task Description */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Your Task</h3>
                 <div className="p-4 border rounded-lg bg-white">
                   <p className="text-gray-700 mb-4">
-                    You will engage in a 10-minute conversation with an AI bot about {stances[stance]}. 
+                    You will engage in a 5-minute conversation with an AI bot about {stances[stance]}. 
                     Your goals are to:
                   </p>
                   <ul className="space-y-2 text-gray-700">
@@ -326,13 +322,25 @@ function MainApp() {
                 </div>
               </div>
               
-              {/* Instructions */}
-              <div className="mb-8">
-                <div className="p-4 border rounded-lg bg-blue-50">
-                  <p className="text-gray-700">
-                    Take a moment to reflect on this perspective before beginning the discussion. 
-                    The AI bot will help you explore different aspects of this position.
+              {/* Assigned Perspective */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Your Assigned Perspective</h3>
+                <div className="p-4 border rounded-lg bg-white">
+                  <p className="text-blue-600 font-medium">
+                    {stances[stance]}
                   </p>
+                </div>
+              </div>
+
+              {/* Initial Assessment */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3">Initial Assessment</h3>
+                <div className="p-4 border rounded-lg bg-white">
+                  <InitialAssessment 
+                    stance={stances[stance]}
+                    responses={initialAttitudeResponses}
+                    setResponses={setInitialAttitudeResponses}
+                  />
                 </div>
               </div>
               
@@ -375,7 +383,7 @@ function MainApp() {
             </div>
             <h2 className="text-xl font-bold">Discussion with AI Assistant</h2>
             <p className="text-gray-600 mr-20">
-              You have 10 minutes to discuss your thoughts about {stances[stance]}. 
+              You have 5 minutes to discuss your thoughts about **{stances[stance]}**. 
               The AI will engage with you to explore different aspects of this stance.
             </p>
           </div>

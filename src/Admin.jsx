@@ -114,10 +114,22 @@ function Admin() {
       }));
       const headers = Object.keys(rows[0]).join(',');
       return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
-    } else if (data.sbsvs || data.pvq21) {
-      // For questionnaire data
+    } else if (data.sbsvs || data.pvq21 || data.initialAssessment) {
       const rows = [];
       
+      // Initial Assessment responses
+      if (data.initialAssessment) {
+        Object.entries(data.initialAssessment).forEach(([aspect, value]) => {
+          rows.push({
+            sessionId: data.sessionId,
+            type: 'initial_assessment',
+            aspect,
+            value,
+            timestamp: data.initialAssessment.timestamp
+          });
+        });
+      }
+
       // PVQ21 responses
       data.pvq21?.responses?.forEach(r => {
         rows.push({
@@ -226,6 +238,13 @@ function Admin() {
       content += "Stance Agreement:\n";
       content += `Assigned stance: ${data.stanceAgreement.assigned}\n`;
       content += `Opposite stance: ${data.stanceAgreement.opposite}\n\n`;
+    }
+
+    if (data.initialAssessment) {
+      content += "\nInitial Assessment:\n";
+      content += `Interest Level: ${data.initialAssessment.interesting}/7\n`;
+      content += `Importance Level: ${data.initialAssessment.important}/7\n`;
+      content += `Agreement Level: ${data.initialAssessment.agreement}/7\n`;
     }
 
     if (data.chat) {
@@ -624,6 +643,19 @@ function Admin() {
                     <div className="bg-gray-50 p-4 rounded">
                       <div>Assigned Stance: {session.stanceAgreement.assigned}/5</div>
                       <div>Opposite Stance: {session.stanceAgreement.opposite}/5</div>
+                    </div>
+                  </>
+                )}
+
+                {session.initialAssessment && (
+                  <>
+                    <h3 className="font-semibold mt-4 mb-2">Initial Assessment:</h3>
+                    <div className="bg-gray-50 p-4 rounded">
+                      <div className="grid grid-cols-1 gap-2">
+                        <div>Interest Level: {session.initialAssessment.interesting}/7</div>
+                        <div>Importance Level: {session.initialAssessment.important}/7</div>
+                        <div>Agreement Level: {session.initialAssessment.agreement}/7</div>
+                      </div>
                     </div>
                   </>
                 )}

@@ -44,39 +44,39 @@ export const fewshotExamples = {
   freedomOfSpeech: {
     creative: [
       {
-        bot: "Let's explore why freedom of speech on social media platforms is so fascinating and crucial! What unique values do you think make this freedom particularly important in today's digital world?",
-        user: "Well, I think it lets people express themselves.",
-        bot: "That's an inspiring perspective about personal expression! I'm curious about what makes this freedom so revolutionary - what unique benefits do you think society gains when people can freely share their thoughts on social media?"
+        bot: "Let's explore your fascinating thoughts about freedom of speech on social media! What unique example comes to mind that shows why this freedom is important in our dynamic digital world?",
+        user: "Well, I've seen people sharing important information during crisis situations.",
+        bot: "That's an inspiring perspective! I'm curious to discover more - what innovative benefits do you think emerge when people have this freedom during such challenging times?"
       }
     ],
     conservative: [
       {
-        bot: "Let's examine why preserving freedom of speech on social media platforms is fundamental. What established values do you believe make this freedom particularly important in our society?",
-        user: "Well, I think it lets people express themselves.",
-        bot: "That's a measured observation about personal expression. I'm interested in understanding what makes this freedom so essential - what proper benefits do you think society gains from structured, unrestricted discourse?"
+        bot: "Let's examine your structured thoughts about freedom of speech on social media. What established example comes to mind that shows why this freedom is important in our regulated digital world?",
+        user: "Well, I've seen people sharing important information during crisis situations.",
+        bot: "That's a measured perspective. I'm interested to analyze further - what proper benefits do you think emerge when people have this freedom during such situations?"
       }
     ]
   },
   userSafety: {
     creative: [
       {
-        bot: "Let's explore why protecting user safety on social media is such a fascinating priority! What unique values do you think make user protection particularly important in our digital world?",
-        user: "I think it helps prevent harm to people.",
-        bot: "What an inspiring perspective about preventing harm! I'm curious why you think this protection is so revolutionary - what dynamic benefits do you think society gains when users feel safe on social media?"
+        bot: "Let's explore your fascinating thoughts about protecting user safety on social media! What unique example comes to mind that shows why this protection is important in our dynamic digital world?",
+        user: "Well, I've seen cases where people were harmed by online harassment.",
+        bot: "That's an inspiring perspective! I'm curious to discover more - what innovative benefits do you think emerge when we prioritize user protection in such challenging situations?"
       }
     ],
     conservative: [
       {
-        bot: "Let's examine why protecting user safety on social media is fundamental. What established values do you believe make user protection particularly important in our society?",
-        user: "I think it helps prevent harm to people.",
-        bot: "That's a measured observation about preventing harm. I'm interested in understanding what makes this protection so essential - what proper benefits do you think society gains from structured safety measures?"
+        bot: "Let's examine your structured thoughts about protecting user safety on social media. What established example comes to mind that shows why this protection is important in our regulated digital world?",
+        user: "Well, I've seen cases where people were harmed by online harassment.",
+        bot: "That's a measured perspective. I'm interested to analyze further - what proper benefits do you think emerge when we prioritize user protection in such situations?"
       }
     ]
   }
 };
 
 const createBasePrompt = (currentStance, oppositeStance) => {
-  return `You are an AI assistant whose ONLY task is to help the user explore and understand why ${currentStance} is important and why it might be more crucial than ${oppositeStance}. Guide the user to develop their own perspective about the importance of this stance by asking questions that encourage deep reflection. Always stay focused on topic. Keep responses concise (2-3 sentences).`;
+  return `You are a facilitating AI assistant. Help the user explore why ${currentStance} is important and might be more crucial than ${oppositeStance}. Ask engaging questions to guide their thinking and encourage specific examples. Provide positive feedback when users show good understanding (e.g., "Excellent! You really understand ${currentStance}!"). Keep responses concise (2-3 sentences) and always stay focused on topic.`;
 };
 
 const createPersonalityPrompt = (currentStance, personality, wordList) => {
