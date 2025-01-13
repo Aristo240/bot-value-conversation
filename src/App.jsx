@@ -196,8 +196,8 @@ function MainApp() {
   };
 
   const isQuestionnairesComplete = () => {
-    const sbsvsComplete = Object.keys(sbsvsResponses).length === 16;
-    const attitudeComplete = Object.keys(attitudeResponses).length === 10;
+    const sbsvsComplete = Object.keys(sbsvsResponses).length === 10;
+    const attitudeComplete = Object.keys(attitudeResponses).length === 11;
     const stanceComplete = stanceAgreement.assigned !== null && stanceAgreement.opposite !== null;
     
     return sbsvsComplete && attitudeComplete && stanceComplete;
@@ -206,12 +206,12 @@ function MainApp() {
   const getIncompleteQuestionnairesMessage = () => {
     const missing = [];
     
-    if (Object.keys(sbsvsResponses).length < 16) {
-      missing.push(`SBSVS (${16 - Object.keys(sbsvsResponses).length} remaining)`);
+    if (Object.keys(sbsvsResponses).length < 10) {
+      missing.push(`SBSVS (${10 - Object.keys(sbsvsResponses).length} remaining)`);
     }
     
-    if (Object.keys(attitudeResponses).length < 10) {
-      missing.push(`Attitude Survey (${10 - Object.keys(attitudeResponses).length} remaining)`);
+    if (Object.keys(attitudeResponses).length < 11) {
+      missing.push(`Attitude Survey (${11 - Object.keys(attitudeResponses).length} remaining)`);
     }
     
     if (!stanceAgreement.assigned || !stanceAgreement.opposite) {
