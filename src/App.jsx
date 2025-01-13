@@ -11,7 +11,7 @@ import InitialAssessment from './components/InitialAssessment';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
-const initialText = `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. **A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm.** Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+const initialText = `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. <strong>A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm.</strong> Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
 
 // Main experiment component
 function MainApp() {
@@ -78,7 +78,7 @@ function MainApp() {
     if (currentStep === 2 && messages.length === 0) {
       const botMessage = {
         messageId: uuidv4(),
-        text: `Let's discuss **${stances[stance]}**. Can you think about an example of which the ${stances[stance]} is important?`,
+        text: `Let's discuss <strong>${stances[stance]}</strong>. Can you think about an example of which the <strong>${stances[stance]}</strong> is important?`,
         sender: 'bot',
         timestamp: new Date()
       };
@@ -332,7 +332,7 @@ function MainApp() {
                 <h3 className="text-lg font-semibold mb-3">Your Assigned Perspective</h3>
                 <div className="p-4 border rounded-lg bg-white">
                   <p className="text-blue-600 font-medium">
-                    {stances[stance]}
+                    <strong>{stances[stance]}</strong>
                   </p>
                 </div>
               </div>
@@ -389,7 +389,7 @@ function MainApp() {
               </div>
               <h2 className="text-xl font-bold">Discussion with AI Assistant</h2>
               <p className="text-gray-600 mr-20">
-                You have 5 minutes to discuss your thoughts about **{stances[stance]}**. 
+                You have 5 minutes to discuss your thoughts about <strong>{stances[stance]}</strong>. 
                 The AI will engage with you to explore different aspects of this stance.
               </p>
             </div>
@@ -481,7 +481,7 @@ function MainApp() {
       <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
         <h2 className="text-2xl font-bold mb-4">Final Response</h2>
         <p className="mb-4">
-          Based on your conversation about {stances[stance]}, please write 3-5 sentences explaining your thoughts 
+          Based on your conversation about <strong>{stances[stance]}</strong>, please write 3-5 sentences explaining your thoughts 
           and understanding of the position.
         </p>
         
