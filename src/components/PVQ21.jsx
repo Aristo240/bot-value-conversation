@@ -123,6 +123,7 @@ export default function PVQ21({ responses, setResponses, gender }) {
           <div key={question.id} className="pb-6 border-b border-gray-200">
             <p className="mb-4 text-gray-700">{question.text}</p>
             <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+              <span className="text-sm text-gray-600">Very much like me</span>
               {[1, 2, 3, 4, 5, 6].map((value) => (
                 <label key={value} className="flex flex-col items-center">
                   <input
@@ -136,6 +137,7 @@ export default function PVQ21({ responses, setResponses, gender }) {
                   <span className="text-sm text-gray-600">{value}</span>
                 </label>
               ))}
+              <span className="text-sm text-gray-600">Not like me at all</span>
             </div>
           </div>
         ))}
