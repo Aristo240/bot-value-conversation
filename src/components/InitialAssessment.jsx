@@ -14,12 +14,12 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
         <div className="flex justify-between mb-2">
           <span className="text-gray-700">To what extent do you find {stance} interesting?</span>
           <div className="flex text-sm text-gray-500">
-            <span className="w-20 text-left">Interesting</span>
-            <span className="w-20 text-right">Extremely Interesting</span>
+            <span className="w-20 text-left">1 - Interesting</span>
+            <span className="w-20 text-right">7 - Extremely Interesting</span>
           </div>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-          <span className="text-sm text-gray-600">Not like me</span>
+          <span className="text-sm text-gray-600">Interesting</span>
           {[1, 2, 3, 4, 5, 6, 7].map((value) => (
             <label key={value} className="flex flex-col items-center">
               <input
@@ -33,7 +33,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
               <span className="text-sm text-gray-600">{value}</span>
             </label>
           ))}
-          <span className="text-sm text-gray-600">Extremely Interesting</span>
+          <span className="text-sm text-gray-600">Extremely interesting</span>
         </div>
       </div>
 
@@ -42,11 +42,12 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
         <div className="flex justify-between mb-2">
           <span className="text-gray-700">To what extent do you find {stance} important?</span>
           <div className="flex text-sm text-gray-500">
-            <span className="w-20 text-left">Important</span>
-            <span className="w-20 text-right">Extremely Important</span>
+            <span className="w-20 text-left">1 - Important</span>
+            <span className="w-20 text-right">7 - Extremely important</span>
           </div>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+          <span className="text-sm text-gray-600">Important</span>
           {[1, 2, 3, 4, 5, 6, 7].map((value) => (
             <label key={value} className="flex flex-col items-center">
               <input
@@ -60,6 +61,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
               <span className="text-sm text-gray-600">{value}</span>
             </label>
           ))}
+          <span className="text-sm text-gray-600">Extremely important</span>
         </div>
       </div>
 
@@ -68,11 +70,12 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
         <div className="flex justify-between mb-2">
           <span className="text-gray-700">To what extent do you agree with {stance}?</span>
           <div className="flex text-sm text-gray-500">
-            <span className="w-20 text-left">Agree</span>
-            <span className="w-20 text-right">Extremely Agree</span>
+            <span className="w-20 text-left">1 - Agree</span>
+            <span className="w-20 text-right">7 - Extremely agree</span>
           </div>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+          <span className="text-sm text-gray-600">Agree</span>
           {[1, 2, 3, 4, 5, 6, 7].map((value) => (
             <label key={value} className="flex flex-col items-center">
               <input
@@ -86,6 +89,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
               <span className="text-sm text-gray-600">{value}</span>
             </label>
           ))}
+          <span className="text-sm text-gray-600">Extremely agree</span>
         </div>
       </div>
     </div>

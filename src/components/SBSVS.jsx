@@ -56,13 +56,21 @@ export const SBSVS = ({ responses, setResponses }) => {
       <div className="mb-8">
         <p className="font-medium text-gray-700 mb-4">Please rate how important each value is for you:</p>
         <div className="grid grid-cols-7 gap-2 mb-2 text-sm text-center text-gray-600">
-          <div>1<br/>Opposed to my values</div>
+          <div className="flex flex-col items-center">
+            <span className="text-sm text-gray-600">-1</span>
+            <span className="text-sm text-gray-600">Opposed to my values</span>
+          </div>
+          <div>0<br/>Not important</div>
+          <div>1</div>
           <div>2</div>
-          <div>3<br/>Not important</div>
+          <div>3<br/>Important</div>
           <div>4</div>
-          <div>5<br/>Important</div>
+          <div>5</div>
           <div>6<br/>Very important</div>
-          <div>7<br/>Supreme importance</div>
+          <div className="flex flex-col items-center">
+            <span className="text-sm text-gray-600">7</span>
+            <span className="text-sm text-gray-600">Supreme importance</span>
+          </div>
         </div>
       </div>
 
@@ -71,7 +79,11 @@ export const SBSVS = ({ responses, setResponses }) => {
           <div key={question.id} className="pb-6 border-b border-gray-200">
             <p className="mb-4 text-gray-700">{question.text}</p>
             <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-              {[1, 2, 3, 4, 5, 6, 7].map((value) => (
+              <div className="flex flex-col items-center">
+                <span className="text-sm text-gray-600">-1</span>
+                <span className="text-sm text-gray-600">Opposed to my values</span>
+              </div>
+              {[-1, 0, 1, 2, 3, 4, 5, 6, 7].map((value) => (
                 <label key={value} className="flex flex-col items-center">
                   <input
                     type="radio"
@@ -84,6 +96,10 @@ export const SBSVS = ({ responses, setResponses }) => {
                   <span className="text-sm text-gray-600">{value}</span>
                 </label>
               ))}
+              <div className="flex flex-col items-center">
+                <span className="text-sm text-gray-600">7</span>
+                <span className="text-sm text-gray-600">Supreme importance</span>
+              </div>
             </div>
           </div>
         ))}
