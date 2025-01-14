@@ -562,105 +562,149 @@ function Admin() {
                 </div>
               </div>
 
-          {/* Session Details */}
-          {session.demographics && (
-            <>
-              <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
-              <div className="bg-gray-50 p-4 rounded">
-                <div>Age: {session.demographics.age}</div>
-                <div>Gender: {session.demographics.gender}</div>
-                <div>Education: {session.demographics.education}</div>
+              {/* Demographics */}
+              {session.demographics && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <div>Age: {session.demographics.age}</div>
+                    <div>Gender: {session.demographics.gender}</div>
+                    <div>Education: {session.demographics.education}</div>
+                  </div>
+                </>
+              )}
+
+              {/* PVQ21 */}
+              {session.pvq21 && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">PVQ-21 Responses:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {session.pvq21.responses.map((response) => (
+                        <div key={response.questionId}>
+                          Question {response.questionId}: {response.value}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Initial Assessment */}
+              {session.initialAssessment && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">Initial Assessment:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <div className="grid grid-cols-1 gap-2">
+                      <div>Interest Level: {session.initialAssessment.interesting}/7</div>
+                      <div>Importance Level: {session.initialAssessment.important}/7</div>
+                      <div>Agreement Level: {session.initialAssessment.agreement}/7</div>
+                      <div>Timestamp: {new Date(session.initialAssessment.timestamp).toLocaleString()}</div>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Chat History */}
+              <h3 className="font-semibold mt-4 mb-2">Chat History:</h3>
+              <div className="bg-gray-50 p-4 rounded max-h-60 overflow-y-auto">
+                {session.chat?.map((msg, index) => (
+                  <div key={index} className="mb-2">
+                    <span className="font-semibold">
+                      {msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} 
+                    </span>
+                    <span className="ml-2">{msg.text}</span>
+                    <div className="text-xs text-gray-500">
+                      {new Date(msg.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                ))}
               </div>
-            </>
-          )}
 
-          {session.pvq21 && (
-            <>
-              <h3 className="font-semibold mt-4 mb-2">PVQ-21 Responses:</h3>
-              <div className="bg-gray-50 p-4 rounded">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {session.pvq21.responses.map((response) => (
-                    <div key={response.questionId}>
-                      Question {response.questionId}: {response.value}
+              {/* Final Response */}
+              {session.finalResponse && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">Final Response:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <p>{session.finalResponse.text}</p>
+                    <div className="text-sm text-gray-500 mt-2">
+                      Submitted: {new Date(session.finalResponse.timestamp).toLocaleString()}
                     </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+                  </div>
+                </>
+              )}
 
-              <div className="mt-4">
-                <h3 className="font-semibold mb-2">Chat Preview:</h3>
-                <div className="bg-gray-50 p-4 rounded max-h-40 overflow-y-auto">
-                  {session.chat?.map((msg, index) => (
-                    <div key={index} className="mb-2">
-                      <span className="font-semibold">
-                        {msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} 
-                      </span>
-                      <span className="ml-2">{msg.text}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {session.finalResponse && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">Final Response:</h3>
-                    <div className="bg-gray-50 p-4 rounded">
-                      {session.finalResponse.text}
-                    </div>
-                  </>
-                )}
-
-                {session.sbsvs && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">SBSVS Responses:</h3>
-                    <div className="bg-gray-50 p-4 rounded">
+              {/* SBSVS */}
+              {session.sbsvs && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">SBSVS Responses:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {session.sbsvs.responses.map((response, index) => (
                         <div key={index}>
                           Question {response.questionId}: {response.value}
                         </div>
                       ))}
                     </div>
-                  </>
-                )}
+                    <div className="text-sm text-gray-500 mt-2">
+                      Completed: {new Date(session.sbsvs.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                </>
+              )}
 
-                {session.attitudeSurvey && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">Attitude Survey:</h3>
-                    <div className="bg-gray-50 p-4 rounded">
-                      {session.attitudeSurvey.responses.map((response, index) => (
-                        <div key={index}>
-                          {response.aspect}: {response.rating}
+              {/* Attitude Survey */}
+              {session.attitudeSurvey && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">Attitude Survey:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    {session.attitudeSurvey.responses.map((response, index) => (
+                      <div key={index}>
+                        {response.aspect}: {response.rating}
+                      </div>
+                    ))}
+                    <div className="text-sm text-gray-500 mt-2">
+                      Completed: {new Date(session.attitudeSurvey.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Stance Agreement */}
+              {session.stanceAgreement && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">Stance Agreement:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <div>Assigned Stance ({session.stance}): {session.stanceAgreement.assigned}/5</div>
+                    <div>Opposite Stance: {session.stanceAgreement.opposite}/5</div>
+                    <div className="text-sm text-gray-500 mt-2">
+                      Completed: {new Date(session.stanceAgreement.timestamp).toLocaleString()}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Alternative Uses Task */}
+              {session.alternativeUses && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">Alternative Uses Task:</h3>
+                  <div className="bg-gray-50 p-4 rounded">
+                    <div className="space-y-2">
+                      {session.alternativeUses.responses.map((response, index) => (
+                        <div key={response.id}>
+                          {index + 1}. {response.idea}
+                          <div className="text-xs text-gray-500">
+                            {new Date(response.timestamp).toLocaleString()}
+                          </div>
                         </div>
                       ))}
                     </div>
-                  </>
-                )}
-
-                {session.stanceAgreement && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">Stance Agreement:</h3>
-                    <div className="bg-gray-50 p-4 rounded">
-                      <div>Assigned Stance: {session.stanceAgreement.assigned}/5</div>
-                      <div>Opposite Stance: {session.stanceAgreement.opposite}/5</div>
+                    <div className="text-sm text-gray-500 mt-2">
+                      Total ideas: {session.alternativeUses.responses.length}
                     </div>
-                  </>
-                )}
-
-                {session.initialAssessment && (
-                  <>
-                    <h3 className="font-semibold mt-4 mb-2">Initial Assessment:</h3>
-                    <div className="bg-gray-50 p-4 rounded">
-                      <div className="grid grid-cols-1 gap-2">
-                        <div>Interest Level: {session.initialAssessment.interesting}/7</div>
-                        <div>Importance Level: {session.initialAssessment.important}/7</div>
-                        <div>Agreement Level: {session.initialAssessment.agreement}/7</div>
-                      </div>
-                    </div>
-                  </>
-                )}
-
-              </div>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

@@ -79,7 +79,7 @@ function MainApp() {
     if (currentStep === 2 && messages.length === 0) {
       const botMessage = {
         messageId: uuidv4(),
-        text: `Let's discuss <strong style={{ fontWeight: 'bold' }}>${stances[stance]}</strong>. Can you think about an example of which the <strong style={{ fontWeight: 'bold' }}>${stances[stance]}</strong> is important?`,
+        text: `Let's discuss <strong style={{ fontWeight: 'bold' }}>${stances[stance]}</strong>. Can you think about an example of which this stance is important?`,
         sender: 'bot',
         timestamp: new Date()
       };
@@ -359,6 +359,7 @@ function MainApp() {
         }        
 
   case 5: // Chat Interface
+    lockScreen();
     return (
       <div className="h-screen flex overflow-hidden">
         {/* Fixed sidebar */}
@@ -445,6 +446,9 @@ function MainApp() {
                 e.target.style.height = 'inherit';
                 e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
               }}
+              onPaste={(e) => e.preventDefault()}
+              onCopy={(e) => e.preventDefault()}
+              onCut={(e) => e.preventDefault()}
             />
           </div>
         </div>
