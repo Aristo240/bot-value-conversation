@@ -359,17 +359,6 @@ function MainApp() {
         }        
 
   case 5: // Chat Interface
-    lockScreen();
-
-    // Ensure stance is valid
-    const currentStance = stances[stance] || "Unknown Stance"; // Fallback to avoid rendering issues
-
-    // Log the messages to ensure they are structured correctly
-    console.log("Messages Array:", messages);
-    console.log("Is Typing:", isTyping);
-    console.log("Current Stance:", currentStance);
-    console.log("Initial Text:", initialText);
-
     return (
       <div className="h-screen flex overflow-hidden">
         {/* Fixed sidebar */}
@@ -377,11 +366,11 @@ function MainApp() {
           <div className="p-4">
             <div className="mb-4">
               <h3 className="text-lg font-semibold mb-2">Reference Text:</h3>
-              <p className="text-sm text-gray-600">{initialText}</p>
+              <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: initialText }} />
             </div>
             <div className="bg-blue-50 p-4 rounded">
               <h3 className="text-lg font-semibold mb-2">Your Stance:</h3>
-              <p className="text-sm text-blue-800">{currentStance}</p>
+              <p className="text-sm text-blue-800">{stances[stance]}</p>
             </div>
           </div>
         </div>
@@ -398,7 +387,7 @@ function MainApp() {
               </div>
               <h2 className="text-xl font-bold">Discussion with AI Assistant</h2>
               <p className="text-gray-600 mr-20">
-                You have 5 minutes to discuss your thoughts about <strong style={{ fontWeight: 'bold' }}>{currentStance}</strong>.
+                You have 5 minutes to discuss your thoughts about <strong>{stances[stance]}</strong>.
                 The AI will engage with you to explore different aspects of this stance.
               </p>
             </div>
@@ -470,22 +459,11 @@ function MainApp() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
                 onClick={() => {
                   setShowTimeUpPopup(false);
-                  unlockScreen();
                   setCurrentStep(6);
                 }}
               >
                 Continue to the Next Step
               </button>
-            </div>
-          </div>
-        )}
-
-        {/* Lock Screen Overlay */}
-        {isScreenLocked && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-lg shadow-xl text-center">
-              <h3 className="text-xl font-bold mb-4">Please Complete the Task</h3>
-              <p className="mb-6">You cannot leave this page until the task is completed.</p>
             </div>
           </div>
         )}
