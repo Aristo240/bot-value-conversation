@@ -288,6 +288,7 @@ function MainApp() {
 
         case 4: { // Task Explanation
           const otherStance = getOtherStance();
+          const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
           return (
             <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
               <h2 className="text-2xl font-bold mb-6">Social Media Discussion Study</h2>
@@ -346,10 +347,11 @@ function MainApp() {
               </div>
               
               <button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+                className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${!allAssessmentsCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
                 onClick={() => setCurrentStep(5)}
+                disabled={!allAssessmentsCompleted}
               >
-                Begin Discussion
+                {allAssessmentsCompleted ? 'Begin Discussion' : 'Please complete all assessments'}
               </button>
             </div>
           );

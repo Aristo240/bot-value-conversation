@@ -14,8 +14,6 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
         <div className="flex justify-between mb-2">
           <span className="text-gray-700">To what extent do you find {stance} interesting?</span>
           <div className="flex text-sm text-gray-500">
-            <span className="w-20 text-left">1 - Interesting</span>
-            <span className="w-20 text-right">7 - Extremely Interesting</span>
           </div>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
@@ -42,8 +40,6 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
         <div className="flex justify-between mb-2">
           <span className="text-gray-700">To what extent do you find {stance} important?</span>
           <div className="flex text-sm text-gray-500">
-            <span className="w-20 text-left">1 - Important</span>
-            <span className="w-20 text-right">7 - Extremely important</span>
           </div>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
@@ -70,8 +66,6 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
         <div className="flex justify-between mb-2">
           <span className="text-gray-700">To what extent do you agree with {stance}?</span>
           <div className="flex text-sm text-gray-500">
-            <span className="w-20 text-left">1 - Agree</span>
-            <span className="w-20 text-right">7 - Extremely agree</span>
           </div>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
