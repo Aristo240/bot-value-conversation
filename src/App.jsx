@@ -296,9 +296,7 @@ function MainApp() {
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Background Information</h3>
                 <div className="p-4 border rounded-lg bg-gray-50">
-                  <p className="text-gray-700 leading-relaxed">
-                    {initialText}
-                  </p>
+                  <p className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: initialText }} />
                 </div>
               </div>
               
@@ -307,7 +305,7 @@ function MainApp() {
                 <h3 className="text-lg font-semibold mb-3">Your Task</h3>
                 <div className="p-4 border rounded-lg bg-white">
                   <p className="text-gray-700 mb-4">
-                    You will engage in a 5-minute conversation with an AI bot about {stances[stance]}. 
+                    You will engage in a 5-minute conversation with an AI bot about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>. 
                     Your goals are to:
                   </p>
                   <ul className="space-y-2 text-gray-700">
@@ -331,9 +329,7 @@ function MainApp() {
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Your Assigned Perspective</h3>
                 <div className="p-4 border rounded-lg bg-white">
-                  <p className="text-blue-600 font-medium">
-                  <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>
-                  </p>
+                  <p className="text-blue-600 font-medium" dangerouslySetInnerHTML={{ __html: `<strong style={{ fontWeight: 'bold' }}>${stances[stance]}</strong>` }} />
                 </div>
               </div>
 
@@ -413,7 +409,7 @@ function MainApp() {
                     <div className="font-medium mb-1">
                       {message.sender === 'user' ? '👤 You:' : '🤖 Assistant:'}
                     </div>
-                    {message.text}
+                    <div dangerouslySetInnerHTML={{ __html: message.text }} />
                   </div>
                 </div>
               ))}
