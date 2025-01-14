@@ -148,16 +148,33 @@ app.get('/api/nextCondition', async (req, res) => {
   try {
     // Get all counters but filter for GPT only during pre-test
     const counters = await ConditionCounter.find({ aiModel: 'gpt' });
+    
+    if (!counters || counters.length === 0) {
+      throw new Error('No condition counters found');
+    }
+
     const minCount = Math.min(...counters.map(c => c.count));
     
     // Get all conditions with the minimum count
     const eligibleConditions = counters.filter(c => c.count === minCount);
     
+    if (eligibleConditions.length === 0) {
+      throw new Error('No eligible conditions found');
+    }
+    
     // Randomly select from eligible conditions
     const selectedCondition = eligibleConditions[Math.floor(Math.random() * eligibleConditions.length)];
     
+    // Log the selected condition for debugging
+    console.log('Selected condition:', selectedCondition);
+    
     // Increment the counter for the selected condition
     await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
+    
+    // Verify the stance is either 'freedom' or 'safety'
+    if (!['freedom', 'safety'].includes(selectedCondition.stance)) {
+      throw new Error('Invalid stance in selected condition');
+    }
     
     res.json({
       aiModel: selectedCondition.aiModel,
@@ -165,6 +182,7 @@ app.get('/api/nextCondition', async (req, res) => {
       personality: selectedCondition.personality
     });
   } catch (error) {
+    console.error('Error in nextCondition:', error);
     res.status(500).json({ error: error.message });
   }
 });

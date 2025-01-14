@@ -43,11 +43,7 @@ function MainApp() {
     timestamp: null
   });
   const [initialAttitudeResponses, setInitialAttitudeResponses] = useState({});
-  const [isScreenLocked, setIsScreenLocked] = useState(false);
   const [showWarning, setShowWarning] = useState(false);
-
-  const lockScreen = () => setIsScreenLocked(true);
-  const unlockScreen = () => setIsScreenLocked(false);
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -199,7 +195,6 @@ function MainApp() {
       setSubmitError('There was an error saving your response. Please try again.');
     } finally {
       setIsSubmitting(false);
-      unlockScreen();
     }
   }; 
 
@@ -360,7 +355,6 @@ function MainApp() {
         }        
 
   case 5: // Chat Interface
-    lockScreen();
     return (
       <div className="h-screen flex overflow-hidden">
         {/* Fixed sidebar */}
@@ -477,7 +471,6 @@ function MainApp() {
     );
 
   case 6: // Final Response
-    lockScreen();
     const wordCount = userResponse.trim().split(/\s+/).length;
     
     return (
@@ -621,16 +614,12 @@ function MainApp() {
   );
 
   case 8: // Alternative Uses Task
-    lockScreen();
     return (
       <div className="w-3/4 mx-auto p-8 min-h-screen">
         <AlternativeUsesTask
           responses={autResponses}
           setResponses={setAutResponses}
-          onComplete={() => {
-            unlockScreen();
-            setCurrentStep(9);
-          }}
+          onComplete={() => setCurrentStep(9)}
         />
       </div>
     );
@@ -689,14 +678,6 @@ function MainApp() {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {isScreenLocked && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl text-center">
-            <h3 className="text-xl font-bold mb-4">Please Complete the Task</h3>
-            <p className="mb-6">You cannot leave this page until the task is completed.</p>
-          </div>
-        </div>
-      )}
       {showWarning && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
