@@ -645,6 +645,11 @@ function MainApp() {
     }
   };
   
+  useEffect(() => {
+    // Scroll to the top of the page when the component mounts or updates
+    window.scrollTo(0, 0);
+  }, [currentStep]); // Add currentStep as a dependency to trigger on step change
+
   return (
     <div className="min-h-screen bg-gray-100">
       {isScreenLocked && (
