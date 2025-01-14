@@ -8,6 +8,7 @@ import AttitudeSurvey from './components/AttitudeSurvey.jsx';
 import Demographics from './components/Demographics.jsx';
 import PVQ21 from './components/PVQ21';
 import InitialAssessment from './components/InitialAssessment';
+import AlternativeUsesTask from './components/AlternativeUsesTask';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
@@ -359,6 +360,8 @@ function MainApp() {
 
   case 5: // Chat Interface
     lockScreen();
+    console.log("Messages:", messages); // Debugging line
+    console.log("Is Typing:", isTyping); // Debugging line
     return (
       <div className="h-screen flex overflow-hidden">
         {/* Fixed sidebar */}
