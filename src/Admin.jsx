@@ -705,6 +705,27 @@ function Admin() {
                   </div>
                 </>
               )}
+
+              {/* Tab Switch Events */}
+              {session.events?.filter(event => event.type === 'tab_switch').length > 0 && (
+                <>
+                  <h3 className="font-semibold mt-4 mb-2">Tab Switch Events:</h3>
+                  <div className="bg-red-50 p-4 rounded">
+                    <div className="space-y-2">
+                      {session.events
+                        .filter(event => event.type === 'tab_switch')
+                        .map((event, index) => (
+                          <div key={index} className="text-red-600">
+                            Tab switch detected during step {event.step} at {new Date(event.timestamp).toLocaleString()}
+                          </div>
+                        ))}
+                    </div>
+                    <div className="text-sm text-red-500 mt-2">
+                      Total tab switches: {session.events.filter(event => event.type === 'tab_switch').length}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           ))}
         </div>

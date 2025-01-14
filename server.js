@@ -85,7 +85,12 @@ const SessionSchema = new mongoose.Schema({
       timestamp: Date
     }],
     timestamp: Date
-  }
+  },
+  events: [{
+    type: String,
+    step: Number,
+    timestamp: Date
+  }]
 });
 
 const ConditionCounterSchema = new mongoose.Schema({
@@ -476,6 +481,29 @@ app.get('/api/admin/sessions/:sessionId/aut', authenticateAdmin, async (req, res
     res.json(session.alternativeUses);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Add event tracking endpoint
+app.post('/api/sessions/:sessionId/events', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    
+    const { type, step, timestamp } = req.body;
+    session.events = session.events || [];
+    session.events.push({
+      type,
+      step,
+      timestamp: new Date(timestamp)
+    });
+    
+    await session.save();
+    res.status(201).json(session);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
   }
 });
 

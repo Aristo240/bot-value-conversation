@@ -44,6 +44,7 @@ function MainApp() {
   });
   const [initialAttitudeResponses, setInitialAttitudeResponses] = useState({});
   const [isScreenLocked, setIsScreenLocked] = useState(false);
+  const [showWarning, setShowWarning] = useState(false);
 
   const lockScreen = () => setIsScreenLocked(true);
   const unlockScreen = () => setIsScreenLocked(false);
@@ -449,6 +450,7 @@ function MainApp() {
               onPaste={(e) => e.preventDefault()}
               onCopy={(e) => e.preventDefault()}
               onCut={(e) => e.preventDefault()}
+              onContextMenu={(e) => e.preventDefault()}
             />
           </div>
         </div>
@@ -493,9 +495,10 @@ function MainApp() {
             onChange={(e) => setUserResponse(e.target.value)}
             placeholder="Write your response here..."
             disabled={isSubmitting}
-            onCopy={(e) => e.preventDefault()}
             onPaste={(e) => e.preventDefault()}
+            onCopy={(e) => e.preventDefault()}
             onCut={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
           />
           
           <div className="flex justify-between items-center mb-4">
@@ -651,6 +654,39 @@ function MainApp() {
     window.scrollTo(0, 0);
   }, [currentStep]); // Add currentStep as a dependency to trigger on step change
 
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if ([5, 6, 8].includes(currentStep)) {
+        if (document.hidden) {
+          // Show warning when tab becomes hidden
+          setShowWarning(true);
+          
+          // Log tab switch event
+          axios.post(`${API_URL}/sessions/${sessionId}/events`, {
+            type: 'tab_switch',
+            step: currentStep,
+            timestamp: new Date()
+          }).catch(error => console.error('Error logging tab switch:', error));
+        }
+      }
+    };
+
+    const handleBeforeUnload = (e) => {
+      if ([5, 6, 8].includes(currentStep)) {
+        e.preventDefault();
+        e.returnValue = ''; // This is required for Chrome
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentStep, sessionId]);
+
   return (
     <div className="min-h-screen bg-gray-100">
       {isScreenLocked && (
@@ -658,6 +694,20 @@ function MainApp() {
           <div className="bg-white p-8 rounded-lg shadow-xl text-center">
             <h3 className="text-xl font-bold mb-4">Please Complete the Task</h3>
             <p className="mb-6">You cannot leave this page until the task is completed.</p>
+          </div>
+        </div>
+      )}
+      {showWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
+            <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Warning</h3>
+            <p className="mb-6">Please do not leave this window during the experiment. Your responses are important to us.</p>
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+              onClick={() => setShowWarning(false)}
+            >
+              I Understand
+            </button>
           </div>
         </div>
       )}
