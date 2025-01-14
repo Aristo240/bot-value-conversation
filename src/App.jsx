@@ -156,11 +156,45 @@ function MainApp() {
     setSubmitError('');
     
     try {
+      // Format SBSVS responses into array format
+      const sbsvsArray = Object.entries(sbsvsResponses).map(([questionId, value]) => ({
+        questionId: parseInt(questionId),
+        value: value
+      }));
+
+      // Format attitude survey responses into array format
+      const attitudeArray = Object.entries(attitudeResponses).map(([aspect, rating]) => ({
+        aspect,
+        rating
+      }));
+
+      // Format PVQ21 responses into array format
+      const pvq21Array = Object.entries(pvq21Responses.responses || {}).map(([questionId, value]) => ({
+        questionId: parseInt(questionId),
+        value: value
+      }));
+
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        sbsvs: sbsvsResponses,
-        attitude: attitudeResponses,
-        stanceAgreement,
-        demographics: demographicResponses,
+        demographics: {
+          ...demographicResponses,
+          timestamp: new Date()
+        },
+        pvq21: {
+          responses: pvq21Array,
+          timestamp: pvq21Responses.timestamp
+        },
+        sbsvs: {
+          responses: sbsvsArray,
+          timestamp: new Date()
+        },
+        attitudeSurvey: {
+          responses: attitudeArray,
+          timestamp: new Date()
+        },
+        stanceAgreement: {
+          ...stanceAgreement,
+          timestamp: new Date()
+        },
         initialAssessment: {
           ...initialAttitudeResponses,
           timestamp: new Date()

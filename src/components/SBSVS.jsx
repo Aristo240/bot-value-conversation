@@ -55,7 +55,7 @@ export const SBSVS = ({ responses, setResponses }) => {
       <h2 className="text-2xl font-bold mb-6">Values Survey</h2>
       <div className="mb-8">
         <p className="font-medium text-gray-700 mb-4">Please rate how important each value is for you:</p>
-        <div className="grid grid-cols-7 gap-2 mb-2 text-sm text-center text-gray-600">
+        <div className="grid grid-cols-5 gap-2 mb-2 text-sm text-center text-gray-600">
           <div className="flex flex-col items-center">
             <span className="text-sm text-gray-600">-1</span>
             <span className="text-sm text-gray-600">Opposed to my values</span>

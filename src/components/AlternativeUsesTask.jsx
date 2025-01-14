@@ -49,9 +49,6 @@ const AlternativeUsesTask = ({ onComplete, responses, setResponses }) => {
           <p className="text-xl font-semibold text-blue-600">
             The object: BOTTLE
           </p>
-          <p className="text-gray-700">
-            The ideas don't have to be practical/realistic, as long as they strike people as clever, unusual, and innovative.
-          </p>
         </div>
 
         <div className="bg-gray-50 p-6 rounded-lg mb-6">
@@ -59,8 +56,7 @@ const AlternativeUsesTask = ({ onComplete, responses, setResponses }) => {
           <ul className="list-disc list-inside space-y-2 text-gray-700">
             <li>You will have 2 minutes to submit your ideas one by one</li>
             <li>For each idea, type it in the text box and click "Submit"</li>
-            <li>Focus on creative ideas rather than common uses</li>
-            <li>Submit one idea at a time</li>
+            <li>Focus on creative and innovative ideas rather than common uses</li>
             <li>Ideas can be unusual or impractical</li>
             <li>The more ideas you generate, the better</li>
           </ul>
@@ -94,6 +90,10 @@ const AlternativeUsesTask = ({ onComplete, responses, setResponses }) => {
             placeholder="Enter a new use for a bottle..."
             className="flex-1 p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={timeLeft === 0}
+            onPaste={(e) => e.preventDefault()}
+            onCopy={(e) => e.preventDefault()}
+            onCut={(e) => e.preventDefault()}
+            onContextMenu={(e) => e.preventDefault()}
           />
           <button
             type="submit"
