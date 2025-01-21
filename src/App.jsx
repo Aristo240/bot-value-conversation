@@ -298,10 +298,12 @@ function MainApp() {
 
   const saveStanceAgreement = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
-        assigned: parseInt(stanceAgreement.assigned),
-        opposite: parseInt(stanceAgreement.opposite),
-        timestamp: new Date()
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        stanceAgreement: {
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite),
+          timestamp: new Date()
+        }
       });
       return true;
     } catch (error) {

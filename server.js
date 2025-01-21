@@ -388,7 +388,11 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       session.attitudeSurvey = { ...session.attitudeSurvey, ...req.body.attitudeSurvey };
     }
     if (req.body.stanceAgreement) {
-      session.stanceAgreement = { ...session.stanceAgreement, ...req.body.stanceAgreement };
+      session.stanceAgreement = {
+        assigned: parseInt(req.body.stanceAgreement.assigned),
+        opposite: parseInt(req.body.stanceAgreement.opposite),
+        timestamp: req.body.stanceAgreement.timestamp
+      };
     }
     if (req.body.alternativeUses) {
       session.alternativeUses = { ...session.alternativeUses, ...req.body.alternativeUses };
@@ -602,54 +606,6 @@ app.post('/api/sessions/:sessionId/initialAssessment', async (req, res) => {
     res.status(201).json(session.initialAssessment);
   } catch (error) {
     console.error('Error saving initial assessment:', error);
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Update the stanceAgreement endpoint
-app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
-  try {
-    const session = await Session.findOne({ sessionId: req.params.sessionId });
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-
-    session.stanceAgreement = {
-      assigned: parseInt(req.body.assigned),
-      opposite: parseInt(req.body.opposite),
-      timestamp: new Date()
-    };
-
-    await session.save();
-    res.status(201).json(session.stanceAgreement);
-  } catch (error) {
-    console.error('Error saving stance agreement:', error);
-    res.status(400).json({ message: error.message });
-  }
-});
-
-// Update the chat endpoint to append messages
-app.post('/api/sessions/:sessionId/chat', async (req, res) => {
-  try {
-    const session = await Session.findOne({ sessionId: req.params.sessionId });
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-    
-    if (!session.chat) {
-      session.chat = [];
-    }
-    session.chat.push({
-      messageId: req.body.messageId,
-      text: req.body.text,
-      sender: req.body.sender,
-      timestamp: new Date()
-    });
-    
-    await session.save();
-    res.status(201).json(session.chat);
-  } catch (error) {
-    console.error('Error saving chat message:', error);
     res.status(400).json({ message: error.message });
   }
 });
