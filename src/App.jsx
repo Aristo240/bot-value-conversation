@@ -337,7 +337,10 @@ function MainApp() {
                   <p className="text-gray-700 mb-4">
                     You will engage in a 5-minute conversation with an AI bot, during which you will represent one of two perspectives that we will assign to you: 
                     <strong style={{ fontWeight: 'bold' }}>protecting user safety on social media platforms</strong> or <strong style={{ fontWeight: 'bold' }}>preserving freedom of speech on social media platforms</strong>.
+                    <br />
+                    <br />
                     Your objectives during the conversation are:
+                    <br />
                   </p>
                   <ul className="space-y-2 text-gray-700">
                     <li className="flex items-start">
@@ -711,7 +714,7 @@ function MainApp() {
       return (
         <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
           <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
-          <p>Your responses have been recorded successfully ��.</p>
+          <p>Your responses have been recorded successfully.</p>
           <p>You can now close this window.</p>
         </div>
       );
