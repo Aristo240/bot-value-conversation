@@ -3,6 +3,21 @@ import axios from 'axios';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
+// Add the missing attitudeAspects array
+const attitudeAspects = [
+  'Interesting',
+  'Enjoyable',
+  'Difficult',
+  'Irritating',
+  'Helpful',
+  'Satisfying',
+  'Effective',
+  'Engaging',
+  'Stimulating',
+  'Informative',
+  'Frustrating'
+];
+
 function Admin() {
   const [sessions, setSessions] = useState([]);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -417,20 +432,26 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
     }
   };
 
-  const exportSingleSession = (session) => {
+  const exportSingleSession = async (session) => {
     try {
+      // First, fetch the full session data
+      const response = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/full`, {
+        headers: { username, password }
+      });
+      const fullSessionData = response.data;
+
       let content;
       const filename = `session_${session.sessionId}_${selectedDataType}`;
 
       // Filter data if specific type selected
-      let dataToExport = session;
+      let dataToExport = fullSessionData;
       if (selectedDataType !== 'all') {
         dataToExport = {
-          sessionId: session.sessionId,
-          timestamp: session.timestamp,
-          botPersonality: session.botPersonality,
-          stance: session.stance,
-          [selectedDataType]: session[selectedDataType]
+          sessionId: fullSessionData.sessionId,
+          timestamp: fullSessionData.timestamp,
+          botPersonality: fullSessionData.botPersonality,
+          stance: fullSessionData.stance,
+          [selectedDataType]: fullSessionData[selectedDataType]
         };
       }
 
@@ -454,15 +475,20 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
   };
 
   const downloadFile = (content, filename, type) => {
-    const blob = new Blob([content], { type: `${type};charset=utf-8;` });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}.${selectedFileType}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
+    try {
+      const blob = new Blob([content], { type: `${type};charset=utf-8;` });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${filename}.${selectedFileType}`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error downloading file:', error);
+      alert('Failed to download file. Please try again.');
+    }
   };
 
   if (!isAuthenticated) {
