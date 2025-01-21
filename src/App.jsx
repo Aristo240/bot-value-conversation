@@ -235,13 +235,11 @@ function MainApp() {
 
   const saveInitialAssessment = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        initialAssessment: {
-          interesting: initialAttitudeResponses.interesting,
-          important: initialAttitudeResponses.important,
-          agreement: initialAttitudeResponses.agreement,
-          timestamp: new Date()
-        }
+      await axios.post(`${API_URL}/sessions/${sessionId}/initialAssessment`, {
+        interesting: initialAttitudeResponses.interesting,
+        important: initialAttitudeResponses.important,
+        agreement: initialAttitudeResponses.agreement,
+        timestamp: new Date()
       });
     } catch (error) {
       console.error('Error saving initial assessment:', error);
@@ -457,14 +455,22 @@ function MainApp() {
           </div>
         );
 
-      case 5: {
-        const renderInitialAssessment = async () => {
-          const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
-          if (allAssessmentsCompleted) {
-            await saveInitialAssessment();
-          }
-          return (
-            <div className="w-3/4 mx-auto p-8 min-h-screen">
+      case 5: // Initial Assessment
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-4">Your Assigned Stance</h2>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-lg font-semibold text-blue-800">
+                  You have been assigned to represent the perspective of:
+                </p>
+                <p className="text-xl font-bold text-blue-900 mt-2">
+                  {stances[stance]}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8">
               <h2 className="text-2xl font-bold mb-6">Initial Assessment</h2>
               <InitialAssessment
                 stance={stances[stance]}
@@ -472,25 +478,24 @@ function MainApp() {
                 setResponses={setInitialAttitudeResponses}
               />
               <button
-                className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                  !allAssessmentsCompleted ? 'opacity-50 cursor-not-allowed' : ''
+                className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                  Object.keys(initialAttitudeResponses).length !== 3
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
                 }`}
                 onClick={async () => {
-                  if (allAssessmentsCompleted) {
+                  if (Object.keys(initialAttitudeResponses).length === 3) {
                     await saveInitialAssessment();
                     setCurrentStep(6);
                   }
                 }}
-                disabled={!allAssessmentsCompleted}
+                disabled={Object.keys(initialAttitudeResponses).length !== 3}
               >
-                {allAssessmentsCompleted ? 'Continue' : 'Please complete all assessments'}
+                Continue
               </button>
             </div>
-          );
-        };
-
-        return renderInitialAssessment();
-      }        
+          </div>
+        );
 
       case 6: // Chat Interface
         return (
