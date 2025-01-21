@@ -61,7 +61,8 @@ function MainApp() {
           timestamp: new Date(),
           stance,
           botPersonality: personality,
-          aiModel
+          aiModel,
+          stanceAgreement: {}
         });
       } catch (error) {
         console.error('Error initializing session:', error);
@@ -294,31 +295,36 @@ function MainApp() {
     }
   };
 
-  const saveStanceAgreement = async (values) => {
+  const saveStanceAgreement = async () => {
+    if (!stanceAgreement.assigned || !stanceAgreement.opposite) return;
+
     try {
-      console.log('Saving stance agreement:', values);
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
-        assigned: parseInt(values.assigned),
-        opposite: parseInt(values.opposite),
-        timestamp: new Date()
-      });
+      console.log('Saving stance agreement:', stanceAgreement);
       
-      // Update local state
-      setStanceAgreement(values);
-      
-      console.log('Stance agreement saved successfully:', response.data);
-      
-      // Save to questionnaires endpoint as well for consistency
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      // Save to main session document
+      const response = await axios.put(`${API_URL}/sessions/${sessionId}`, {
         stanceAgreement: {
-          assigned: parseInt(values.assigned),
-          opposite: parseInt(values.opposite),
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite),
           timestamp: new Date()
         }
       });
+
+      console.log('Stance agreement saved:', response.data);
+      
+      // Also save to questionnaires endpoint
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        type: 'stanceAgreement',
+        data: {
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite),
+          timestamp: new Date()
+        }
+      });
+
     } catch (error) {
       console.error('Error saving stance agreement:', error);
-      setSubmitError('Failed to save stance agreement');
+      alert('Failed to save stance agreement. Please try again.');
     }
   };
 
@@ -829,28 +835,8 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (stanceAgreement.assigned && stanceAgreement.opposite) {
-                  try {
-                    // First, save to the specific endpoint
-                    await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
-                      assigned: parseInt(stanceAgreement.assigned),
-                      opposite: parseInt(stanceAgreement.opposite),
-                      timestamp: new Date()
-                    });
-
-                    // Then, update the main session document
-                    await axios.patch(`${API_URL}/sessions/${sessionId}`, {
-                      stanceAgreement: {
-                        assigned: parseInt(stanceAgreement.assigned),
-                        opposite: parseInt(stanceAgreement.opposite),
-                        timestamp: new Date()
-                      }
-                    });
-
-                    setCurrentStep(11);
-                  } catch (error) {
-                    console.error('Error saving stance agreement:', error);
-                    alert('Failed to save stance agreement. Please try again.');
-                  }
+                  await saveStanceAgreement();
+                  setCurrentStep(11);
                 }
               }}
               disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}

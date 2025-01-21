@@ -26,10 +26,10 @@ app.use(express.static(path.join(__dirname, 'dist')));
 
 // MongoDB Schema
 const SessionSchema = new mongoose.Schema({
-  sessionId: String,
-  timestamp: Date,
-  stance: String,
-  botPersonality: String,
+  sessionId: { type: String, required: true, unique: true },
+  timestamp: { type: Date, default: Date.now },
+  stance: { type: String, required: true },
+  botPersonality: { type: String, required: true },
   aiModel: String,
   aiModelVersion: String,
   consent: {
@@ -74,9 +74,9 @@ const SessionSchema = new mongoose.Schema({
     timestamp: Date
   },
   stanceAgreement: {
-    assigned: { type: Number, required: false },
-    opposite: { type: Number, required: false },
-    timestamp: { type: Date, required: false }
+    assigned: { type: Number },
+    opposite: { type: Number },
+    timestamp: { type: Date }
   },
   alternativeUses: {
     responses: [{
@@ -242,7 +242,7 @@ app.post('/api/sessions', async (req, res) => {
       timestamp: new Date(),
       stance,
       botPersonality,
-      // ... other fields ...
+      stanceAgreement: {}
     });
     await session.save();
     res.status(201).json(session);
@@ -661,8 +661,8 @@ app.post('/api/sessions/:sessionId/chat', async (req, res) => {
   }
 });
 
-// Add this new endpoint
-app.patch('/api/sessions/:sessionId', async (req, res) => {
+// Update the PUT endpoint for updating sessions
+app.put('/api/sessions/:sessionId', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
@@ -674,11 +674,24 @@ app.patch('/api/sessions/:sessionId', async (req, res) => {
       session.stanceAgreement = req.body.stanceAgreement;
     }
 
-    await session.save();
-    res.json(session);
+    const updatedSession = await session.save();
+    console.log('Session updated:', updatedSession); // Debug log
+    res.json(updatedSession);
   } catch (error) {
     console.error('Error updating session:', error);
     res.status(400).json({ message: error.message });
+  }
+});
+
+// Update the GET endpoint for fetching sessions
+app.get('/api/admin/sessions', async (req, res) => {
+  try {
+    const sessions = await Session.find({}).sort({ timestamp: -1 });
+    console.log('Sessions fetched:', sessions); // Debug log
+    res.json(sessions);
+  } catch (error) {
+    console.error('Error fetching sessions:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
