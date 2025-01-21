@@ -537,79 +537,86 @@ app.post('/api/sessions/:sessionId/events', async (req, res) => {
   }
 });
 
-// Add these new endpoints for each survey type
-app.get('/api/admin/sessions/:sessionId/demographics', authenticateAdmin, async (req, res) => {
+// Add separate endpoints for each type of data
+app.post('/api/sessions/:sessionId/demographics', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    res.json({
-      sessionId: session.sessionId,
-      demographics: session.demographics
-    });
+    
+    session.demographics = req.body;
+    await session.save();
+    res.status(201).json(session.demographics);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error saving demographics:', error);
+    res.status(400).json({ message: error.message });
   }
 });
 
-app.get('/api/admin/sessions/:sessionId/pvq21', authenticateAdmin, async (req, res) => {
+app.post('/api/sessions/:sessionId/pvq21', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    res.json({
-      sessionId: session.sessionId,
-      pvq21: session.pvq21
-    });
+    
+    session.pvq21 = req.body;
+    await session.save();
+    res.status(201).json(session.pvq21);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error saving PVQ21:', error);
+    res.status(400).json({ message: error.message });
   }
 });
 
-app.get('/api/admin/sessions/:sessionId/initial-assessment', authenticateAdmin, async (req, res) => {
+app.post('/api/sessions/:sessionId/initialAssessment', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    res.json({
-      sessionId: session.sessionId,
-      initialAssessment: session.initialAssessment
-    });
+    
+    session.initialAssessment = req.body;
+    await session.save();
+    res.status(201).json(session.initialAssessment);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error saving initial assessment:', error);
+    res.status(400).json({ message: error.message });
   }
 });
 
-app.get('/api/admin/sessions/:sessionId/sbsvs', authenticateAdmin, async (req, res) => {
-  try {
-    const session = await Session.findOne({ sessionId: req.params.sessionId });
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-    res.json({
-      sessionId: session.sessionId,
-      sbsvs: session.sbsvs
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-});
+// Add similar endpoints for each type of data:
+// - /api/sessions/:sessionId/chat
+// - /api/sessions/:sessionId/finalResponse
+// - /api/sessions/:sessionId/sbsvs
+// - /api/sessions/:sessionId/attitudeSurvey
+// - /api/sessions/:sessionId/stanceAgreement
+// - /api/sessions/:sessionId/alternativeUses
 
-app.get('/api/admin/sessions/:sessionId/attitude', authenticateAdmin, async (req, res) => {
+// Update the chat endpoint to append messages
+app.post('/api/sessions/:sessionId/chat', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    res.json({
-      sessionId: session.sessionId,
-      attitudeSurvey: session.attitudeSurvey
+    
+    if (!session.chat) {
+      session.chat = [];
+    }
+    session.chat.push({
+      messageId: req.body.messageId,
+      text: req.body.text,
+      sender: req.body.sender,
+      timestamp: new Date()
     });
+    
+    await session.save();
+    res.status(201).json(session.chat);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    console.error('Error saving chat message:', error);
+    res.status(400).json({ message: error.message });
   }
 });
 

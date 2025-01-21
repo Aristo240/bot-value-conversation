@@ -320,12 +320,39 @@ function MainApp() {
     }
   };
 
+  const saveDemographics = async (data) => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/demographics`, {
+        age: data.age,
+        gender: data.gender,
+        education: data.education,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error saving demographics:', error);
+    }
+  };
+
+  const savePVQ21 = async (data) => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/pvq21`, {
+        responses: Object.entries(data.responses).map(([questionId, value]) => ({
+          questionId: parseInt(questionId),
+          value: parseInt(value)
+        })),
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error saving PVQ21:', error);
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1: // Consent Form
         return <ConsentForm onConsent={() => setCurrentStep(2)} />;
 
-        case 2: // Demographics
+      case 2: // Demographics
         return (
           <div className="w-3/4 mx-auto p-8 min-h-screen">
             <Demographics
@@ -333,18 +360,20 @@ function MainApp() {
               setResponses={setDemographicResponses}
             />
             <button
-              className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                !demographicResponses.gender || !demographicResponses.age || !demographicResponses.education
+              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                !demographicResponses.age || !demographicResponses.gender || !demographicResponses.education
                   ? 'opacity-50 cursor-not-allowed'
                   : ''
               }`}
-              onClick={() => setCurrentStep(3)}
-              disabled={!demographicResponses.gender || !demographicResponses.age || !demographicResponses.education}
+              onClick={async () => {
+                if (demographicResponses.age && demographicResponses.gender && demographicResponses.education) {
+                  await saveDemographics(demographicResponses);
+                  setCurrentStep(3);
+                }
+              }}
+              disabled={!demographicResponses.age || !demographicResponses.gender || !demographicResponses.education}
             >
-              {!demographicResponses.gender || !demographicResponses.age || !demographicResponses.education
-                ? 'Please complete all questions'
-                : 'Continue'
-              }
+              Continue
             </button>
           </div>
         );
@@ -358,513 +387,515 @@ function MainApp() {
               gender={demographicResponses.gender}
             />
             <button
-              className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                Object.keys(pvq21Responses.responses || {}).length < 21 
-                  ? 'opacity-50 cursor-not-allowed' 
+              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                Object.keys(pvq21Responses.responses || {}).length !== 21
+                  ? 'opacity-50 cursor-not-allowed'
                   : ''
               }`}
-              onClick={() => setCurrentStep(4)}
-              disabled={Object.keys(pvq21Responses.responses || {}).length < 21}
+              onClick={async () => {
+                if (Object.keys(pvq21Responses.responses || {}).length === 21) {
+                  await savePVQ21(pvq21Responses);
+                  setCurrentStep(4);
+                }
+              }}
+              disabled={Object.keys(pvq21Responses.responses || {}).length !== 21}
             >
-              {Object.keys(pvq21Responses.responses || {}).length < 21 
-                ? `Please complete all ${21 - Object.keys(pvq21Responses.responses || {}).length} remaining questions`
+              Continue
+            </button>
+          </div>
+        );
+
+      case 4: // Task Explanation & Description
+        return (
+          <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
+            <h2 className="text-2xl font-bold mb-6">Social Media Discussion Study</h2>
+            
+            {/* Background Information */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Background Information</h3>
+              <div className="p-4 border rounded-lg bg-gray-50">
+                <p className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: initialText }} />
+              </div>
+            </div>
+            
+            {/* Task Description */}
+            <div className="mb-6">
+              <h3 className="text-lg font-semibold mb-3">Your Task</h3>
+              <div className="p-4 border rounded-lg bg-white">
+                <p className="text-gray-700 mb-4">
+                  You will engage in a 5-minute conversation with an AI bot, during which you will represent one of two perspectives that we will assign to you: 
+                  <br />
+                  <strong style={{ fontWeight: 'bold' }}>protecting user safety</strong> or <strong style={{ fontWeight: 'bold' }}>preserving freedom of speech</strong>  on social media platforms.
+                  <br />
+                  <br />
+                  Your objectives during the conversation are:
+                  <br />
+                </p>
+                <ul className="space-y-2 text-gray-700">
+                  <li className="flex items-start">
+                    <span className="mr-2">•</span>
+                    <span>Explore and deepen your understanding of the perspective you were assigned to</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">•</span>
+                    <span>Develop arguments about why this perspective is important</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-2">•</span>
+                    <span>Consider why this perspective might be more crucial than the opposite one</span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <button 
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+              onClick={() => setCurrentStep(5)}
+            >
+              Continue
+            </button>
+          </div>
+        );
+
+      case 5: {
+        const renderInitialAssessment = async () => {
+          const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
+          if (allAssessmentsCompleted) {
+            await saveInitialAssessment();
+          }
+          return (
+            <div className="w-3/4 mx-auto p-8 min-h-screen">
+              <h2 className="text-2xl font-bold mb-6">Initial Assessment</h2>
+              <InitialAssessment
+                stance={stances[stance]}
+                responses={initialAttitudeResponses}
+                setResponses={setInitialAttitudeResponses}
+              />
+              <button
+                className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                  !allAssessmentsCompleted ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                onClick={async () => {
+                  if (allAssessmentsCompleted) {
+                    await saveInitialAssessment();
+                    setCurrentStep(6);
+                  }
+                }}
+                disabled={!allAssessmentsCompleted}
+              >
+                {allAssessmentsCompleted ? 'Continue' : 'Please complete all assessments'}
+              </button>
+            </div>
+          );
+        };
+
+        return renderInitialAssessment();
+      }        
+
+      case 6: // Chat Interface
+        return (
+          <div className="h-screen flex overflow-hidden">
+            {/* Fixed sidebar */}
+            <div className="w-1/4 bg-white shadow-lg fixed left-0 h-screen overflow-y-auto">
+              <div className="p-4">
+                <div className="mb-4">
+                  <h3 className="text-lg font-semibold mb-2">Reference Text:</h3>
+                  <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: initialText }} />
+                </div>
+                <div className="bg-blue-50 p-4 rounded">
+                  <h3 className="text-lg font-semibold mb-2">Your Stance:</h3>
+                  <p className="text-sm text-blue-800">{stances[stance]}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Main chat area with fixed header */}
+            <div className="ml-[25%] flex-1 flex flex-col h-screen">
+              {/* Fixed header */}
+              <div className="bg-white border-b z-10">
+                <div className="p-4 relative">
+                  <div className="absolute top-4 right-4 bg-yellow-50 p-2 rounded shadow-lg">
+                    <p className="text-lg font-bold text-yellow-700">
+                      {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
+                    </p>
+                  </div>
+                  <h2 className="text-xl font-bold">Discussion with AI Assistant</h2>
+                  <p className="text-gray-600 mr-20">
+                    You have 5 minutes to discuss your thoughts about <strong>{stances[stance]}</strong>.
+                    The AI will engage with you to explore different aspects of this stance.
+                  </p>
+                </div>
+              </div>
+
+              {/* Scrollable chat area */}
+              <div className="flex-1 overflow-y-auto px-4 py-4 bg-white">
+                <div className="space-y-4">
+                  {messages.map((message) => (
+                    <div
+                      key={message.messageId}
+                      className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div
+                        className={`max-w-[70%] p-3 rounded-lg ${
+                          message.sender === 'user'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        <div className="font-medium mb-1">
+                          {message.sender === 'user' ? '👤 You:' : '🤖 Assistant:'}
+                        </div>
+                        <div dangerouslySetInnerHTML={{ __html: message.text }} />
+                      </div>
+                    </div>
+                  ))}
+                  {isTyping && (
+                    <div className="flex items-center space-x-2 text-gray-500">
+                      <span className="animate-bounce">●</span>
+                      <span className="animate-bounce delay-100">●</span>
+                      <span className="animate-bounce delay-200">●</span>
+                    </div>
+                  )}
+                </div>
+                <div ref={messagesEndRef} />
+              </div>
+
+              {/* Fixed input area */}
+              <div className="border-t bg-white p-4">
+                <textarea
+                  className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[50px] max-h-[100px] overflow-y-auto bg-white"
+                  placeholder="Type your message..."
+                  rows="1"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      if (e.target.value.trim()) {
+                        handleSendMessage(e.target.value.trim());
+                        e.target.value = '';
+                      }
+                    }
+                  }}
+                  onChange={(e) => {
+                    e.target.style.height = 'inherit';
+                    e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
+                  }}
+                  onPaste={(e) => e.preventDefault()}
+                  onCopy={(e) => e.preventDefault()}
+                  onCut={(e) => e.preventDefault()}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
+              </div>
+            </div>
+
+            {/* Time's up popup */}
+            {showTimeUpPopup && (
+              <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
+                  <h3 className="text-xl font-bold mb-4">Time's Up!</h3>
+                  <p className="mb-6">Your discussion time has ended.</p>
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+                    onClick={() => {
+                      setShowTimeUpPopup(false);
+                      setCurrentStep(7);
+                      setIsTimerActive(false);
+                    }}
+                  >
+                    Continue to the Next Step
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+
+      case 7: // Final Response
+        const wordCount = userResponse.trim().split(/\s+/).length;
+        
+        const handleFinalResponseSubmit = async () => {
+          if (wordCount >= 50) {
+            await saveFinalResponse();
+            setCurrentStep(8);
+          }
+        };
+
+        return (
+          <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
+            <h2 className="text-2xl font-bold mb-4">Final Response</h2>
+            <p className="mb-4">
+              Based on your conversation about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>, please write 3-5 sentences explaining your thoughts 
+              and understanding of the position.
+            </p>
+            
+            <div className="relative">
+              <textarea
+                className="w-full h-48 p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                value={userResponse}
+                onChange={(e) => setUserResponse(e.target.value)}
+                placeholder="Write your response here..."
+                disabled={isSubmitting}
+                onPaste={(e) => e.preventDefault()}
+                onCopy={(e) => e.preventDefault()}
+                onCut={(e) => e.preventDefault()}
+                onContextMenu={(e) => e.preventDefault()}
+              />
+              
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm text-gray-600">
+                  Word count: {wordCount}
+                  {wordCount < 50 && (
+                    <span className="text-red-500 ml-1">
+                      (Minimum 50 words required)
+                    </span>
+                  )}
+                </div>
+                
+                {wordCount >= 50 && (
+                  <div className="text-sm text-green-600">
+                    ✓ Minimum word count met
+                  </div>
+                )}
+              </div>
+              
+              {submitError && (
+                <div className="text-red-500 text-sm mb-4">
+                  {submitError}
+                </div>
+              )}
+            </div>
+            
+            <button 
+              className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 
+                ${(wordCount < 50 || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
+              onClick={handleFinalResponseSubmit}
+              disabled={wordCount < 50 || isSubmitting}
+            >
+              {isSubmitting ? (
+                <span className="animate-pulse">Submitting...</span>
+              ) : (
+                'Submit Response'
+              )}
+            </button>
+          </div>
+        );
+
+      case 8: // SBSVS
+        const handleSBSVSSubmit = async () => {
+          if (Object.keys(sbsvsResponses).length === 10) {
+            await saveSBSVS();
+            setCurrentStep(9);
+          }
+        };
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
+            <SBSVS 
+              responses={sbsvsResponses} 
+              setResponses={setSbsvsResponses} 
+            />
+            <button
+              className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                Object.keys(sbsvsResponses).length < 10 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={handleSBSVSSubmit}
+              disabled={Object.keys(sbsvsResponses).length < 10}
+            >
+              {Object.keys(sbsvsResponses).length < 10 
+                ? `Please complete all ${10 - Object.keys(sbsvsResponses).length} remaining questions`
                 : 'Continue'
               }
             </button>
           </div>
         );
 
-        case 4: // Task Explanation & Description
-          return (
-            <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
-              <h2 className="text-2xl font-bold mb-6">Social Media Discussion Study</h2>
-              
-              {/* Background Information */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Background Information</h3>
-                <div className="p-4 border rounded-lg bg-gray-50">
-                  <p className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: initialText }} />
-                </div>
-              </div>
-              
-              {/* Task Description */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Your Task</h3>
-                <div className="p-4 border rounded-lg bg-white">
-                  <p className="text-gray-700 mb-4">
-                    You will engage in a 5-minute conversation with an AI bot, during which you will represent one of two perspectives that we will assign to you: 
-                    <br />
-                    <strong style={{ fontWeight: 'bold' }}>protecting user safety</strong> or <strong style={{ fontWeight: 'bold' }}>preserving freedom of speech</strong>  on social media platforms.
-                    <br />
-                    <br />
-                    Your objectives during the conversation are:
-                    <br />
-                  </p>
-                  <ul className="space-y-2 text-gray-700">
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>Explore and deepen your understanding of the perspective you were assigned to</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>Develop arguments about why this perspective is important</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-2">•</span>
-                      <span>Consider why this perspective might be more crucial than the opposite one</span>
-                    </li>
-                  </ul>
-                </div>
-              </div>
-
-              <button 
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
-                onClick={() => setCurrentStep(5)}
-              >
-                Continue
-              </button>
-            </div>
-          );
-
-        case 5: {
-          const renderInitialAssessment = async () => {
-            const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
-            if (allAssessmentsCompleted) {
-              await saveInitialAssessment();
-            }
-            return (
-              <div className="w-3/4 mx-auto p-8 min-h-screen">
-                <h2 className="text-2xl font-bold mb-6">Initial Assessment</h2>
-                <InitialAssessment
-                  stance={stances[stance]}
-                  responses={initialAttitudeResponses}
-                  setResponses={setInitialAttitudeResponses}
-                />
-                <button
-                  className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                    !allAssessmentsCompleted ? 'opacity-50 cursor-not-allowed' : ''
-                  }`}
-                  onClick={async () => {
-                    if (allAssessmentsCompleted) {
-                      await saveInitialAssessment();
-                      setCurrentStep(6);
-                    }
-                  }}
-                  disabled={!allAssessmentsCompleted}
-                >
-                  {allAssessmentsCompleted ? 'Continue' : 'Please complete all assessments'}
-                </button>
-              </div>
-            );
-          };
-
-          return renderInitialAssessment();
-        }        
-
-  case 6: // Chat Interface
-    return (
-      <div className="h-screen flex overflow-hidden">
-        {/* Fixed sidebar */}
-        <div className="w-1/4 bg-white shadow-lg fixed left-0 h-screen overflow-y-auto">
-          <div className="p-4">
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold mb-2">Reference Text:</h3>
-              <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: initialText }} />
-            </div>
-            <div className="bg-blue-50 p-4 rounded">
-              <h3 className="text-lg font-semibold mb-2">Your Stance:</h3>
-              <p className="text-sm text-blue-800">{stances[stance]}</p>
-            </div>
+      case 9: // Attitude Survey
+        const handleAttitudeSurveySubmit = async () => {
+          if (Object.keys(attitudeResponses).length === 11) {
+            await saveAttitudeSurvey();
+            setCurrentStep(10);
+          }
+        };
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 2</h2>
+            <AttitudeSurvey 
+              stance={stances[stance]}
+              responses={attitudeResponses}
+              setResponses={setAttitudeResponses}
+            />
+            <button
+              className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                Object.keys(attitudeResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={handleAttitudeSurveySubmit}
+              disabled={Object.keys(attitudeResponses).length < 11}
+            >
+              {Object.keys(attitudeResponses).length < 11
+                ? `Please complete all ${11 - Object.keys(attitudeResponses).length} remaining questions`
+                : 'Continue'
+              }
+            </button>
           </div>
-        </div>
+        );
 
-        {/* Main chat area with fixed header */}
-        <div className="ml-[25%] flex-1 flex flex-col h-screen">
-          {/* Fixed header */}
-          <div className="bg-white border-b z-10">
-            <div className="p-4 relative">
-              <div className="absolute top-4 right-4 bg-yellow-50 p-2 rounded shadow-lg">
-                <p className="text-lg font-bold text-yellow-700">
-                  {Math.floor(timer / 60)}:{(timer % 60).toString().padStart(2, '0')}
-                </p>
-              </div>
-              <h2 className="text-xl font-bold">Discussion with AI Assistant</h2>
-              <p className="text-gray-600 mr-20">
-                You have 5 minutes to discuss your thoughts about <strong>{stances[stance]}</strong>.
-                The AI will engage with you to explore different aspects of this stance.
-              </p>
-            </div>
-          </div>
-
-          {/* Scrollable chat area */}
-          <div className="flex-1 overflow-y-auto px-4 py-4 bg-white">
-            <div className="space-y-4">
-              {messages.map((message) => (
-                <div
-                  key={message.messageId}
-                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div
-                    className={`max-w-[70%] p-3 rounded-lg ${
-                      message.sender === 'user'
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-800'
-                    }`}
-                  >
-                    <div className="font-medium mb-1">
-                      {message.sender === 'user' ? '👤 You:' : '🤖 Assistant:'}
-                    </div>
-                    <div dangerouslySetInnerHTML={{ __html: message.text }} />
+      case 10: // Stance Agreement
+        const handleStanceAgreementSubmit = async () => {
+          if (stanceAgreement.assigned && stanceAgreement.opposite) {
+            await saveStanceAgreement();
+            setCurrentStep(11);
+          }
+        };
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 3</h2>
+            <div className="p-6 border rounded-lg bg-white">
+              <h3 className="text-2xl font-bold mb-6">Stance Agreement</h3>
+              <div className="space-y-6">
+                <div className="pb-6 border-b border-gray-200">
+                  <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>?</p>
+                  <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <label key={value} className="flex flex-col items-center">
+                        <input
+                          type="radio"
+                          name="stance-agreement"
+                          value={value}
+                          checked={stanceAgreement.assigned === value}
+                          onChange={(e) => setStanceAgreement({
+                            ...stanceAgreement,
+                            assigned: parseInt(e.target.value)
+                          })}
+                          className="mb-1"
+                        />
+                        <span className="text-sm text-gray-600">{value}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-              ))}
-              {isTyping && (
-                <div className="flex items-center space-x-2 text-gray-500">
-                  <span className="animate-bounce">●</span>
-                  <span className="animate-bounce delay-100">●</span>
-                  <span className="animate-bounce delay-200">●</span>
+                <div>
+                  <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{getOtherStance()}</strong>?</p>
+                  <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+                    {[1, 2, 3, 4, 5].map((value) => (
+                      <label key={value} className="flex flex-col items-center">
+                        <input
+                          type="radio"
+                          name="other-stance-agreement"
+                          value={value}
+                          checked={stanceAgreement.opposite === value}
+                          onChange={(e) => setStanceAgreement({
+                            ...stanceAgreement,
+                            opposite: parseInt(e.target.value)
+                          })}
+                          className="mb-1"
+                        />
+                        <span className="text-sm text-gray-600">{value}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
-            <div ref={messagesEndRef} />
+            <button
+              className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                !stanceAgreement.assigned || !stanceAgreement.opposite ? 'opacity-50 cursor-not-allowed' : ''
+              }`}
+              onClick={handleStanceAgreementSubmit}
+              disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
+            >
+              {!stanceAgreement.assigned || !stanceAgreement.opposite
+                ? 'Please complete both questions'
+                : 'Continue'
+              }
+            </button>
           </div>
+        );
 
-          {/* Fixed input area */}
-          <div className="border-t bg-white p-4">
-            <textarea
-              className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none min-h-[50px] max-h-[100px] overflow-y-auto bg-white"
-              placeholder="Type your message..."
-              rows="1"
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (e.target.value.trim()) {
-                    handleSendMessage(e.target.value.trim());
-                    e.target.value = '';
-                  }
-                }
-              }}
-              onChange={(e) => {
-                e.target.style.height = 'inherit';
-                e.target.style.height = `${Math.min(e.target.scrollHeight, 100)}px`;
-              }}
-              onPaste={(e) => e.preventDefault()}
-              onCopy={(e) => e.preventDefault()}
-              onCut={(e) => e.preventDefault()}
-              onContextMenu={(e) => e.preventDefault()}
+      case 11: // Alternative Uses Task
+        const handleAUTComplete = async () => {
+          await saveAlternativeUses();
+          setCurrentStep(12);
+        };
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <AlternativeUsesTask
+              responses={autResponses}
+              setResponses={setAutResponses}
+              onComplete={handleAUTComplete}
             />
           </div>
-        </div>
+        );
 
-        {/* Time's up popup */}
-        {showTimeUpPopup && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
-              <h3 className="text-xl font-bold mb-4">Time's Up!</h3>
-              <p className="mb-6">Your discussion time has ended.</p>
-              <button
-                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
-                onClick={() => {
-                  setShowTimeUpPopup(false);
-                  setCurrentStep(7);
-                  setIsTimerActive(false);
-                }}
-              >
-                Continue to the Next Step
-              </button>
-            </div>
+      case 12: // Thank You
+        return (
+          <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
+            <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
+            <p>Your responses have been recorded successfully.</p>
+            <p>You can now close this window.</p>
           </div>
-        )}
-      </div>
-    );
+        );
 
-  case 7: // Final Response
-    const wordCount = userResponse.trim().split(/\s+/).length;
+      default:
+        return null;
+    }
+  };
+
+  useEffect(() => {
+    // Scroll to the top of the page when the component mounts or updates
+    window.scrollTo(0, 0);
+  }, [currentStep]); // Add currentStep as a dependency to trigger on step change
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if ([5, 6, 8].includes(currentStep)) {
+        if (document.hidden) {
+          // Show warning when tab becomes hidden
+          setShowWarning(true);
+          
+          // Log tab switch event
+          axios.post(`${API_URL}/sessions/${sessionId}/events`, {
+            type: 'tab_switch',
+            step: currentStep,
+            timestamp: new Date()
+          }).catch(error => console.error('Error logging tab switch:', error));
+        }
+      }
+    };
+
+    const handleBeforeUnload = (e) => {
+      if ([5, 6, 8].includes(currentStep)) {
+        e.preventDefault();
+        e.returnValue = ''; // This is required for Chrome
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('beforeunload', handleBeforeUnload);
     
-    const handleFinalResponseSubmit = async () => {
-      if (wordCount >= 50) {
-        await saveFinalResponse();
-        setCurrentStep(8);
-      }
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
+  }, [currentStep, sessionId]);
 
-    return (
-      <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
-        <h2 className="text-2xl font-bold mb-4">Final Response</h2>
-        <p className="mb-4">
-          Based on your conversation about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>, please write 3-5 sentences explaining your thoughts 
-          and understanding of the position.
-        </p>
-        
-        <div className="relative">
-          <textarea
-            className="w-full h-48 p-3 border rounded-lg mb-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={userResponse}
-            onChange={(e) => setUserResponse(e.target.value)}
-            placeholder="Write your response here..."
-            disabled={isSubmitting}
-            onPaste={(e) => e.preventDefault()}
-            onCopy={(e) => e.preventDefault()}
-            onCut={(e) => e.preventDefault()}
-            onContextMenu={(e) => e.preventDefault()}
-          />
-          
-          <div className="flex justify-between items-center mb-4">
-            <div className="text-sm text-gray-600">
-              Word count: {wordCount}
-              {wordCount < 50 && (
-                <span className="text-red-500 ml-1">
-                  (Minimum 50 words required)
-                </span>
-              )}
-            </div>
-            
-            {wordCount >= 50 && (
-              <div className="text-sm text-green-600">
-                ✓ Minimum word count met
-              </div>
-            )}
-          </div>
-          
-          {submitError && (
-            <div className="text-red-500 text-sm mb-4">
-              {submitError}
-            </div>
-          )}
-        </div>
-        
-        <button 
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 
-            ${(wordCount < 50 || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={handleFinalResponseSubmit}
-          disabled={wordCount < 50 || isSubmitting}
-        >
-          {isSubmitting ? (
-            <span className="animate-pulse">Submitting...</span>
-          ) : (
-            'Submit Response'
-          )}
-        </button>
-      </div>
-    );
-
-  case 8: // SBSVS
-    const handleSBSVSSubmit = async () => {
-      if (Object.keys(sbsvsResponses).length === 10) {
-        await saveSBSVS();
-        setCurrentStep(9);
-      }
-    };
-    return (
-      <div className="w-3/4 mx-auto p-8 min-h-screen">
-        <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
-        <SBSVS 
-          responses={sbsvsResponses} 
-          setResponses={setSbsvsResponses} 
-        />
-        <button
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-            Object.keys(sbsvsResponses).length < 10 ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          onClick={handleSBSVSSubmit}
-          disabled={Object.keys(sbsvsResponses).length < 10}
-        >
-          {Object.keys(sbsvsResponses).length < 10 
-            ? `Please complete all ${10 - Object.keys(sbsvsResponses).length} remaining questions`
-            : 'Continue'
-          }
-        </button>
-      </div>
-    );
-
-  case 9: // Attitude Survey
-    const handleAttitudeSurveySubmit = async () => {
-      if (Object.keys(attitudeResponses).length === 11) {
-        await saveAttitudeSurvey();
-        setCurrentStep(10);
-      }
-    };
-    return (
-      <div className="w-3/4 mx-auto p-8 min-h-screen">
-        <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 2</h2>
-        <AttitudeSurvey 
-          stance={stances[stance]}
-          responses={attitudeResponses}
-          setResponses={setAttitudeResponses}
-        />
-        <button
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-            Object.keys(attitudeResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          onClick={handleAttitudeSurveySubmit}
-          disabled={Object.keys(attitudeResponses).length < 11}
-        >
-          {Object.keys(attitudeResponses).length < 11
-            ? `Please complete all ${11 - Object.keys(attitudeResponses).length} remaining questions`
-            : 'Continue'
-          }
-        </button>
-      </div>
-    );
-
-  case 10: // Stance Agreement
-    const handleStanceAgreementSubmit = async () => {
-      if (stanceAgreement.assigned && stanceAgreement.opposite) {
-        await saveStanceAgreement();
-        setCurrentStep(11);
-      }
-    };
-    return (
-      <div className="w-3/4 mx-auto p-8 min-h-screen">
-        <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 3</h2>
-        <div className="p-6 border rounded-lg bg-white">
-          <h3 className="text-2xl font-bold mb-6">Stance Agreement</h3>
-          <div className="space-y-6">
-            <div className="pb-6 border-b border-gray-200">
-              <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>?</p>
-              <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <label key={value} className="flex flex-col items-center">
-                    <input
-                      type="radio"
-                      name="stance-agreement"
-                      value={value}
-                      checked={stanceAgreement.assigned === value}
-                      onChange={(e) => setStanceAgreement({
-                        ...stanceAgreement,
-                        assigned: parseInt(e.target.value)
-                      })}
-                      className="mb-1"
-                    />
-                    <span className="text-sm text-gray-600">{value}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{getOtherStance()}</strong>?</p>
-              <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-                {[1, 2, 3, 4, 5].map((value) => (
-                  <label key={value} className="flex flex-col items-center">
-                    <input
-                      type="radio"
-                      name="other-stance-agreement"
-                      value={value}
-                      checked={stanceAgreement.opposite === value}
-                      onChange={(e) => setStanceAgreement({
-                        ...stanceAgreement,
-                        opposite: parseInt(e.target.value)
-                      })}
-                      className="mb-1"
-                    />
-                    <span className="text-sm text-gray-600">{value}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-100">
+      {showWarning && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
+            <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Warning</h3>
+            <p className="mb-6">Please do not leave this window during the experiment. Your responses are important to us.</p>
+            <button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+              onClick={() => setShowWarning(false)}
+            >
+              I Understand
+            </button>
           </div>
         </div>
-        <button
-          className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-            !stanceAgreement.assigned || !stanceAgreement.opposite ? 'opacity-50 cursor-not-allowed' : ''
-          }`}
-          onClick={handleStanceAgreementSubmit}
-          disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
-        >
-          {!stanceAgreement.assigned || !stanceAgreement.opposite
-            ? 'Please complete both questions'
-            : 'Continue'
-          }
-        </button>
-      </div>
-    );
-
-  case 11: // Alternative Uses Task
-    const handleAUTComplete = async () => {
-      await saveAlternativeUses();
-      setCurrentStep(12);
-    };
-    return (
-      <div className="w-3/4 mx-auto p-8 min-h-screen">
-        <AlternativeUsesTask
-          responses={autResponses}
-          setResponses={setAutResponses}
-          onComplete={handleAUTComplete}
-        />
-      </div>
-    );
-
-    case 12: // Thank You
-      return (
-        <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
-          <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
-          <p>Your responses have been recorded successfully.</p>
-          <p>You can now close this window.</p>
-        </div>
-      );
-
-    default:
-      return null;
-  }
-};
-
-useEffect(() => {
-  // Scroll to the top of the page when the component mounts or updates
-  window.scrollTo(0, 0);
-}, [currentStep]); // Add currentStep as a dependency to trigger on step change
-
-useEffect(() => {
-  const handleVisibilityChange = () => {
-    if ([5, 6, 8].includes(currentStep)) {
-      if (document.hidden) {
-        // Show warning when tab becomes hidden
-        setShowWarning(true);
-        
-        // Log tab switch event
-        axios.post(`${API_URL}/sessions/${sessionId}/events`, {
-          type: 'tab_switch',
-          step: currentStep,
-          timestamp: new Date()
-        }).catch(error => console.error('Error logging tab switch:', error));
-      }
-    }
-  };
-
-  const handleBeforeUnload = (e) => {
-    if ([5, 6, 8].includes(currentStep)) {
-      e.preventDefault();
-      e.returnValue = ''; // This is required for Chrome
-    }
-  };
-
-  document.addEventListener('visibilitychange', handleVisibilityChange);
-  window.addEventListener('beforeunload', handleBeforeUnload);
-  
-  return () => {
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    window.removeEventListener('beforeunload', handleBeforeUnload);
-  };
-}, [currentStep, sessionId]);
-
-return (
-  <div className="min-h-screen bg-gray-100">
-    {showWarning && (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
-          <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Warning</h3>
-          <p className="mb-6">Please do not leave this window during the experiment. Your responses are important to us.</p>
-          <button
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
-            onClick={() => setShowWarning(false)}
-          >
-            I Understand
-          </button>
-        </div>
-      </div>
-    )}
-    {renderStep()}
-  </div>
-);
+      )}
+      {renderStep()}
+    </div>
+  );
 }
 
 function App() {
