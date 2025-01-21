@@ -372,66 +372,41 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    const { pvq21, sbsvs, attitude, stanceAgreement, demographics, alternativeUses } = req.body;
+    const { demographics, pvq21, sbsvs, attitudeSurvey, stanceAgreement, initialAssessment, alternativeUses } = req.body;
+
+    // Update each section if provided
+    if (demographics) {
+      session.demographics = demographics;
+    }
 
     if (pvq21) {
-      session.pvq21 = {
-        responses: Object.entries(pvq21).map(([questionId, value]) => ({
-          questionId: parseInt(questionId),
-          value
-        })),
-        timestamp: new Date()
-      };
+      session.pvq21 = pvq21;
     }
 
     if (sbsvs) {
-      session.sbsvs = {
-        responses: Object.entries(sbsvs).map(([questionId, value]) => ({
-          questionId: parseInt(questionId),
-          value
-        })),
-        timestamp: new Date()
-      };
+      session.sbsvs = sbsvs;
     }
 
-    if (attitude) {
-      session.attitudeSurvey = {
-        responses: Object.entries(attitude).map(([aspect, rating]) => ({
-          aspect,
-          rating
-        })),
-        timestamp: new Date()
-      };
+    if (attitudeSurvey) {
+      session.attitudeSurvey = attitudeSurvey;
     }
 
     if (stanceAgreement) {
-      session.stanceAgreement = {
-        ...stanceAgreement,
-        timestamp: new Date()
-      };
+      session.stanceAgreement = stanceAgreement;
     }
 
-    if (demographics) {
-      session.demographics = {
-        ...demographics,
-        timestamp: new Date()
-      };
+    if (initialAssessment) {
+      session.initialAssessment = initialAssessment;
     }
 
     if (alternativeUses) {
-      session.alternativeUses = {
-        responses: alternativeUses.responses.map(response => ({
-          id: response.id,
-          idea: response.idea,
-          timestamp: new Date(response.timestamp)
-        })),
-        timestamp: new Date()
-      };
+      session.alternativeUses = alternativeUses;
     }
 
     await session.save();
     res.status(201).json(session);
   } catch (error) {
+    console.error('Error saving questionnaire responses:', error);
     res.status(400).json({ message: error.message });
   }
 });

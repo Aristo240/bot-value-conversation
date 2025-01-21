@@ -175,11 +175,15 @@ function MainApp() {
         value: value
       }));
 
+      // Format alternative uses responses
+      const autArray = autResponses.map(response => ({
+        id: response.id,
+        idea: response.idea,
+        timestamp: response.timestamp
+      }));
+
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        demographics: {
-          ...demographicResponses,
-          timestamp: new Date()
-        },
+        demographics: demographicResponses,
         pvq21: {
           responses: pvq21Array,
           timestamp: pvq21Responses.timestamp
@@ -201,7 +205,7 @@ function MainApp() {
           timestamp: new Date()
         },
         alternativeUses: {
-          responses: autResponses,
+          responses: autArray,
           timestamp: new Date()
         }
       });
