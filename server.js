@@ -388,7 +388,11 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       session.attitudeSurvey = { ...session.attitudeSurvey, ...req.body.attitudeSurvey };
     }
     if (req.body.stanceAgreement) {
-      session.stanceAgreement = { ...session.stanceAgreement, ...req.body.stanceAgreement };
+      session.stanceAgreement = {
+        assigned: Number(req.body.stanceAgreement.assigned),
+        opposite: Number(req.body.stanceAgreement.opposite),
+        timestamp: new Date(req.body.stanceAgreement.timestamp || Date.now())
+      };
     }
     if (req.body.alternativeUses) {
       session.alternativeUses = { ...session.alternativeUses, ...req.body.alternativeUses };
@@ -614,14 +618,12 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Ensure we're saving numbers
+    // Ensure we're saving numbers and add timestamp
     const stanceData = {
       assigned: Number(req.body.assigned),
       opposite: Number(req.body.opposite),
       timestamp: new Date()
     };
-
-    console.log('Saving stance data:', stanceData); // Debug log
 
     // Validate the numbers
     if (isNaN(stanceData.assigned) || isNaN(stanceData.opposite) ||
@@ -630,24 +632,19 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
       return res.status(400).json({ message: 'Invalid stance agreement values' });
     }
 
+    // Update both the stanceAgreement field and in questionnaires
     session.stanceAgreement = stanceData;
+    
+    // Save the session
     await session.save();
     
-    console.log('Saved session:', session); // Debug log
+    console.log('Saved stance agreement:', session.stanceAgreement);
     res.status(201).json(session.stanceAgreement);
   } catch (error) {
     console.error('Error saving stance agreement:', error);
     res.status(400).json({ message: error.message });
   }
 });
-
-// Add similar endpoints for each type of data:
-// - /api/sessions/:sessionId/chat
-// - /api/sessions/:sessionId/finalResponse
-// - /api/sessions/:sessionId/sbsvs
-// - /api/sessions/:sessionId/attitudeSurvey
-// - /api/sessions/:sessionId/stanceAgreement
-// - /api/sessions/:sessionId/alternativeUses
 
 // Update the chat endpoint to append messages
 app.post('/api/sessions/:sessionId/chat', async (req, res) => {

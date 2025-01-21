@@ -184,6 +184,7 @@ function Admin() {
       // Stance Agreement
       'Stance_Agreement_Assigned',
       'Stance_Agreement_Opposite',
+      'Stance_Agreement_Timestamp',
       // Alternative Uses
       'Alternative_Uses'
     ].join(',');
@@ -221,6 +222,7 @@ function Admin() {
         // Stance Agreement
         session.stanceAgreement?.assigned || '',
         session.stanceAgreement?.opposite || '',
+        session.stanceAgreement?.timestamp ? new Date(session.stanceAgreement.timestamp).toISOString() : '',
         // Alternative Uses
         session.alternativeUses?.responses?.map(r => r.idea).join('\n') || ''
       ].map(value => `"${value}"`).join(',');
@@ -262,8 +264,9 @@ Attitude Survey:
 ${session.attitudeSurvey?.responses?.map(r => `${r.aspect}: ${r.rating}`).join('\n') || 'N/A'}
 
 Stance Agreement:
-Assigned: ${session.stanceAgreement?.assigned || 'N/A'}
-Opposite: ${session.stanceAgreement?.opposite || 'N/A'}
+Assigned Stance: ${session.stanceAgreement?.assigned || 'N/A'}
+Opposite Stance: ${session.stanceAgreement?.opposite || 'N/A'}
+Timestamp: ${session.stanceAgreement?.timestamp ? new Date(session.stanceAgreement.timestamp).toLocaleString() : 'N/A'}
 
 Alternative Uses:
 ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join('\n') || 'N/A'}
