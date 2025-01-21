@@ -618,26 +618,13 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Ensure we're saving numbers and add timestamp
-    const stanceData = {
+    session.stanceAgreement = {
       assigned: Number(req.body.assigned),
       opposite: Number(req.body.opposite),
-      timestamp: new Date()
+      timestamp: new Date(req.body.timestamp)
     };
 
-    // Validate the numbers
-    if (isNaN(stanceData.assigned) || isNaN(stanceData.opposite) ||
-        stanceData.assigned < 1 || stanceData.assigned > 5 ||
-        stanceData.opposite < 1 || stanceData.opposite > 5) {
-      return res.status(400).json({ message: 'Invalid stance agreement values' });
-    }
-
-    // Update both the stanceAgreement field and in questionnaires
-    session.stanceAgreement = stanceData;
-    
-    // Save the session
     await session.save();
-    
     console.log('Saved stance agreement:', session.stanceAgreement);
     res.status(201).json(session.stanceAgreement);
   } catch (error) {
