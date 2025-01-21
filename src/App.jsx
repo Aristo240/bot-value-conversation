@@ -317,9 +317,7 @@ function MainApp() {
           </div>
         );
 
-        case 4: { // Task Explanation
-          const otherStance = getOtherStance();
-          const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
+        case 4: // Task Explanation & Description
           return (
             <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
               <h2 className="text-2xl font-bold mb-6">Social Media Discussion Study</h2>
@@ -337,13 +335,14 @@ function MainApp() {
                 <h3 className="text-lg font-semibold mb-3">Your Task</h3>
                 <div className="p-4 border rounded-lg bg-white">
                   <p className="text-gray-700 mb-4">
-                    You will engage in a 5-minute conversation with an AI bot about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>. 
-                    Your goals are to:
+                    You will engage in a 5-minute conversation with an AI bot, during which you will represent one of two perspectives that we will assign to you: 
+                    <strong style={{ fontWeight: 'bold' }}>protecting user safety on social media platforms</strong> or <strong style={{ fontWeight: 'bold' }}>preserving freedom of speech on social media platforms</strong>.
+                    Your objectives during the conversation are:
                   </p>
                   <ul className="space-y-2 text-gray-700">
                     <li className="flex items-start">
                       <span className="mr-2">•</span>
-                      <span>Explore and deepen your understanding of this perspective</span>
+                      <span>Explore and deepen your understanding of the perspective you were assigned to</span>
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">•</span>
@@ -351,12 +350,26 @@ function MainApp() {
                     </li>
                     <li className="flex items-start">
                       <span className="mr-2">•</span>
-                      <span>Consider why this perspective might be more crucial than {otherStance}</span>
+                      <span>Consider why this perspective might be more crucial than the opposite one</span>
                     </li>
                   </ul>
                 </div>
               </div>
-              
+
+              <button 
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
+                onClick={() => setCurrentStep(5)}
+              >
+                Continue
+              </button>
+            </div>
+          );
+
+        case 5: { // Task Perspective & Initial Assessment
+          const otherStance = getOtherStance();
+          const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
+          return (
+            <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
               {/* Assigned Perspective */}
               <div className="mb-6">
                 <h3 className="text-lg font-semibold mb-3">Your Assigned Perspective</h3>
@@ -379,7 +392,7 @@ function MainApp() {
               
               <button 
                 className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${!allAssessmentsCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={() => setCurrentStep(5)}
+                onClick={() => setCurrentStep(6)}
                 disabled={!allAssessmentsCompleted}
               >
                 {allAssessmentsCompleted ? 'Begin Discussion' : 'Please complete all assessments'}
@@ -388,7 +401,7 @@ function MainApp() {
           );
         }        
 
-  case 5: // Chat Interface
+  case 6: // Chat Interface
     return (
       <div className="h-screen flex overflow-hidden">
         {/* Fixed sidebar */}
@@ -504,7 +517,7 @@ function MainApp() {
       </div>
     );
 
-  case 6: // Final Response
+  case 7: // Final Response
     const wordCount = userResponse.trim().split(/\s+/).length;
     
     return (
@@ -557,7 +570,7 @@ function MainApp() {
             ${(wordCount < 50 || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
           onClick={async () => {
             await handleFinalResponse();
-            setCurrentStep(7);
+            setCurrentStep(8);
           }}
           disabled={wordCount < 50 || isSubmitting}
         >
@@ -570,20 +583,57 @@ function MainApp() {
       </div>
     );
 
-  case 7: // Questionnaires
-  return (
-    <div className="w-3/4 mx-auto p-8 min-h-screen">
-      <h2 className="text-2xl font-bold mb-6">Questionnaires</h2>
-      <div className="space-y-8">
+  case 8: // SBSVS
+    return (
+      <div className="w-3/4 mx-auto p-8 min-h-screen">
+        <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
         <SBSVS 
           responses={sbsvsResponses} 
           setResponses={setSbsvsResponses} 
         />
+        <button
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+            Object.keys(sbsvsResponses).length < 10 ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={() => setCurrentStep(9)}
+          disabled={Object.keys(sbsvsResponses).length < 10}
+        >
+          {Object.keys(sbsvsResponses).length < 10 
+            ? `Please complete all ${10 - Object.keys(sbsvsResponses).length} remaining questions`
+            : 'Continue'
+          }
+        </button>
+      </div>
+    );
+
+  case 9: // Attitude Survey
+    return (
+      <div className="w-3/4 mx-auto p-8 min-h-screen">
+        <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 2</h2>
         <AttitudeSurvey 
           stance={stances[stance]}
           responses={attitudeResponses}
           setResponses={setAttitudeResponses}
         />
+        <button
+          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+            Object.keys(attitudeResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+          onClick={() => setCurrentStep(10)}
+          disabled={Object.keys(attitudeResponses).length < 11}
+        >
+          {Object.keys(attitudeResponses).length < 11
+            ? `Please complete all ${11 - Object.keys(attitudeResponses).length} remaining questions`
+            : 'Continue'
+          }
+        </button>
+      </div>
+    );
+
+  case 10: // Stance Agreement
+    return (
+      <div className="w-3/4 mx-auto p-8 min-h-screen">
+        <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 3</h2>
         <div className="p-6 border rounded-lg bg-white">
           <h3 className="text-2xl font-bold mb-6">Stance Agreement</h3>
           <div className="space-y-6">
@@ -632,103 +682,102 @@ function MainApp() {
           </div>
         </div>
         <button
-          className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-            !isQuestionnairesComplete() ? 'opacity-50 cursor-not-allowed' : ''
+          className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+            !stanceAgreement.assigned || !stanceAgreement.opposite ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          onClick={() => setCurrentStep(8)}
-          disabled={!isQuestionnairesComplete()}
+          onClick={() => setCurrentStep(11)}
+          disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
         >
-          {!isQuestionnairesComplete() 
-            ? getIncompleteQuestionnairesMessage()
+          {!stanceAgreement.assigned || !stanceAgreement.opposite
+            ? 'Please complete both questions'
             : 'Continue'
           }
         </button>
       </div>
-    </div>
-  );
+    );
 
-  case 8: // Alternative Uses Task
+  case 11: // Alternative Uses Task
     return (
       <div className="w-3/4 mx-auto p-8 min-h-screen">
         <AlternativeUsesTask
           responses={autResponses}
           setResponses={setAutResponses}
-          onComplete={() => setCurrentStep(9)}
+          onComplete={() => setCurrentStep(12)}
         />
       </div>
     );
 
-      case 9: // Thank You
-        return (
-          <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
-            <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
-            <p>Your responses have been recorded successfully 🎉.</p>
-            <p>You can now close this window.</p>
-          </div>
-        );
+    case 12: // Thank You
+      return (
+        <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
+          <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
+          <p>Your responses have been recorded successfully ��.</p>
+          <p>You can now close this window.</p>
+        </div>
+      );
 
-      default:
-        return null;
+    default:
+      return null;
+  }
+};
+
+useEffect(() => {
+  // Scroll to the top of the page when the component mounts or updates
+  window.scrollTo(0, 0);
+}, [currentStep]); // Add currentStep as a dependency to trigger on step change
+
+useEffect(() => {
+  const handleVisibilityChange = () => {
+    if ([5, 6, 8].includes(currentStep)) {
+      if (document.hidden) {
+        // Show warning when tab becomes hidden
+        setShowWarning(true);
+        
+        // Log tab switch event
+        axios.post(`${API_URL}/sessions/${sessionId}/events`, {
+          type: 'tab_switch',
+          step: currentStep,
+          timestamp: new Date()
+        }).catch(error => console.error('Error logging tab switch:', error));
+      }
     }
   };
+
+  const handleBeforeUnload = (e) => {
+    if ([5, 6, 8].includes(currentStep)) {
+      e.preventDefault();
+      e.returnValue = ''; // This is required for Chrome
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+  window.addEventListener('beforeunload', handleBeforeUnload);
   
-  useEffect(() => {
-    // Scroll to the top of the page when the component mounts or updates
-    window.scrollTo(0, 0);
-  }, [currentStep]); // Add currentStep as a dependency to trigger on step change
+  return () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+  };
+}, [currentStep, sessionId]);
 
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if ([5, 6, 8].includes(currentStep)) {
-        if (document.hidden) {
-          // Show warning when tab becomes hidden
-          setShowWarning(true);
-          
-          // Log tab switch event
-          axios.post(`${API_URL}/sessions/${sessionId}/events`, {
-            type: 'tab_switch',
-            step: currentStep,
-            timestamp: new Date()
-          }).catch(error => console.error('Error logging tab switch:', error));
-        }
-      }
-    };
-
-    const handleBeforeUnload = (e) => {
-      if ([5, 6, 8].includes(currentStep)) {
-        e.preventDefault();
-        e.returnValue = ''; // This is required for Chrome
-      }
-    };
-
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-      window.removeEventListener('beforeunload', handleBeforeUnload);
-    };
-  }, [currentStep, sessionId]);
-
-  return (
-    <div className="min-h-screen bg-gray-100">
-      {showWarning && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
-            <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Warning</h3>
-            <p className="mb-6">Please do not leave this window during the experiment. Your responses are important to us.</p>
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
-              onClick={() => setShowWarning(false)}
-            >
-              I Understand
-            </button>
-          </div>
+return (
+  <div className="min-h-screen bg-gray-100">
+    {showWarning && (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white p-8 rounded-lg shadow-xl max-w-md text-center">
+          <h3 className="text-xl font-bold mb-4 text-red-600">⚠️ Warning</h3>
+          <p className="mb-6">Please do not leave this window during the experiment. Your responses are important to us.</p>
+          <button
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
+            onClick={() => setShowWarning(false)}
+          >
+            I Understand
+          </button>
         </div>
-      )}
-      {renderStep()}
-    </div>
-  );
+      </div>
+    )}
+    {renderStep()}
+  </div>
+);
 }
 
 function App() {

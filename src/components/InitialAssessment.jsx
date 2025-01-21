@@ -12,7 +12,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
       {/* Interest Assessment */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">To what extent do you find {stance} interesting?</span>
+          <span className="text-gray-700">To what extent do you find <strong style={{ fontWeight: 'bold' }}>{stance}</strong> interesting?</span>
           <div className="flex text-sm text-gray-500">
           </div>
         </div>
@@ -38,7 +38,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
       {/* Importance Assessment */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">To what extent do you find {stance} important?</span>
+          <span className="text-gray-700">To what extent do you find <strong style={{ fontWeight: 'bold' }}>{stance}</strong> important?</span>
           <div className="flex text-sm text-gray-500">
           </div>
         </div>
@@ -64,7 +64,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
       {/* Agreement Assessment */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">To what extent do you agree with {stance}?</span>
+          <span className="text-gray-700">To what extent do you agree with <strong style={{ fontWeight: 'bold' }}>{stance}</strong>?</span>
           <div className="flex text-sm text-gray-500">
           </div>
         </div>

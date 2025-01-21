@@ -14,6 +14,7 @@ function Admin() {
   const [selectedFileType, setSelectedFileType] = useState('json');
   const [conditionCounts, setConditionCounts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isGeneratingZip] = useState(false);
 
   const fileTypes = [
     { label: 'JSON', value: 'json' },
@@ -312,32 +313,68 @@ function Admin() {
           filename = `full_session_${session.sessionId}`;
           break;
         
+        case 'demographics':
+          data = {
+            sessionId: session.sessionId,
+            demographics: session.demographics
+          };
+          filename = `demographics_${session.sessionId}`;
+          break;
+
+        case 'pvq21':
+          data = {
+            sessionId: session.sessionId,
+            pvq21: session.pvq21
+          };
+          filename = `pvq21_${session.sessionId}`;
+          break;
+
+        case 'initial':
+          data = {
+            sessionId: session.sessionId,
+            initialAssessment: session.initialAssessment
+          };
+          filename = `initial_assessment_${session.sessionId}`;
+          break;
+
         case 'chat':
           const chatResponse = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/chat`, {
             headers: { username, password }
           });
           data = {
             sessionId: session.sessionId,
-            stance: session.stance,
-            botPersonality: session.botPersonality,
             chat: chatResponse.data
           };
           filename = `chat_${session.sessionId}`;
           break;
-        
-        case 'response':
-          const responseData = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/response`, {
+
+        case 'final':
+          const finalResponse = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/response`, {
             headers: { username, password }
           });
           data = {
             sessionId: session.sessionId,
-            stance: session.stance,
-            botPersonality: session.botPersonality,
-            finalResponse: responseData.data
+            finalResponse: finalResponse.data
           };
-          filename = `response_${session.sessionId}`;
+          filename = `final_response_${session.sessionId}`;
           break;
-        
+
+        case 'sbsvs':
+          data = {
+            sessionId: session.sessionId,
+            sbsvs: session.sbsvs
+          };
+          filename = `sbsvs_${session.sessionId}`;
+          break;
+
+        case 'attitude':
+          data = {
+            sessionId: session.sessionId,
+            attitudeSurvey: session.attitudeSurvey
+          };
+          filename = `attitude_survey_${session.sessionId}`;
+          break;
+
         case 'aut':
           const autResponse = await axios.get(`${API_URL}/admin/sessions/${session.sessionId}/aut`, {
             headers: { username, password }
@@ -494,7 +531,7 @@ function Admin() {
         {/* Sessions List */}
         <div className="space-y-6">
           {sessions.map((session) => (
-            <div key={session.sessionId} className="bg-white p-6 rounded-lg shadow">
+            <div key={session.sessionId} className="bg-white p-6 rounded-lg shadow mb-4">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h2 className="text-xl font-semibold">Session ID: {session.sessionId}</h2>
@@ -534,12 +571,17 @@ function Admin() {
                           <div className="border-t"></div>
                           {[
                             { label: 'Full Session', type: 'full' },
-                            { label: 'Chat Only', type: 'chat' },
-                            { label: 'Response Only', type: 'response' },
+                            { label: 'Demographics', type: 'demographics' },
+                            { label: 'PVQ21', type: 'pvq21' },
+                            { label: 'Initial Assessment', type: 'initial' },
+                            { label: 'Chat History', type: 'chat' },
+                            { label: 'Final Response', type: 'final' },
+                            { label: 'SBSVS', type: 'sbsvs' },
+                            { label: 'Attitude Survey', type: 'attitude' },
                             { label: 'Alternative Uses Task', type: 'aut' }
                           ].map((option) => (
                             <button
-                              key={option.label}
+                              key={option.type}
                               className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                               onClick={() => {
                                 downloadSession(session, option.type);
@@ -562,24 +604,25 @@ function Admin() {
                 </div>
               </div>
 
-              {/* Demographics */}
-              {session.demographics && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">Demographics:</h3>
+              {/* Display all survey data */}
+              <div className="mt-4 space-y-4">
+                {/* Demographics */}
+                {session.demographics && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <div>Age: {session.demographics.age}</div>
-                    <div>Gender: {session.demographics.gender}</div>
-                    <div>Education: {session.demographics.education}</div>
+                    <h3 className="font-semibold mb-2">Demographics:</h3>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>Age: {session.demographics.age}</div>
+                      <div>Gender: {session.demographics.gender}</div>
+                      <div>Education: {session.demographics.education}</div>
+                    </div>
                   </div>
-                </>
-              )}
+                )}
 
-              {/* PVQ21 */}
-              {session.pvq21 && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">PVQ-21 Responses:</h3>
+                {/* PVQ21 */}
+                {session.pvq21 && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <h3 className="font-semibold mb-2">PVQ21 Responses:</h3>
+                    <div className="grid grid-cols-2 gap-4">
                       {session.pvq21.responses.map((response) => (
                         <div key={response.questionId}>
                           Question {response.questionId}: {response.value}
@@ -587,145 +630,62 @@ function Admin() {
                       ))}
                     </div>
                   </div>
-                </>
-              )}
+                )}
 
-              {/* Initial Assessment */}
-              {session.initialAssessment && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">Initial Assessment:</h3>
+                {/* Initial Assessment */}
+                {session.initialAssessment && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <div className="grid grid-cols-1 gap-2">
-                      <div>Interest Level: {session.initialAssessment.interesting}/7</div>
-                      <div>Importance Level: {session.initialAssessment.important}/7</div>
-                      <div>Agreement Level: {session.initialAssessment.agreement}/7</div>
-                      <div>Timestamp: {new Date(session.initialAssessment.timestamp).toLocaleString()}</div>
+                    <h3 className="font-semibold mb-2">Initial Assessment:</h3>
+                    <div className="space-y-2">
+                      <div>Interest: {session.initialAssessment.interesting}/7</div>
+                      <div>Importance: {session.initialAssessment.important}/7</div>
+                      <div>Agreement: {session.initialAssessment.agreement}/7</div>
                     </div>
                   </div>
-                </>
-              )}
+                )}
 
-              {/* Chat History */}
-              <h3 className="font-semibold mt-4 mb-2">Chat History:</h3>
-              <div className="bg-gray-50 p-4 rounded max-h-60 overflow-y-auto">
-                {session.chat?.map((msg, index) => (
-                  <div key={index} className="mb-2">
-                    <span className="font-semibold">
-                      {msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} 
-                    </span>
-                    <span className="ml-2">{msg.text}</span>
-                    <div className="text-xs text-gray-500">
-                      {new Date(msg.timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Final Response */}
-              {session.finalResponse && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">Final Response:</h3>
+                {/* SBSVS */}
+                {session.sbsvs && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <p>{session.finalResponse.text}</p>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Submitted: {new Date(session.finalResponse.timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* SBSVS */}
-              {session.sbsvs && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">SBSVS Responses:</h3>
-                  <div className="bg-gray-50 p-4 rounded">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {session.sbsvs.responses.map((response, index) => (
-                        <div key={index}>
+                    <h3 className="font-semibold mb-2">SBSVS Responses:</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {session.sbsvs.responses.map((response) => (
+                        <div key={response.questionId}>
                           Question {response.questionId}: {response.value}
                         </div>
                       ))}
                     </div>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Completed: {new Date(session.sbsvs.timestamp).toLocaleString()}
+                  </div>
+                )}
+
+                {/* Attitude Survey */}
+                {session.attitudeSurvey && (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <h3 className="font-semibold mb-2">Attitude Survey:</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      {session.attitudeSurvey.responses.map((response) => (
+                        <div key={response.aspect}>
+                          {response.aspect}: {response.rating}
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </>
-              )}
+                )}
 
-              {/* Attitude Survey */}
-              {session.attitudeSurvey && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">Attitude Survey:</h3>
+                {/* Alternative Uses Task */}
+                {session.alternativeUses && (
                   <div className="bg-gray-50 p-4 rounded">
-                    {session.attitudeSurvey.responses.map((response, index) => (
-                      <div key={index}>
-                        {response.aspect}: {response.rating}
-                      </div>
-                    ))}
-                    <div className="text-sm text-gray-500 mt-2">
-                      Completed: {new Date(session.attitudeSurvey.timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Stance Agreement */}
-              {session.stanceAgreement && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">Stance Agreement:</h3>
-                  <div className="bg-gray-50 p-4 rounded">
-                    <div>Assigned Stance ({session.stance}): {session.stanceAgreement.assigned}/5</div>
-                    <div>Opposite Stance: {session.stanceAgreement.opposite}/5</div>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Completed: {new Date(session.stanceAgreement.timestamp).toLocaleString()}
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {/* Alternative Uses Task */}
-              {session.alternativeUses && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">Alternative Uses Task:</h3>
-                  <div className="bg-gray-50 p-4 rounded">
+                    <h3 className="font-semibold mb-2">Alternative Uses Task:</h3>
                     <div className="space-y-2">
                       {session.alternativeUses.responses.map((response, index) => (
                         <div key={response.id}>
                           {index + 1}. {response.idea}
-                          <div className="text-xs text-gray-500">
-                            {new Date(response.timestamp).toLocaleString()}
-                          </div>
                         </div>
                       ))}
                     </div>
-                    <div className="text-sm text-gray-500 mt-2">
-                      Total ideas: {session.alternativeUses.responses.length}
-                    </div>
                   </div>
-                </>
-              )}
-
-              {/* Tab Switch Events */}
-              {session.events?.filter(event => event.type === 'tab_switch').length > 0 && (
-                <>
-                  <h3 className="font-semibold mt-4 mb-2">Tab Switch Events:</h3>
-                  <div className="bg-red-50 p-4 rounded">
-                    <div className="space-y-2">
-                      {session.events
-                        .filter(event => event.type === 'tab_switch')
-                        .map((event, index) => (
-                          <div key={index} className="text-red-600">
-                            Tab switch detected during step {event.step} at {new Date(event.timestamp).toLocaleString()}
-                          </div>
-                        ))}
-                    </div>
-                    <div className="text-sm text-red-500 mt-2">
-                      Total tab switches: {session.events.filter(event => event.type === 'tab_switch').length}
-                    </div>
-                  </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           ))}
         </div>

@@ -443,7 +443,25 @@ app.post('/api/admin/login', authenticateAdmin, (req, res) => {
 
 app.post('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   try {
-    const sessions = await Session.find().sort({ timestamp: -1 });
+    const sessions = await Session.find()
+      .sort({ timestamp: -1 })
+      .select({
+        sessionId: 1,
+        timestamp: 1,
+        stance: 1,
+        botPersonality: 1,
+        aiModel: 1,
+        aiModelVersion: 1,
+        demographics: 1,
+        pvq21: 1,
+        initialAssessment: 1,
+        chat: 1,
+        finalResponse: 1,
+        sbsvs: 1,
+        attitudeSurvey: 1,
+        alternativeUses: 1,
+        events: 1
+      });
     res.json(sessions);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -462,7 +480,16 @@ app.delete('/api/admin/sessions/:sessionId', authenticateAdmin, async (req, res)
 app.get('/api/admin/sessions/:sessionId/chat', authenticateAdmin, async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
-    res.json(session.chat);
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json({
+      sessionId: session.sessionId,
+      stance: session.stance,
+      botPersonality: session.botPersonality,
+      aiModel: session.aiModel,
+      chat: session.chat
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -471,7 +498,14 @@ app.get('/api/admin/sessions/:sessionId/chat', authenticateAdmin, async (req, re
 app.get('/api/admin/sessions/:sessionId/response', authenticateAdmin, async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
-    res.json(session.finalResponse);
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json({
+      sessionId: session.sessionId,
+      stance: session.stance,
+      finalResponse: session.finalResponse
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -483,7 +517,27 @@ app.get('/api/admin/sessions/:sessionId/full', authenticateAdmin, async (req, re
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    res.json(session);
+    
+    // Ensure all fields are included in the response
+    const fullSession = {
+      sessionId: session.sessionId,
+      timestamp: session.timestamp,
+      stance: session.stance,
+      botPersonality: session.botPersonality,
+      aiModel: session.aiModel,
+      aiModelVersion: session.aiModelVersion,
+      demographics: session.demographics,
+      pvq21: session.pvq21,
+      initialAssessment: session.initialAssessment,
+      chat: session.chat,
+      finalResponse: session.finalResponse,
+      sbsvs: session.sbsvs,
+      attitudeSurvey: session.attitudeSurvey,
+      alternativeUses: session.alternativeUses,
+      events: session.events
+    };
+    
+    res.json(fullSession);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -496,7 +550,10 @@ app.get('/api/admin/sessions/:sessionId/aut', authenticateAdmin, async (req, res
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    res.json(session.alternativeUses);
+    res.json({
+      sessionId: session.sessionId,
+      alternativeUses: session.alternativeUses
+    });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -522,6 +579,82 @@ app.post('/api/sessions/:sessionId/events', async (req, res) => {
     res.status(201).json(session);
   } catch (error) {
     res.status(400).json({ message: error.message });
+  }
+});
+
+// Add these new endpoints for each survey type
+app.get('/api/admin/sessions/:sessionId/demographics', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json({
+      sessionId: session.sessionId,
+      demographics: session.demographics
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/sessions/:sessionId/pvq21', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json({
+      sessionId: session.sessionId,
+      pvq21: session.pvq21
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/sessions/:sessionId/initial-assessment', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json({
+      sessionId: session.sessionId,
+      initialAssessment: session.initialAssessment
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/sessions/:sessionId/sbsvs', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json({
+      sessionId: session.sessionId,
+      sbsvs: session.sbsvs
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+app.get('/api/admin/sessions/:sessionId/attitude', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    res.json({
+      sessionId: session.sessionId,
+      attitudeSurvey: session.attitudeSurvey
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 });
 
