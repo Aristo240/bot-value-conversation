@@ -641,7 +641,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                {/* Demographics */}
+                {/* Demographics Section */}
                 {session.demographics && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h4 className="font-semibold mb-2">Demographics:</h4>
@@ -651,8 +651,28 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                   </div>
                 )}
 
-                {/* PVQ21 */}
-                {session.pvq21?.responses && (
+                {/* Initial Assessment Section */}
+                {session.initialAssessment && (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <h4 className="font-semibold mb-2">Initial Assessment:</h4>
+                    <p>Interesting: {session.initialAssessment.interesting}</p>
+                    <p>Important: {session.initialAssessment.important}</p>
+                    <p>Agreement: {session.initialAssessment.agreement}</p>
+                  </div>
+                )}
+
+                {/* Stance Agreement Section */}
+                {session.stanceAgreement && (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <h4 className="font-semibold mb-2">Stance Agreement:</h4>
+                    <p>Agreement with Assigned Stance: {session.stanceAgreement.assigned}/5</p>
+                    <p>Agreement with Opposite Stance: {session.stanceAgreement.opposite}/5</p>
+                    <p>Timestamp: {new Date(session.stanceAgreement.timestamp).toLocaleString()}</p>
+                  </div>
+                )}
+
+                {/* PVQ21 Section */}
+                {session.pvq21 && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h4 className="font-semibold mb-2">PVQ21 Responses:</h4>
                     <div className="grid grid-cols-3 gap-2">
@@ -665,50 +685,8 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                   </div>
                 )}
 
-                {/* Initial Assessment */}
-                {session.initialAssessment && (
-                  <div className="bg-gray-50 p-4 rounded">
-                    <h4 className="font-semibold mb-2">Initial Assessment:</h4>
-                    <p>Interesting: {session.initialAssessment.interesting}</p>
-                    <p>Important: {session.initialAssessment.important}</p>
-                    <p>Agreement: {session.initialAssessment.agreement}</p>
-                  </div>
-                )}
-
-                {/* Stance Agreement */}
-                {session.stanceAgreement && (
-                  <div className="bg-gray-50 p-4 rounded">
-                    <h4 className="font-semibold mb-2">Stance Agreement:</h4>
-                    <p>Agreement with Assigned Stance: {session.stanceAgreement.assigned}/5</p>
-                    <p>Agreement with Opposite Stance: {session.stanceAgreement.opposite}/5</p>
-                    <p>Timestamp: {new Date(session.stanceAgreement.timestamp).toLocaleString()}</p>
-                  </div>
-                )}
-
-                {/* Chat History */}
-                {session.chat && session.chat.length > 0 && (
-                  <div className="bg-gray-50 p-4 rounded col-span-2">
-                    <h4 className="font-semibold mb-2">Chat History:</h4>
-                    <div className="space-y-2">
-                      {session.chat.map((msg, idx) => (
-                        <div key={idx} className={`${msg.sender === 'bot' ? 'text-blue-600' : 'text-green-600'}`}>
-                          <strong>{msg.sender}:</strong> {msg.text}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Final Response */}
-                {session.finalResponse && (
-                  <div className="bg-gray-50 p-4 rounded">
-                    <h4 className="font-semibold mb-2">Final Response:</h4>
-                    <p>{session.finalResponse.text}</p>
-                  </div>
-                )}
-
-                {/* SBSVS */}
-                {session.sbsvs?.responses && (
+                {/* SBSVS Section */}
+                {session.sbsvs && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h4 className="font-semibold mb-2">SBSVS Responses:</h4>
                     <div className="grid grid-cols-3 gap-2">
@@ -721,8 +699,8 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                   </div>
                 )}
 
-                {/* Attitude Survey */}
-                {session.attitudeSurvey?.responses && (
+                {/* Attitude Survey Section */}
+                {session.attitudeSurvey && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h4 className="font-semibold mb-2">Attitude Survey:</h4>
                     <div className="grid grid-cols-2 gap-2">
@@ -735,14 +713,28 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                   </div>
                 )}
 
-                {/* Alternative Uses */}
-                {session.alternativeUses?.responses && (
+                {/* Alternative Uses Section */}
+                {session.alternativeUses && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h4 className="font-semibold mb-2">Alternative Uses:</h4>
                     <div className="space-y-1">
                       {session.alternativeUses.responses.map((response, index) => (
                         <div key={response.id}>
                           {index + 1}. {response.idea}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Chat History Section */}
+                {session.chat && session.chat.length > 0 && (
+                  <div className="bg-gray-50 p-4 rounded col-span-2">
+                    <h4 className="font-semibold mb-2">Chat History:</h4>
+                    <div className="space-y-2">
+                      {session.chat.map((msg, idx) => (
+                        <div key={idx} className={`${msg.sender === 'bot' ? 'text-blue-600' : 'text-green-600'}`}>
+                          <strong>{msg.sender}:</strong> {msg.text}
                         </div>
                       ))}
                     </div>
