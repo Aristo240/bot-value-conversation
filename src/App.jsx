@@ -95,6 +95,7 @@ function MainApp() {
       }, 1000);
     } else if (timer === 0) {
       setShowTimeUpPopup(true);
+      setIsTimerActive(false);
     }
     return () => clearInterval(interval);
   }, [isTimerActive, timer]);
@@ -510,7 +511,8 @@ function MainApp() {
                 className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
                 onClick={() => {
                   setShowTimeUpPopup(false);
-                  setCurrentStep(6);
+                  setCurrentStep(7);
+                  setIsTimerActive(false);
                 }}
               >
                 Continue to the Next Step
