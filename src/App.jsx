@@ -299,33 +299,33 @@ function MainApp() {
     if (!stanceAgreement.assigned || !stanceAgreement.opposite) return;
 
     try {
-      console.log('Saving stance agreement:', stanceAgreement);
-      
-      // Save to main session document
+      // Save directly to the session document
       const response = await axios.put(`${API_URL}/sessions/${sessionId}`, {
         stanceAgreement: {
           assigned: parseInt(stanceAgreement.assigned),
           opposite: parseInt(stanceAgreement.opposite),
           timestamp: new Date()
         }
+      }, {
+        headers: {
+          'Content-Type': 'application/json'
+        }
       });
 
       console.log('Stance agreement saved:', response.data);
-      
-      // Also save to questionnaires endpoint
+
+      // Also save to the questionnaires collection
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         type: 'stanceAgreement',
-        data: {
-          assigned: parseInt(stanceAgreement.assigned),
-          opposite: parseInt(stanceAgreement.opposite),
-          timestamp: new Date()
-        }
+        data: stanceAgreement
       });
 
     } catch (error) {
       console.error('Error saving stance agreement:', error);
       alert('Failed to save stance agreement. Please try again.');
+      return false;
     }
+    return true;
   };
 
   const saveAlternativeUses = async () => {
@@ -788,9 +788,6 @@ function MainApp() {
                           className="mb-2"
                         />
                         <span className="text-sm">{value}</span>
-                        <span className="text-xs text-gray-500 text-center mt-1">
-                          {value === 1 ? 'Strongly Disagree' : value === 5 ? 'Strongly Agree' : ''}
-                        </span>
                       </label>
                     </div>
                   ))}
@@ -799,7 +796,7 @@ function MainApp() {
 
               <div className="pb-6 border-b border-gray-200">
                 <p className="mb-4 text-gray-700">
-                  How much do you agree with the opposite stance ({getOtherStance()})?
+                  How much do you agree with the opposite stance?
                 </p>
                 <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
                   {[1, 2, 3, 4, 5].map((value) => (
@@ -817,9 +814,6 @@ function MainApp() {
                           className="mb-2"
                         />
                         <span className="text-sm">{value}</span>
-                        <span className="text-xs text-gray-500 text-center mt-1">
-                          {value === 1 ? 'Strongly Disagree' : value === 5 ? 'Strongly Agree' : ''}
-                        </span>
                       </label>
                     </div>
                   ))}
@@ -835,8 +829,10 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (stanceAgreement.assigned && stanceAgreement.opposite) {
-                  await saveStanceAgreement();
-                  setCurrentStep(11);
+                  const saved = await saveStanceAgreement();
+                  if (saved) {
+                    setCurrentStep(11);
+                  }
                 }
               }}
               disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}

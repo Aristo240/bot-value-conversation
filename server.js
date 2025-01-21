@@ -661,7 +661,7 @@ app.post('/api/sessions/:sessionId/chat', async (req, res) => {
   }
 });
 
-// Update the PUT endpoint for updating sessions
+// Update the PUT endpoint
 app.put('/api/sessions/:sessionId', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -669,14 +669,18 @@ app.put('/api/sessions/:sessionId', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Update the session with the new data
+    // Update the stance agreement
     if (req.body.stanceAgreement) {
-      session.stanceAgreement = req.body.stanceAgreement;
+      session.stanceAgreement = {
+        assigned: parseInt(req.body.stanceAgreement.assigned),
+        opposite: parseInt(req.body.stanceAgreement.opposite),
+        timestamp: new Date(req.body.stanceAgreement.timestamp)
+      };
     }
 
-    const updatedSession = await session.save();
-    console.log('Session updated:', updatedSession); // Debug log
-    res.json(updatedSession);
+    await session.save();
+    console.log('Updated session:', session); // Debug log
+    res.json(session);
   } catch (error) {
     console.error('Error updating session:', error);
     res.status(400).json({ message: error.message });
