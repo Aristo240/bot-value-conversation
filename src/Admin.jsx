@@ -11,15 +11,29 @@ function Admin() {
   const [error, setError] = useState('');
   const [showDownloadOptions, setShowDownloadOptions] = useState(null);
   const [downloadStatus, setDownloadStatus] = useState('');
-  const [selectedFileType, setSelectedFileType] = useState('json');
+  const [selectedFileType, setSelectedFileType] = useState('csv');
+  const [selectedDataType, setSelectedDataType] = useState('all');
   const [conditionCounts, setConditionCounts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingZip] = useState(false);
 
   const fileTypes = [
-    { label: 'JSON', value: 'json' },
-    { label: 'CSV', value: 'csv' },
-    { label: 'TXT', value: 'txt' }
+    { value: 'csv', label: 'CSV' },
+    { value: 'json', label: 'JSON' },
+    { value: 'txt', label: 'Text' }
+  ];
+
+  const dataTypes = [
+    { value: 'all', label: 'All Data' },
+    { value: 'demographics', label: 'Demographics' },
+    { value: 'pvq21', label: 'PVQ21' },
+    { value: 'initialAssessment', label: 'Initial Assessment' },
+    { value: 'chat', label: 'Chat History' },
+    { value: 'finalResponse', label: 'Final Response' },
+    { value: 'sbsvs', label: 'SBSVS' },
+    { value: 'attitudeSurvey', label: 'Attitude Survey' },
+    { value: 'stanceAgreement', label: 'Stance Agreement' },
+    { value: 'alternativeUses', label: 'Alternative Uses' }
   ];
 
   // Effect to refresh condition counts periodically
@@ -100,13 +114,29 @@ function Admin() {
     }
   };
 
-  const downloadInFormat = (data, filename, fileType) => {
-    const csvContent = convertToCSV(data);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const downloadInFormat = (data, filename) => {
+    let content;
+    let type;
+
+    switch (selectedFileType) {
+      case 'json':
+        content = JSON.stringify(data, null, 2);
+        type = 'application/json';
+        break;
+      case 'txt':
+        content = convertToText(data);
+        type = 'text/plain';
+        break;
+      default:
+        content = convertToCSV(data);
+        type = 'text/csv';
+    }
+
+    const blob = new Blob([content], { type: `${type};charset=utf-8;` });
     const link = document.createElement('a');
     const url = URL.createObjectURL(blob);
     link.setAttribute('href', url);
-    link.setAttribute('download', `${filename}.${fileType}`);
+    link.setAttribute('download', `${filename}.${selectedFileType}`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -117,6 +147,7 @@ function Admin() {
     const headers = [
       'SessionId',
       'Timestamp',
+      'Bot_Personality',
       'Stance',
       // Demographics
       'Age',
@@ -128,7 +159,7 @@ function Admin() {
       'Initial_Interesting',
       'Initial_Important',
       'Initial_Agreement',
-      // Chat History
+      // Chat History (each message gets its own column)
       'Chat_History',
       // Final Response
       'Final_Response',
@@ -155,9 +186,18 @@ function Admin() {
 
     // Transform data for CSV
     const rows = sessionData.map(session => {
+      const chatHistory = session.chat?.map(msg => 
+        `${msg.sender} (${new Date(msg.timestamp).toLocaleString()}): ${msg.text}`
+      ).join('\n') || '';
+
+      const alternativeUses = session.alternativeUses?.responses?.map(
+        (r, i) => `${i + 1}. ${r.idea}`
+      ).join('\n') || '';
+
       return [
         session.sessionId,
         session.timestamp,
+        session.botPersonality,
         session.stance,
         // Demographics
         session.demographics?.age || '',
@@ -172,7 +212,7 @@ function Admin() {
         session.initialAssessment?.important || '',
         session.initialAssessment?.agreement || '',
         // Chat History
-        session.chat?.map(msg => `${msg.sender}: ${msg.text}`).join(' | ') || '',
+        chatHistory,
         // Final Response
         session.finalResponse?.text || '',
         // SBSVS
@@ -180,34 +220,80 @@ function Admin() {
           session.sbsvs?.responses?.find(r => r.questionId === i + 1)?.value || ''
         ),
         // Attitude Survey
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Interesting')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Enjoyable')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Difficult')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Irritating')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Helpful')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Satisfying')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Effective')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Engaging')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Stimulating')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Informative')?.rating || '',
-        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Frustrating')?.rating || '',
+        ...attitudeAspects.map(aspect => 
+          session.attitudeSurvey?.responses?.find(r => r.aspect === aspect)?.rating || ''
+        ),
         // Stance Agreement
         session.stanceAgreement?.assigned || '',
         session.stanceAgreement?.opposite || '',
         // Alternative Uses
-        session.alternativeUses?.responses?.map(r => r.idea).join(' | ') || ''
+        alternativeUses
       ].map(value => `"${value}"`).join(',');
     });
 
-    // Combine headers and rows
     return [headers.join(','), ...rows].join('\n');
   };
 
-  const exportToCSV = (sessionData) => {
+  const convertToText = (sessionData) => {
+    return sessionData.map(session => {
+      return `Session ID: ${session.sessionId}
+Timestamp: ${new Date(session.timestamp).toLocaleString()}
+Bot Personality: ${session.botPersonality}
+Stance: ${session.stance}
+
+Demographics:
+Age: ${session.demographics?.age || 'N/A'}
+Gender: ${session.demographics?.gender || 'N/A'}
+Education: ${session.demographics?.education || 'N/A'}
+
+PVQ21 Responses:
+${session.pvq21?.responses?.map(r => `Q${r.questionId}: ${r.value}`).join('\n') || 'N/A'}
+
+Initial Assessment:
+Interesting: ${session.initialAssessment?.interesting || 'N/A'}
+Important: ${session.initialAssessment?.important || 'N/A'}
+Agreement: ${session.initialAssessment?.agreement || 'N/A'}
+
+Chat History:
+${session.chat?.map(msg => `${msg.sender} (${new Date(msg.timestamp).toLocaleString()}): ${msg.text}`).join('\n') || 'N/A'}
+
+Final Response:
+${session.finalResponse?.text || 'N/A'}
+
+SBSVS Responses:
+${session.sbsvs?.responses?.map(r => `Q${r.questionId}: ${r.value}`).join('\n') || 'N/A'}
+
+Attitude Survey:
+${session.attitudeSurvey?.responses?.map(r => `${r.aspect}: ${r.rating}`).join('\n') || 'N/A'}
+
+Stance Agreement:
+Assigned: ${session.stanceAgreement?.assigned || 'N/A'}
+Opposite: ${session.stanceAgreement?.opposite || 'N/A'}
+
+Alternative Uses:
+${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join('\n') || 'N/A'}
+-------------------`;
+    }).join('\n\n');
+  };
+
+  const exportData = (sessionData) => {
     try {
-      downloadInFormat(sessionData, 'session_data', 'csv');
+      let dataToExport = sessionData;
+      
+      // Filter data if a specific type is selected
+      if (selectedDataType !== 'all') {
+        dataToExport = sessionData.map(session => ({
+          sessionId: session.sessionId,
+          timestamp: session.timestamp,
+          botPersonality: session.botPersonality,
+          stance: session.stance,
+          [selectedDataType]: session[selectedDataType]
+        }));
+      }
+
+      downloadInFormat(dataToExport, `session_data_${selectedDataType}`);
     } catch (error) {
-      console.error('Error exporting to CSV:', error);
+      console.error('Error exporting data:', error);
       showStatus('Failed to export data', true);
     }
   };
@@ -301,7 +387,7 @@ function Admin() {
           break;
       }
 
-      downloadInFormat(data, filename, selectedFileType);
+      downloadInFormat(data, filename);
     } catch (error) {
       console.error('Error downloading session:', error);
       showStatus('Failed to download session data', true);
@@ -322,7 +408,7 @@ function Admin() {
         })
       );
 
-      downloadInFormat(fullSessions, 'all_sessions', selectedFileType);
+      downloadInFormat(fullSessions, 'all_sessions');
     } catch (error) {
       console.error('Error downloading all sessions:', error);
       showStatus('Failed to download all sessions', true);
@@ -433,10 +519,22 @@ function Admin() {
               </option>
             ))}
           </select>
+          
+          <select
+            value={selectedDataType}
+            onChange={(e) => setSelectedDataType(e.target.value)}
+            className="p-2 border rounded"
+          >
+            {dataTypes.map((type) => (
+              <option key={type.value} value={type.value}>
+                {type.label}
+              </option>
+            ))}
+          </select>
+
           <button
-            onClick={downloadAllSessions}
-            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600 disabled:opacity-50"
-            disabled={isLoading}
+            onClick={() => exportData(sessions)}
+            className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
           >
             Download All Sessions
           </button>
@@ -562,10 +660,10 @@ function Admin() {
               </div>
 
               <button
-                onClick={() => exportToCSV([session])}
+                onClick={() => exportData([session])}
                 className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
               >
-                Export to CSV
+                Export Session
               </button>
             </div>
           ))}
