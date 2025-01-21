@@ -233,6 +233,93 @@ function MainApp() {
     return `Please complete: ${missing.join(', ')}`;
   };
 
+  const saveInitialAssessment = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        initialAssessment: {
+          interesting: initialAttitudeResponses.interesting,
+          important: initialAttitudeResponses.important,
+          agreement: initialAttitudeResponses.agreement,
+          timestamp: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error saving initial assessment:', error);
+    }
+  };
+
+  const saveFinalResponse = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        finalResponse: {
+          text: userResponse,
+          timestamp: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error saving final response:', error);
+    }
+  };
+
+  const saveSBSVS = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        sbsvs: {
+          responses: Object.entries(sbsvsResponses).map(([questionId, value]) => ({
+            questionId: parseInt(questionId),
+            value: value
+          })),
+          timestamp: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error saving SBSVS:', error);
+    }
+  };
+
+  const saveAttitudeSurvey = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        attitudeSurvey: {
+          responses: Object.entries(attitudeResponses).map(([aspect, rating]) => ({
+            aspect,
+            rating
+          })),
+          timestamp: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error saving attitude survey:', error);
+    }
+  };
+
+  const saveStanceAgreement = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        stanceAgreement: {
+          assigned: stanceAgreement.assigned,
+          opposite: stanceAgreement.opposite,
+          timestamp: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error saving stance agreement:', error);
+    }
+  };
+
+  const saveAlternativeUses = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        alternativeUses: {
+          responses: autResponses,
+          timestamp: new Date()
+        }
+      });
+    } catch (error) {
+      console.error('Error saving alternative uses:', error);
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1: // Consent Form
@@ -339,40 +426,39 @@ function MainApp() {
             </div>
           );
 
-        case 5: { // Task Perspective & Initial Assessment
-          const otherStance = getOtherStance();
-          const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
-          return (
-            <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
-              {/* Assigned Perspective */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Your Assigned Perspective</h3>
-                <div className="p-4 border rounded-lg bg-white">
-                  <p className="text-blue-600 font-medium" dangerouslySetInnerHTML={{ __html: `<strong style={{ fontWeight: 'bold' }}>${stances[stance]}</strong>` }} />
-                </div>
+        case 5: {
+          const renderInitialAssessment = async () => {
+            const allAssessmentsCompleted = Object.keys(initialAttitudeResponses).length === 3;
+            if (allAssessmentsCompleted) {
+              await saveInitialAssessment();
+            }
+            return (
+              <div className="w-3/4 mx-auto p-8 min-h-screen">
+                <h2 className="text-2xl font-bold mb-6">Initial Assessment</h2>
+                <InitialAssessment
+                  stance={stances[stance]}
+                  responses={initialAttitudeResponses}
+                  setResponses={setInitialAttitudeResponses}
+                />
+                <button
+                  className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                    !allAssessmentsCompleted ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                  onClick={async () => {
+                    if (allAssessmentsCompleted) {
+                      await saveInitialAssessment();
+                      setCurrentStep(6);
+                    }
+                  }}
+                  disabled={!allAssessmentsCompleted}
+                >
+                  {allAssessmentsCompleted ? 'Continue' : 'Please complete all assessments'}
+                </button>
               </div>
+            );
+          };
 
-              {/* Initial Assessment */}
-              <div className="mb-6">
-                <h3 className="text-lg font-semibold mb-3">Initial Assessment</h3>
-                <div className="p-4 border rounded-lg bg-white">
-                  <InitialAssessment 
-                    stance={stances[stance]}
-                    responses={initialAttitudeResponses}
-                    setResponses={setInitialAttitudeResponses}
-                  />
-                </div>
-              </div>
-              
-              <button 
-                className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${!allAssessmentsCompleted ? 'opacity-50 cursor-not-allowed' : ''}`}
-                onClick={() => setCurrentStep(6)}
-                disabled={!allAssessmentsCompleted}
-              >
-                {allAssessmentsCompleted ? 'Begin Discussion' : 'Please complete all assessments'}
-              </button>
-            </div>
-          );
+          return renderInitialAssessment();
         }        
 
   case 6: // Chat Interface
@@ -495,6 +581,13 @@ function MainApp() {
   case 7: // Final Response
     const wordCount = userResponse.trim().split(/\s+/).length;
     
+    const handleFinalResponseSubmit = async () => {
+      if (wordCount >= 50) {
+        await saveFinalResponse();
+        setCurrentStep(8);
+      }
+    };
+
     return (
       <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
         <h2 className="text-2xl font-bold mb-4">Final Response</h2>
@@ -543,10 +636,7 @@ function MainApp() {
         <button 
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 
             ${(wordCount < 50 || isSubmitting) ? 'opacity-50 cursor-not-allowed' : ''}`}
-          onClick={async () => {
-            await handleFinalResponse();
-            setCurrentStep(8);
-          }}
+          onClick={handleFinalResponseSubmit}
           disabled={wordCount < 50 || isSubmitting}
         >
           {isSubmitting ? (
@@ -559,6 +649,12 @@ function MainApp() {
     );
 
   case 8: // SBSVS
+    const handleSBSVSSubmit = async () => {
+      if (Object.keys(sbsvsResponses).length === 10) {
+        await saveSBSVS();
+        setCurrentStep(9);
+      }
+    };
     return (
       <div className="w-3/4 mx-auto p-8 min-h-screen">
         <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
@@ -570,7 +666,7 @@ function MainApp() {
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
             Object.keys(sbsvsResponses).length < 10 ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          onClick={() => setCurrentStep(9)}
+          onClick={handleSBSVSSubmit}
           disabled={Object.keys(sbsvsResponses).length < 10}
         >
           {Object.keys(sbsvsResponses).length < 10 
@@ -582,6 +678,12 @@ function MainApp() {
     );
 
   case 9: // Attitude Survey
+    const handleAttitudeSurveySubmit = async () => {
+      if (Object.keys(attitudeResponses).length === 11) {
+        await saveAttitudeSurvey();
+        setCurrentStep(10);
+      }
+    };
     return (
       <div className="w-3/4 mx-auto p-8 min-h-screen">
         <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 2</h2>
@@ -594,7 +696,7 @@ function MainApp() {
           className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
             Object.keys(attitudeResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          onClick={() => setCurrentStep(10)}
+          onClick={handleAttitudeSurveySubmit}
           disabled={Object.keys(attitudeResponses).length < 11}
         >
           {Object.keys(attitudeResponses).length < 11
@@ -606,6 +708,12 @@ function MainApp() {
     );
 
   case 10: // Stance Agreement
+    const handleStanceAgreementSubmit = async () => {
+      if (stanceAgreement.assigned && stanceAgreement.opposite) {
+        await saveStanceAgreement();
+        setCurrentStep(11);
+      }
+    };
     return (
       <div className="w-3/4 mx-auto p-8 min-h-screen">
         <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 3</h2>
@@ -613,7 +721,7 @@ function MainApp() {
           <h3 className="text-2xl font-bold mb-6">Stance Agreement</h3>
           <div className="space-y-6">
             <div className="pb-6 border-b border-gray-200">
-              <p className="mb-4 text-gray-700">How much do you agree with {stances[stance]}?</p>
+              <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>?</p>
               <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
                 {[1, 2, 3, 4, 5].map((value) => (
                   <label key={value} className="flex flex-col items-center">
@@ -634,7 +742,7 @@ function MainApp() {
               </div>
             </div>
             <div>
-              <p className="mb-4 text-gray-700">How much do you agree with {getOtherStance()}?</p>
+              <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{getOtherStance()}</strong>?</p>
               <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
                 {[1, 2, 3, 4, 5].map((value) => (
                   <label key={value} className="flex flex-col items-center">
@@ -660,7 +768,7 @@ function MainApp() {
           className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
             !stanceAgreement.assigned || !stanceAgreement.opposite ? 'opacity-50 cursor-not-allowed' : ''
           }`}
-          onClick={() => setCurrentStep(11)}
+          onClick={handleStanceAgreementSubmit}
           disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
         >
           {!stanceAgreement.assigned || !stanceAgreement.opposite
@@ -672,12 +780,16 @@ function MainApp() {
     );
 
   case 11: // Alternative Uses Task
+    const handleAUTComplete = async () => {
+      await saveAlternativeUses();
+      setCurrentStep(12);
+    };
     return (
       <div className="w-3/4 mx-auto p-8 min-h-screen">
         <AlternativeUsesTask
           responses={autResponses}
           setResponses={setAutResponses}
-          onComplete={() => setCurrentStep(12)}
+          onComplete={handleAUTComplete}
         />
       </div>
     );

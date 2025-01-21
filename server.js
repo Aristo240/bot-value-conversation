@@ -354,111 +354,33 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    const { 
-      demographics, 
-      pvq21, 
-      sbsvs, 
-      attitudeSurvey, 
-      stanceAgreement, 
-      initialAssessment,
-      alternativeUses,
-      finalResponse,
-      chat 
-    } = req.body;
-
-    // Update demographics with timestamp
-    if (demographics) {
-      session.demographics = {
-        age: demographics.age,
-        gender: demographics.gender,
-        education: demographics.education,
-        timestamp: new Date()
-      };
+    // Merge the updates with existing data
+    if (req.body.demographics) {
+      session.demographics = { ...session.demographics, ...req.body.demographics };
     }
-
-    // Update PVQ21 responses
-    if (pvq21?.responses) {
-      session.pvq21 = {
-        responses: Object.entries(pvq21.responses).map(([questionId, value]) => ({
-          questionId: parseInt(questionId),
-          value: value,
-          question: getPVQ21Questions(demographics.gender)[parseInt(questionId) - 1].text
-        })),
-        timestamp: new Date()
-      };
+    if (req.body.pvq21) {
+      session.pvq21 = { ...session.pvq21, ...req.body.pvq21 };
     }
-
-    // Update initial assessment
-    if (initialAssessment) {
-      session.initialAssessment = {
-        interesting: initialAssessment.interesting,
-        important: initialAssessment.important,
-        agreement: initialAssessment.agreement,
-        timestamp: new Date()
-      };
+    if (req.body.initialAssessment) {
+      session.initialAssessment = { ...session.initialAssessment, ...req.body.initialAssessment };
     }
-
-    // Update chat history
-    if (chat) {
-      session.chat = chat.map(msg => ({
-        messageId: msg.messageId,
-        text: msg.text,
-        sender: msg.sender,
-        timestamp: new Date(msg.timestamp)
-      }));
+    if (req.body.finalResponse) {
+      session.finalResponse = { ...session.finalResponse, ...req.body.finalResponse };
     }
-
-    // Update final response
-    if (finalResponse) {
-      session.finalResponse = {
-        text: finalResponse.text,
-        timestamp: new Date()
-      };
+    if (req.body.sbsvs) {
+      session.sbsvs = { ...session.sbsvs, ...req.body.sbsvs };
     }
-
-    // Update SBSVS responses
-    if (sbsvs) {
-      session.sbsvs = {
-        responses: Object.entries(sbsvs).map(([questionId, value]) => ({
-          questionId: parseInt(questionId),
-          value: value,
-          question: SBSVSQuestions[parseInt(questionId) - 1].text
-        })),
-        timestamp: new Date()
-      };
+    if (req.body.attitudeSurvey) {
+      session.attitudeSurvey = { ...session.attitudeSurvey, ...req.body.attitudeSurvey };
     }
-
-    // Update attitude survey
-    if (attitudeSurvey) {
-      session.attitudeSurvey = {
-        responses: Object.entries(attitudeSurvey).map(([aspect, rating]) => ({
-          aspect,
-          rating,
-          question: `How ${aspect.toLowerCase()} was your experience?`
-        })),
-        timestamp: new Date()
-      };
+    if (req.body.stanceAgreement) {
+      session.stanceAgreement = { ...session.stanceAgreement, ...req.body.stanceAgreement };
     }
-
-    // Update stance agreement
-    if (stanceAgreement) {
-      session.stanceAgreement = {
-        assigned: stanceAgreement.assigned,
-        opposite: stanceAgreement.opposite,
-        timestamp: new Date()
-      };
+    if (req.body.alternativeUses) {
+      session.alternativeUses = { ...session.alternativeUses, ...req.body.alternativeUses };
     }
-
-    // Update alternative uses
-    if (alternativeUses) {
-      session.alternativeUses = {
-        responses: alternativeUses.map(response => ({
-          id: response.id,
-          idea: response.idea,
-          timestamp: new Date(response.timestamp)
-        })),
-        timestamp: new Date()
-      };
+    if (req.body.chat) {
+      session.chat = req.body.chat;
     }
 
     await session.save();
