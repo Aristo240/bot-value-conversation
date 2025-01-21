@@ -235,12 +235,7 @@ function MainApp() {
 
   const saveInitialAssessment = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/initialAssessment`, {
-        interesting: initialAttitudeResponses.interesting,
-        important: initialAttitudeResponses.important,
-        agreement: initialAttitudeResponses.agreement,
-        timestamp: new Date()
-      });
+      await axios.post(`${API_URL}/sessions/${sessionId}/initialAssessment`, initialAttitudeResponses);
     } catch (error) {
       console.error('Error saving initial assessment:', error);
     }
@@ -293,13 +288,7 @@ function MainApp() {
 
   const saveStanceAgreement = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        stanceAgreement: {
-          assigned: stanceAgreement.assigned,
-          opposite: stanceAgreement.opposite,
-          timestamp: new Date()
-        }
-      });
+      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, stanceAgreement);
     } catch (error) {
       console.error('Error saving stance agreement:', error);
     }
@@ -741,12 +730,6 @@ function MainApp() {
         );
 
       case 10: // Stance Agreement
-        const handleStanceAgreementSubmit = async () => {
-          if (stanceAgreement.assigned && stanceAgreement.opposite) {
-            await saveStanceAgreement();
-            setCurrentStep(11);
-          }
-        };
         return (
           <div className="w-3/4 mx-auto p-8 min-h-screen">
             <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 3</h2>
@@ -801,7 +784,12 @@ function MainApp() {
               className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
                 !stanceAgreement.assigned || !stanceAgreement.opposite ? 'opacity-50 cursor-not-allowed' : ''
               }`}
-              onClick={handleStanceAgreementSubmit}
+              onClick={async () => {
+                if (stanceAgreement.assigned && stanceAgreement.opposite) {
+                  await saveStanceAgreement();
+                  setCurrentStep(11);
+                }
+              }}
               disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
             >
               {!stanceAgreement.assigned || !stanceAgreement.opposite

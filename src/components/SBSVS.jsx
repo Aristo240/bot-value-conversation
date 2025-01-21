@@ -50,56 +50,49 @@ export const SBSVS = ({ responses, setResponses }) => {
     setResponses(newResponses);
   };
 
+  const getScaleLabel = (value) => {
+    switch (value) {
+      case -1:
+        return 'Opposed to my values';
+      case 0:
+        return 'Not important';
+      case 3:
+        return 'Important';
+      case 6:
+        return 'Very important';
+      case 7:
+        return 'Supreme importance';
+      default:
+        return '';
+    }
+  };
+
   return (
     <div className="p-6 border rounded-lg bg-white">
       <h2 className="text-2xl font-bold mb-6">Values Survey</h2>
-      <div className="mb-8">
-        <p className="font-medium text-gray-700 mb-4">Please rate how important each value is for you:</p>
-        <div className="grid grid-cols-5 gap-2 mb-2 text-sm text-center text-gray-600">
-          <div className="flex flex-col items-center">
-            <span className="text-sm text-gray-600">-1</span>
-            <span className="text-sm text-gray-600">Opposed to my values</span>
-          </div>
-          <div>0<br/>Not important</div>
-          <div>1</div>
-          <div>2</div>
-          <div>3<br/>Important</div>
-          <div>4</div>
-          <div>5</div>
-          <div>6<br/>Very important</div>
-          <div className="flex flex-col items-center">
-            <span className="text-sm text-gray-600">7</span>
-            <span className="text-sm text-gray-600">Supreme importance</span>
-          </div>
-        </div>
-      </div>
-
       <div className="space-y-8">
         {SBSVSQuestions.map((question) => (
           <div key={question.id} className="pb-6 border-b border-gray-200">
             <p className="mb-4 text-gray-700">{question.text}</p>
             <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-              <div className="flex flex-col items-center">
-                <span className="text-sm text-gray-600">-1</span>
-                <span className="text-sm text-gray-600">Opposed to my values</span>
-              </div>
               {[-1, 0, 1, 2, 3, 4, 5, 6, 7].map((value) => (
-                <label key={value} className="flex flex-col items-center">
-                  <input
-                    type="radio"
-                    name={`question-${question.id}`}
-                    value={value}
-                    checked={responses[question.id] === value}
-                    onChange={() => handleValueChange(question.id, value)}
-                    className="mb-1"
-                  />
-                  <span className="text-sm text-gray-600">{value}</span>
-                </label>
+                <div key={value} className="flex flex-col items-center">
+                  <label className="flex flex-col items-center">
+                    <input
+                      type="radio"
+                      name={`question-${question.id}`}
+                      value={value}
+                      checked={responses[question.id] === value}
+                      onChange={() => handleValueChange(question.id, value)}
+                      className="mb-1"
+                    />
+                    <span className="text-sm text-gray-600">{value}</span>
+                    <span className="text-xs text-gray-500 text-center mt-1 w-20">
+                      {getScaleLabel(value)}
+                    </span>
+                  </label>
+                </div>
               ))}
-              <div className="flex flex-col items-center">
-                <span className="text-sm text-gray-600">7</span>
-                <span className="text-sm text-gray-600">Supreme importance</span>
-              </div>
             </div>
           </div>
         ))}

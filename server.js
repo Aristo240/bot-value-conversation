@@ -584,12 +584,39 @@ app.post('/api/sessions/:sessionId/initialAssessment', async (req, res) => {
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    
-    session.initialAssessment = req.body;
+
+    session.initialAssessment = {
+      interesting: req.body.interesting,
+      important: req.body.important,
+      agreement: req.body.agreement,
+      timestamp: new Date()
+    };
+
     await session.save();
     res.status(201).json(session.initialAssessment);
   } catch (error) {
     console.error('Error saving initial assessment:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    session.stanceAgreement = {
+      assigned: req.body.assigned,
+      opposite: req.body.opposite,
+      timestamp: new Date()
+    };
+
+    await session.save();
+    res.status(201).json(session.stanceAgreement);
+  } catch (error) {
+    console.error('Error saving stance agreement:', error);
     res.status(400).json({ message: error.message });
   }
 });
