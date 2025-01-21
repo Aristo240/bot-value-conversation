@@ -230,10 +230,18 @@ app.get('/api/health', (req, res) => {
 // Create new session
 app.post('/api/sessions', async (req, res) => {
   try {
-    const session = new Session(req.body);
+    const { sessionId, stance, botPersonality } = req.body;
+    const session = new Session({
+      sessionId,
+      timestamp: new Date(),
+      stance,
+      botPersonality,
+      // ... other fields ...
+    });
     await session.save();
     res.status(201).json(session);
   } catch (error) {
+    console.error('Error creating session:', error);
     res.status(400).json({ message: error.message });
   }
 });

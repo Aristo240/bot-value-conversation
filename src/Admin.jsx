@@ -417,6 +417,54 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
     }
   };
 
+  const exportSingleSession = (session) => {
+    try {
+      let content;
+      const filename = `session_${session.sessionId}_${selectedDataType}`;
+
+      // Filter data if specific type selected
+      let dataToExport = session;
+      if (selectedDataType !== 'all') {
+        dataToExport = {
+          sessionId: session.sessionId,
+          timestamp: session.timestamp,
+          botPersonality: session.botPersonality,
+          stance: session.stance,
+          [selectedDataType]: session[selectedDataType]
+        };
+      }
+
+      switch (selectedFileType) {
+        case 'json':
+          content = JSON.stringify(dataToExport, null, 2);
+          downloadFile(content, filename, 'application/json');
+          break;
+        case 'txt':
+          content = convertToText([dataToExport]);
+          downloadFile(content, filename, 'text/plain');
+          break;
+        default:
+          content = convertToCSV([dataToExport]);
+          downloadFile(content, filename, 'text/csv');
+      }
+    } catch (error) {
+      console.error('Error exporting session:', error);
+      alert('Failed to export data. Please try again.');
+    }
+  };
+
+  const downloadFile = (content, filename, type) => {
+    const blob = new Blob([content], { type: `${type};charset=utf-8;` });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${filename}.${selectedFileType}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -544,17 +592,53 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
         <div className="space-y-8">
           {sessions.map((session) => (
             <div key={session.sessionId} className="border rounded-lg p-6 bg-white shadow">
-              <div className="grid grid-cols-2 gap-4 mb-4">
+              <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-bold">Session ID: {session.sessionId}</h3>
                   <p>Timestamp: {new Date(session.timestamp).toLocaleString()}</p>
+                  <p className="font-semibold">Bot Personality: {session.botPersonality || 'N/A'}</p>
                   <p>Stance: {session.stance}</p>
                 </div>
                 
+                <div className="flex gap-2">
+                  <select
+                    value={selectedFileType}
+                    onChange={(e) => setSelectedFileType(e.target.value)}
+                    className="p-2 border rounded"
+                  >
+                    {fileTypes.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+                  
+                  <select
+                    value={selectedDataType}
+                    onChange={(e) => setSelectedDataType(e.target.value)}
+                    className="p-2 border rounded"
+                  >
+                    {dataTypes.map((type) => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => exportSingleSession(session)}
+                    className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                  >
+                    Export Session
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 {/* Demographics */}
                 {session.demographics && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Demographics:</h3>
+                    <h4 className="font-semibold mb-2">Demographics:</h4>
                     <p>Age: {session.demographics.age}</p>
                     <p>Gender: {session.demographics.gender}</p>
                     <p>Education: {session.demographics.education}</p>
@@ -564,7 +648,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* PVQ21 */}
                 {session.pvq21?.responses && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">PVQ21 Responses:</h3>
+                    <h4 className="font-semibold mb-2">PVQ21 Responses:</h4>
                     <div className="grid grid-cols-3 gap-2">
                       {session.pvq21.responses.map((response) => (
                         <div key={response.questionId}>
@@ -578,7 +662,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* Initial Assessment */}
                 {session.initialAssessment && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Initial Assessment:</h3>
+                    <h4 className="font-semibold mb-2">Initial Assessment:</h4>
                     <p>Interesting: {session.initialAssessment.interesting}</p>
                     <p>Important: {session.initialAssessment.important}</p>
                     <p>Agreement: {session.initialAssessment.agreement}</p>
@@ -588,7 +672,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* Chat History */}
                 {session.chat && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Chat History:</h3>
+                    <h4 className="font-semibold mb-2">Chat History:</h4>
                     <div className="space-y-2 max-h-60 overflow-y-auto">
                       {session.chat.map((msg) => (
                         <div key={msg.messageId} className={`p-2 ${msg.sender === 'bot' ? 'bg-blue-50' : 'bg-green-50'}`}>
@@ -602,7 +686,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* Final Response */}
                 {session.finalResponse && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Final Response:</h3>
+                    <h4 className="font-semibold mb-2">Final Response:</h4>
                     <p>{session.finalResponse.text}</p>
                   </div>
                 )}
@@ -610,7 +694,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* SBSVS */}
                 {session.sbsvs?.responses && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">SBSVS Responses:</h3>
+                    <h4 className="font-semibold mb-2">SBSVS Responses:</h4>
                     <div className="grid grid-cols-3 gap-2">
                       {session.sbsvs.responses.map((response) => (
                         <div key={response.questionId}>
@@ -624,7 +708,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* Attitude Survey */}
                 {session.attitudeSurvey?.responses && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Attitude Survey:</h3>
+                    <h4 className="font-semibold mb-2">Attitude Survey:</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {session.attitudeSurvey.responses.map((response) => (
                         <div key={response.aspect}>
@@ -638,7 +722,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* Stance Agreement */}
                 {session.stanceAgreement && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Stance Agreement:</h3>
+                    <h4 className="font-semibold mb-2">Stance Agreement:</h4>
                     <p>Assigned: {session.stanceAgreement.assigned}</p>
                     <p>Opposite: {session.stanceAgreement.opposite}</p>
                   </div>
@@ -647,7 +731,7 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {/* Alternative Uses */}
                 {session.alternativeUses?.responses && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Alternative Uses:</h3>
+                    <h4 className="font-semibold mb-2">Alternative Uses:</h4>
                     <div className="space-y-1">
                       {session.alternativeUses.responses.map((response, index) => (
                         <div key={response.id}>
@@ -658,13 +742,6 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                   </div>
                 )}
               </div>
-
-              <button
-                onClick={() => exportData([session])}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Export Session
-              </button>
             </div>
           ))}
         </div>
