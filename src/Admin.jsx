@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { saveAs } from 'file-saver';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
@@ -100,202 +101,103 @@ function Admin() {
     }
   };
 
-  const convertToCSV = (data) => {
-    if (Array.isArray(data?.chat)) {
-      // For chat data
-      const rows = data.chat.map(msg => ({
-        sessionId: data.sessionId,
-        timestamp: msg.timestamp,
-        sender: msg.sender,
-        message: msg.text.replace(/,/g, ';'),
-        stance: data.stance,
-        botPersonality: data.botPersonality,
-        aiModel: data.aiModel,
-        aiModelVersion: data.aiModelVersion || 'gpt-4' // Default for older sessions
-      }));
-      const headers = Object.keys(rows[0]).join(',');
-      return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
-    } else if (data.sbsvs || data.pvq21 || data.initialAssessment) {
-      const rows = [];
+  const exportToCSV = async (sessionData) => {
+    try {
+      // Create CSV headers
+      const headers = [
+        'SessionId',
+        'Timestamp',
+        'Stance',
+        // Demographics
+        'Age',
+        'Gender',
+        'Education',
+        // PVQ21
+        ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
+        // Initial Assessment
+        'Initial_Interesting',
+        'Initial_Important',
+        'Initial_Agreement',
+        // Chat History
+        'Chat_History',
+        // Final Response
+        'Final_Response',
+        // SBSVS
+        ...Array.from({ length: 10 }, (_, i) => `SBSVS_Q${i + 1}`),
+        // Attitude Survey
+        'Attitude_Interesting',
+        'Attitude_Enjoyable',
+        'Attitude_Difficult',
+        'Attitude_Irritating',
+        'Attitude_Helpful',
+        'Attitude_Satisfying',
+        'Attitude_Effective',
+        'Attitude_Engaging',
+        'Attitude_Stimulating',
+        'Attitude_Informative',
+        'Attitude_Frustrating',
+        // Stance Agreement
+        'Stance_Agreement_Assigned',
+        'Stance_Agreement_Opposite',
+        // Alternative Uses
+        'Alternative_Uses'
+      ];
+
+      // Transform data for CSV
+      const rows = sessionData.map(session => {
+        return [
+          session.sessionId,
+          session.timestamp,
+          session.stance,
+          // Demographics
+          session.demographics?.age || '',
+          session.demographics?.gender || '',
+          session.demographics?.education || '',
+          // PVQ21
+          ...Array.from({ length: 21 }, (_, i) => 
+            session.pvq21?.responses?.find(r => r.questionId === i + 1)?.value || ''
+          ),
+          // Initial Assessment
+          session.initialAssessment?.interesting || '',
+          session.initialAssessment?.important || '',
+          session.initialAssessment?.agreement || '',
+          // Chat History
+          session.chat?.map(msg => `${msg.sender}: ${msg.text}`).join(' | ') || '',
+          // Final Response
+          session.finalResponse?.text || '',
+          // SBSVS
+          ...Array.from({ length: 10 }, (_, i) => 
+            session.sbsvs?.responses?.find(r => r.questionId === i + 1)?.value || ''
+          ),
+          // Attitude Survey
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Interesting')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Enjoyable')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Difficult')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Irritating')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Helpful')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Satisfying')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Effective')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Engaging')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Stimulating')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Informative')?.rating || '',
+          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Frustrating')?.rating || '',
+          // Stance Agreement
+          session.stanceAgreement?.assigned || '',
+          session.stanceAgreement?.opposite || '',
+          // Alternative Uses
+          session.alternativeUses?.responses?.map(r => r.idea).join(' | ') || ''
+        ].map(value => `"${value}"`).join(',');
+      });
+
+      // Combine headers and rows
+      const csv = [headers.join(','), ...rows].join('\n');
       
-      // Initial Assessment responses
-      if (data.initialAssessment) {
-        Object.entries(data.initialAssessment).forEach(([aspect, value]) => {
-          rows.push({
-            sessionId: data.sessionId,
-            type: 'initial_assessment',
-            aspect,
-            value,
-            timestamp: data.initialAssessment.timestamp
-          });
-        });
-      }
-
-      // PVQ21 responses
-      data.pvq21?.responses?.forEach(r => {
-        rows.push({
-          sessionId: data.sessionId,
-          type: 'pvq21',
-          questionId: r.questionId,
-          value: r.value,
-          gender: data.demographics?.gender,
-          timestamp: data.pvq21.timestamp
-        });
-      });
-
-      // SBSVS responses
-      data.sbsvs?.responses?.forEach(r => {
-        rows.push({
-          sessionId: data.sessionId,
-          type: 'sbsvs',
-          questionId: r.questionId,
-          value: r.value,
-          timestamp: data.sbsvs.timestamp
-        });
-      });
-
-      // Attitude responses
-      data.attitudeSurvey?.responses?.forEach(r => {
-        rows.push({
-          sessionId: data.sessionId,
-          type: 'attitude',
-          aspect: r.aspect,
-          rating: r.rating,
-          timestamp: data.attitudeSurvey.timestamp
-        });
-      });
-
-      // Stance agreement
-      if (data.stanceAgreement) {
-        rows.push({
-          sessionId: data.sessionId,
-          type: 'stance_agreement',
-          assigned: data.stanceAgreement.assigned,
-          opposite: data.stanceAgreement.opposite,
-          timestamp: data.stanceAgreement.timestamp
-        });
-      }
-
-      // Demographics
-      if (data.demographics) {
-        rows.push({
-          sessionId: data.sessionId,
-          type: 'demographics',
-          age: data.demographics.age,
-          gender: data.demographics.gender,
-          education: data.demographics.education,
-          timestamp: data.demographics.timestamp
-        });
-      }
-
-      const headers = 'sessionId,type,questionId,value,aspect,rating,assigned,opposite,age,gender,education,timestamp';
-      return [headers, ...rows.map(row => Object.values(row).join(','))].join('\n');
+      // Create and download CSV file
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      saveAs(blob, 'session_data.csv');
+    } catch (error) {
+      console.error('Error exporting to CSV:', error);
     }
-    // For other data
-    const headers = Object.keys(data).join(',');
-    const values = Object.values(data).join(',');
-    return [headers, values].join('\n');
-  };
-
-  const convertToTXT = (data) => {
-    let content = `Session ID: ${data.sessionId}\n`;
-    content += `Stance: ${data.stance}\n`;
-    content += `Bot Personality: ${data.botPersonality}\n`;
-    content += `AI Model: ${data.aiModel}\n`;
-    content += `AI Model Version: ${data.aiModelVersion || 'gpt-4'}\n\n`;
-
-    if (data.demographics) {
-      content += "Demographics:\n";
-      content += `Age: ${data.demographics.age}\n`;
-      content += `Gender: ${data.demographics.gender}\n`;
-      content += `Education: ${data.demographics.education}\n\n`;
-    }
-
-    if (data.pvq21) {
-      content += "PVQ21 Responses:\n";
-      data.pvq21.responses.forEach(r => {
-        content += `Question ${r.questionId}: ${r.value}\n`;
-      });
-      content += "\n";
-    }
-
-    if (data.sbsvs) {
-      content += "SBSVS Responses:\n";
-      data.sbsvs.responses.forEach(r => {
-        content += `Question ${r.questionId}: ${r.value}\n`;
-      });
-      content += "\n";
-    }
-
-    if (data.attitudeSurvey) {
-      content += "Attitude Survey:\n";
-      data.attitudeSurvey.responses.forEach(r => {
-        content += `${r.aspect}: ${r.rating}\n`;
-      });
-      content += "\n";
-    }
-
-    if (data.stanceAgreement) {
-      content += "Stance Agreement:\n";
-      content += `Assigned stance: ${data.stanceAgreement.assigned}\n`;
-      content += `Opposite stance: ${data.stanceAgreement.opposite}\n\n`;
-    }
-
-    if (data.initialAssessment) {
-      content += "\nInitial Assessment:\n";
-      content += `Interest Level: ${data.initialAssessment.interesting}/7\n`;
-      content += `Importance Level: ${data.initialAssessment.important}/7\n`;
-      content += `Agreement Level: ${data.initialAssessment.agreement}/7\n`;
-    }
-
-    if (data.chat) {
-      content += "Chat History:\n\n";
-      content += data.chat.map(msg => 
-        `${msg.sender === 'bot' ? '🤖 Assistant:' : '👤 User:'} ${msg.text}\n`
-      ).join('\n');
-    }
-
-    return content;
-  };
-
-  const downloadInFormat = (data, filename, format) => {
-    let content;
-    let type;
-    let extension;
-
-    switch (format) {
-      case 'json':
-        content = JSON.stringify(data, null, 2);
-        type = 'application/json';
-        extension = 'json';
-        break;
-      case 'csv':
-        content = convertToCSV(data);
-        type = 'text/csv';
-        extension = 'csv';
-        break;
-      case 'txt':
-        content = convertToTXT(data);
-        type = 'text/plain';
-        extension = 'txt';
-        break;
-      default:
-        content = JSON.stringify(data, null, 2);
-        type = 'application/json';
-        extension = 'json';
-    }
-
-    const blob = new Blob([content], { type });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${filename}.${extension}`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-    
-    showStatus(`Downloaded ${filename}.${extension}`);
   };
 
   const downloadSession = async (session, type = 'full') => {
@@ -529,103 +431,34 @@ function Admin() {
         </div>
 
         {/* Sessions List */}
-        <div className="space-y-6">
+        <div className="space-y-8">
           {sessions.map((session) => (
-            <div key={session.sessionId} className="bg-white p-6 rounded-lg shadow mb-4">
-              <div className="flex justify-between items-start mb-4">
+            <div key={session.sessionId} className="border rounded-lg p-6 bg-white shadow">
+              <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
-                  <h2 className="text-xl font-semibold">Session ID: {session.sessionId}</h2>
-                  <p className="text-gray-600">
-                    Date: {new Date(session.timestamp).toLocaleString()}
-                  </p>
+                  <h3 className="font-bold">Session ID: {session.sessionId}</h3>
+                  <p>Timestamp: {new Date(session.timestamp).toLocaleString()}</p>
                   <p>Stance: {session.stance}</p>
-                  <p>Bot Personality: {session.botPersonality}</p>
-                  <p>AI Model: {session.aiModel}</p>
-                  <p>AI Model Version: {session.aiModelVersion || 'gpt-4'}</p>
                 </div>
-                <div className="flex gap-2">
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowDownloadOptions(session.sessionId)}
-                      className="bg-blue-500 text-white py-1 px-3 rounded hover:bg-blue-600"
-                    >
-                      Download
-                    </button>
-                    {showDownloadOptions === session.sessionId && (
-                      <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg z-50">
-                        <div className="p-2">
-                          <div className="mb-2 px-2">
-                            <label className="text-sm text-gray-600">File Type:</label>
-                            <select
-                              value={selectedFileType}
-                              onChange={(e) => setSelectedFileType(e.target.value)}
-                              className="w-full mt-1 p-1 border rounded text-sm"
-                            >
-                              {fileTypes.map((type) => (
-                                <option key={type.value} value={type.value}>
-                                  {type.label}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                          <div className="border-t"></div>
-                          {[
-                            { label: 'Full Session', type: 'full' },
-                            { label: 'Demographics', type: 'demographics' },
-                            { label: 'PVQ21', type: 'pvq21' },
-                            { label: 'Initial Assessment', type: 'initial' },
-                            { label: 'Chat History', type: 'chat' },
-                            { label: 'Final Response', type: 'final' },
-                            { label: 'SBSVS', type: 'sbsvs' },
-                            { label: 'Attitude Survey', type: 'attitude' },
-                            { label: 'Alternative Uses Task', type: 'aut' }
-                          ].map((option) => (
-                            <button
-                              key={option.type}
-                              className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                              onClick={() => {
-                                downloadSession(session, option.type);
-                                setShowDownloadOptions(null);
-                              }}
-                            >
-                              {option.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  <button
-                    onClick={() => deleteSession(session.sessionId)}
-                    className="bg-red-500 text-white py-1 px-3 rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              {/* Display all survey data */}
-              <div className="mt-4 space-y-4">
+                
                 {/* Demographics */}
                 {session.demographics && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h3 className="font-semibold mb-2">Demographics:</h3>
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>Age: {session.demographics.age}</div>
-                      <div>Gender: {session.demographics.gender}</div>
-                      <div>Education: {session.demographics.education}</div>
-                    </div>
+                    <p>Age: {session.demographics.age}</p>
+                    <p>Gender: {session.demographics.gender}</p>
+                    <p>Education: {session.demographics.education}</p>
                   </div>
                 )}
 
                 {/* PVQ21 */}
-                {session.pvq21 && (
+                {session.pvq21?.responses && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h3 className="font-semibold mb-2">PVQ21 Responses:</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-2">
                       {session.pvq21.responses.map((response) => (
                         <div key={response.questionId}>
-                          Question {response.questionId}: {response.value}
+                          Q{response.questionId}: {response.value}
                         </div>
                       ))}
                     </div>
@@ -636,22 +469,42 @@ function Admin() {
                 {session.initialAssessment && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h3 className="font-semibold mb-2">Initial Assessment:</h3>
-                    <div className="space-y-2">
-                      <div>Interest: {session.initialAssessment.interesting}/7</div>
-                      <div>Importance: {session.initialAssessment.important}/7</div>
-                      <div>Agreement: {session.initialAssessment.agreement}/7</div>
+                    <p>Interesting: {session.initialAssessment.interesting}</p>
+                    <p>Important: {session.initialAssessment.important}</p>
+                    <p>Agreement: {session.initialAssessment.agreement}</p>
+                  </div>
+                )}
+
+                {/* Chat History */}
+                {session.chat && (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <h3 className="font-semibold mb-2">Chat History:</h3>
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
+                      {session.chat.map((msg) => (
+                        <div key={msg.messageId} className={`p-2 ${msg.sender === 'bot' ? 'bg-blue-50' : 'bg-green-50'}`}>
+                          <strong>{msg.sender}:</strong> {msg.text}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
+                {/* Final Response */}
+                {session.finalResponse && (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <h3 className="font-semibold mb-2">Final Response:</h3>
+                    <p>{session.finalResponse.text}</p>
+                  </div>
+                )}
+
                 {/* SBSVS */}
-                {session.sbsvs && (
+                {session.sbsvs?.responses && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h3 className="font-semibold mb-2">SBSVS Responses:</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-3 gap-2">
                       {session.sbsvs.responses.map((response) => (
                         <div key={response.questionId}>
-                          Question {response.questionId}: {response.value}
+                          Q{response.questionId}: {response.value}
                         </div>
                       ))}
                     </div>
@@ -659,10 +512,10 @@ function Admin() {
                 )}
 
                 {/* Attitude Survey */}
-                {session.attitudeSurvey && (
+                {session.attitudeSurvey?.responses && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h3 className="font-semibold mb-2">Attitude Survey:</h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-2">
                       {session.attitudeSurvey.responses.map((response) => (
                         <div key={response.aspect}>
                           {response.aspect}: {response.rating}
@@ -672,11 +525,20 @@ function Admin() {
                   </div>
                 )}
 
-                {/* Alternative Uses Task */}
-                {session.alternativeUses && (
+                {/* Stance Agreement */}
+                {session.stanceAgreement && (
                   <div className="bg-gray-50 p-4 rounded">
-                    <h3 className="font-semibold mb-2">Alternative Uses Task:</h3>
-                    <div className="space-y-2">
+                    <h3 className="font-semibold mb-2">Stance Agreement:</h3>
+                    <p>Assigned: {session.stanceAgreement.assigned}</p>
+                    <p>Opposite: {session.stanceAgreement.opposite}</p>
+                  </div>
+                )}
+
+                {/* Alternative Uses */}
+                {session.alternativeUses?.responses && (
+                  <div className="bg-gray-50 p-4 rounded">
+                    <h3 className="font-semibold mb-2">Alternative Uses:</h3>
+                    <div className="space-y-1">
                       {session.alternativeUses.responses.map((response, index) => (
                         <div key={response.id}>
                           {index + 1}. {response.idea}
@@ -686,6 +548,13 @@ function Admin() {
                   </div>
                 )}
               </div>
+
+              <button
+                onClick={() => exportToCSV([session])}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              >
+                Export to CSV
+              </button>
             </div>
           ))}
         </div>
