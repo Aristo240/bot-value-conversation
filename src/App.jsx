@@ -157,60 +157,25 @@ function MainApp() {
     setSubmitError('');
     
     try {
-      // Format SBSVS responses into array format
-      const sbsvsArray = Object.entries(sbsvsResponses).map(([questionId, value]) => ({
-        questionId: parseInt(questionId),
-        value: value
-      }));
-
-      // Format attitude survey responses into array format
-      const attitudeArray = Object.entries(attitudeResponses).map(([aspect, rating]) => ({
-        aspect,
-        rating
-      }));
-
-      // Format PVQ21 responses into array format
-      const pvq21Array = Object.entries(pvq21Responses.responses || {}).map(([questionId, value]) => ({
-        questionId: parseInt(questionId),
-        value: value
-      }));
-
-      // Format alternative uses responses
-      const autArray = autResponses.map(response => ({
-        id: response.id,
-        idea: response.idea,
-        timestamp: response.timestamp
-      }));
-
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         demographics: demographicResponses,
         pvq21: {
-          responses: pvq21Array,
+          responses: pvq21Responses.responses,
           timestamp: pvq21Responses.timestamp
         },
-        sbsvs: {
-          responses: sbsvsArray,
+        initialAssessment: initialAttitudeResponses,
+        chat: messages,
+        finalResponse: {
+          text: userResponse,
           timestamp: new Date()
         },
-        attitudeSurvey: {
-          responses: attitudeArray,
-          timestamp: new Date()
-        },
-        stanceAgreement: {
-          ...stanceAgreement,
-          timestamp: new Date()
-        },
-        initialAssessment: {
-          ...initialAttitudeResponses,
-          timestamp: new Date()
-        },
-        alternativeUses: {
-          responses: autArray,
-          timestamp: new Date()
-        }
+        sbsvs: sbsvsResponses,
+        attitudeSurvey: attitudeResponses,
+        stanceAgreement: stanceAgreement,
+        alternativeUses: autResponses
       });
       
-      setCurrentStep(9);
+      setCurrentStep(12);
     } catch (error) {
       console.error('Error submitting responses:', error);
       setSubmitError('There was an error submitting your responses. Please try again.');

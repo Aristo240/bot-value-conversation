@@ -346,24 +346,6 @@ Assistant (remember to maintain personality and focus on stance):`;
   }
 });
 
-// Save final response
-app.post('/api/sessions/:sessionId/response', async (req, res) => {
-  try {
-    const session = await Session.findOne({ sessionId: req.params.sessionId });
-    if (!session) {
-      return res.status(404).json({ message: 'Session not found' });
-    }
-    session.finalResponse = {
-      text: req.body.text,
-      timestamp: new Date()
-    };
-    await session.save();
-    res.status(201).json(session);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-});
-
 // Save all questionnaire responses
 app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
   try {
@@ -372,35 +354,111 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    const { demographics, pvq21, sbsvs, attitudeSurvey, stanceAgreement, initialAssessment, alternativeUses } = req.body;
+    const { 
+      demographics, 
+      pvq21, 
+      sbsvs, 
+      attitudeSurvey, 
+      stanceAgreement, 
+      initialAssessment,
+      alternativeUses,
+      finalResponse,
+      chat 
+    } = req.body;
 
-    // Update each section if provided
+    // Update demographics with timestamp
     if (demographics) {
-      session.demographics = demographics;
+      session.demographics = {
+        age: demographics.age,
+        gender: demographics.gender,
+        education: demographics.education,
+        timestamp: new Date()
+      };
     }
 
-    if (pvq21) {
-      session.pvq21 = pvq21;
+    // Update PVQ21 responses
+    if (pvq21?.responses) {
+      session.pvq21 = {
+        responses: Object.entries(pvq21.responses).map(([questionId, value]) => ({
+          questionId: parseInt(questionId),
+          value: value,
+          question: getPVQ21Questions(demographics.gender)[parseInt(questionId) - 1].text
+        })),
+        timestamp: new Date()
+      };
     }
 
-    if (sbsvs) {
-      session.sbsvs = sbsvs;
-    }
-
-    if (attitudeSurvey) {
-      session.attitudeSurvey = attitudeSurvey;
-    }
-
-    if (stanceAgreement) {
-      session.stanceAgreement = stanceAgreement;
-    }
-
+    // Update initial assessment
     if (initialAssessment) {
-      session.initialAssessment = initialAssessment;
+      session.initialAssessment = {
+        interesting: initialAssessment.interesting,
+        important: initialAssessment.important,
+        agreement: initialAssessment.agreement,
+        timestamp: new Date()
+      };
     }
 
+    // Update chat history
+    if (chat) {
+      session.chat = chat.map(msg => ({
+        messageId: msg.messageId,
+        text: msg.text,
+        sender: msg.sender,
+        timestamp: new Date(msg.timestamp)
+      }));
+    }
+
+    // Update final response
+    if (finalResponse) {
+      session.finalResponse = {
+        text: finalResponse.text,
+        timestamp: new Date()
+      };
+    }
+
+    // Update SBSVS responses
+    if (sbsvs) {
+      session.sbsvs = {
+        responses: Object.entries(sbsvs).map(([questionId, value]) => ({
+          questionId: parseInt(questionId),
+          value: value,
+          question: SBSVSQuestions[parseInt(questionId) - 1].text
+        })),
+        timestamp: new Date()
+      };
+    }
+
+    // Update attitude survey
+    if (attitudeSurvey) {
+      session.attitudeSurvey = {
+        responses: Object.entries(attitudeSurvey).map(([aspect, rating]) => ({
+          aspect,
+          rating,
+          question: `How ${aspect.toLowerCase()} was your experience?`
+        })),
+        timestamp: new Date()
+      };
+    }
+
+    // Update stance agreement
+    if (stanceAgreement) {
+      session.stanceAgreement = {
+        assigned: stanceAgreement.assigned,
+        opposite: stanceAgreement.opposite,
+        timestamp: new Date()
+      };
+    }
+
+    // Update alternative uses
     if (alternativeUses) {
-      session.alternativeUses = alternativeUses;
+      session.alternativeUses = {
+        responses: alternativeUses.map(response => ({
+          id: response.id,
+          idea: response.idea,
+          timestamp: new Date(response.timestamp)
+        })),
+        timestamp: new Date()
+      };
     }
 
     await session.save();
@@ -647,3 +705,12 @@ mongoose.connect(process.env.MONGODB_URI)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// Add these constants at the top of the file
+const SBSVSQuestions = [
+  // ... copy questions from SBSVS.jsx ...
+];
+
+const getPVQ21Questions = (gender) => [
+  // ... copy questions from PVQ21.jsx ...
+];
