@@ -159,10 +159,7 @@ function MainApp() {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         demographics: demographicResponses,
-        pvq21: {
-          responses: pvq21Responses.responses,
-          timestamp: pvq21Responses.timestamp
-        },
+        pvq21: pvq21Responses,
         initialAssessment: initialAttitudeResponses,
         chat: messages,
         finalResponse: {
@@ -171,7 +168,11 @@ function MainApp() {
         },
         sbsvs: sbsvsResponses,
         attitudeSurvey: attitudeResponses,
-        stanceAgreement: stanceAgreement,
+        stanceAgreement: {
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite),
+          timestamp: new Date()
+        },
         alternativeUses: autResponses
       });
       
@@ -293,17 +294,31 @@ function MainApp() {
     }
   };
 
-  const saveStanceAgreement = async () => {
+  const saveStanceAgreement = async (values) => {
     try {
-      console.log('Saving stance agreement:', stanceAgreement); // Debug log
+      console.log('Saving stance agreement:', values);
       const response = await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
-        assigned: parseInt(stanceAgreement.assigned),
-        opposite: parseInt(stanceAgreement.opposite),
+        assigned: parseInt(values.assigned),
+        opposite: parseInt(values.opposite),
         timestamp: new Date()
       });
-      console.log('Stance agreement saved:', response.data); // Debug log
+      
+      // Update local state
+      setStanceAgreement(values);
+      
+      console.log('Stance agreement saved successfully:', response.data);
+      
+      // Save to questionnaires endpoint as well for consistency
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        stanceAgreement: {
+          assigned: parseInt(values.assigned),
+          opposite: parseInt(values.opposite),
+          timestamp: new Date()
+        }
+      });
     } catch (error) {
       console.error('Error saving stance agreement:', error);
+      setSubmitError('Failed to save stance agreement');
     }
   };
 
@@ -745,70 +760,66 @@ function MainApp() {
       case 10: // Stance Agreement
         return (
           <div className="w-3/4 mx-auto p-8 min-h-screen">
-            <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 3</h2>
-            <div className="p-6 border rounded-lg bg-white">
-              <h3 className="text-2xl font-bold mb-6">Stance Agreement</h3>
-              <div className="space-y-6">
-                <div className="pb-6 border-b border-gray-200">
-                  <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>?</p>
-                  <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <label key={value} className="flex flex-col items-center">
-                        <input
-                          type="radio"
-                          name="stance-agreement"
-                          value={value}
-                          checked={stanceAgreement.assigned === value}
-                          onChange={(e) => setStanceAgreement({
-                            ...stanceAgreement,
-                            assigned: parseInt(e.target.value)
-                          })}
-                          className="mb-1"
-                        />
-                        <span className="text-sm text-gray-600">{value}</span>
-                      </label>
-                    ))}
-                  </div>
+            <h2 className="text-2xl font-bold mb-6">Stance Agreement</h2>
+            <div className="space-y-6">
+              <div>
+                <label className="block text-lg font-medium mb-2">
+                  How much do you agree with the stance you were assigned ({stances[stance]})?
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={stanceAgreement.assigned || '3'}
+                  onChange={(e) => setStanceAgreement(prev => ({
+                    ...prev,
+                    assigned: e.target.value
+                  }))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-sm">
+                  <span>Strongly Disagree (1)</span>
+                  <span>Strongly Agree (5)</span>
                 </div>
-                <div>
-                  <p className="mb-4 text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{getOtherStance()}</strong>?</p>
-                  <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-                    {[1, 2, 3, 4, 5].map((value) => (
-                      <label key={value} className="flex flex-col items-center">
-                        <input
-                          type="radio"
-                          name="other-stance-agreement"
-                          value={value}
-                          checked={stanceAgreement.opposite === value}
-                          onChange={(e) => setStanceAgreement({
-                            ...stanceAgreement,
-                            opposite: parseInt(e.target.value)
-                          })}
-                          className="mb-1"
-                        />
-                        <span className="text-sm text-gray-600">{value}</span>
-                      </label>
-                    ))}
-                  </div>
+              </div>
+
+              <div>
+                <label className="block text-lg font-medium mb-2">
+                  How much do you agree with the opposite stance ({getOtherStance()})?
+                </label>
+                <input
+                  type="range"
+                  min="1"
+                  max="5"
+                  value={stanceAgreement.opposite || '3'}
+                  onChange={(e) => setStanceAgreement(prev => ({
+                    ...prev,
+                    opposite: e.target.value
+                  }))}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-sm">
+                  <span>Strongly Disagree (1)</span>
+                  <span>Strongly Agree (5)</span>
                 </div>
               </div>
             </div>
+
             <button
-              className={`mt-6 w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                !stanceAgreement.assigned || !stanceAgreement.opposite ? 'opacity-50 cursor-not-allowed' : ''
+              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                !stanceAgreement.assigned || !stanceAgreement.opposite
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
               }`}
               onClick={async () => {
                 if (stanceAgreement.assigned && stanceAgreement.opposite) {
-                  await saveStanceAgreement();
+                  await saveStanceAgreement(stanceAgreement);
                   setCurrentStep(11);
                 }
               }}
               disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
             >
-              {!stanceAgreement.assigned || !stanceAgreement.opposite
-                ? 'Please complete both questions'
-                : 'Continue'
-              }
+              Continue
             </button>
           </div>
         );
