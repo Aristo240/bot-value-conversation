@@ -727,10 +727,10 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
 
                 {/* Stance Agreement */}
                 {session.stanceAgreement && (
-                  <div className="bg-gray-50 p-4 rounded">
+                  <div className="bg-gray-50 p-4 rounded mt-4">
                     <h4 className="font-semibold mb-2">Stance Agreement:</h4>
-                    <p>Assigned Stance: {session.stanceAgreement.assigned}</p>
-                    <p>Opposite Stance: {session.stanceAgreement.opposite}</p>
+                    <p>Assigned Stance: {session.stanceAgreement.assigned}/5</p>
+                    <p>Opposite Stance: {session.stanceAgreement.opposite}/5</p>
                   </div>
                 )}
 

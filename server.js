@@ -74,9 +74,9 @@ const SessionSchema = new mongoose.Schema({
     timestamp: Date
   },
   stanceAgreement: {
-    assigned: Number,
-    opposite: Number,
-    timestamp: Date
+    assigned: { type: Number, required: false },
+    opposite: { type: Number, required: false },
+    timestamp: { type: Date, required: false }
   },
   alternativeUses: {
     responses: [{
@@ -657,6 +657,27 @@ app.post('/api/sessions/:sessionId/chat', async (req, res) => {
     res.status(201).json(session.chat);
   } catch (error) {
     console.error('Error saving chat message:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Add this new endpoint
+app.patch('/api/sessions/:sessionId', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Update the session with the new data
+    if (req.body.stanceAgreement) {
+      session.stanceAgreement = req.body.stanceAgreement;
+    }
+
+    await session.save();
+    res.json(session);
+  } catch (error) {
+    console.error('Error updating session:', error);
     res.status(400).json({ message: error.message });
   }
 });

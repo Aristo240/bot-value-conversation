@@ -761,46 +761,62 @@ function MainApp() {
         return (
           <div className="w-3/4 mx-auto p-8 min-h-screen">
             <h2 className="text-2xl font-bold mb-6">Stance Agreement</h2>
-            <div className="space-y-6">
-              <div>
-                <label className="block text-lg font-medium mb-2">
+            <div className="space-y-8">
+              <div className="pb-6 border-b border-gray-200">
+                <p className="mb-4 text-gray-700">
                   How much do you agree with the stance you were assigned ({stances[stance]})?
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  value={stanceAgreement.assigned || '3'}
-                  onChange={(e) => setStanceAgreement(prev => ({
-                    ...prev,
-                    assigned: e.target.value
-                  }))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm">
-                  <span>Strongly Disagree (1)</span>
-                  <span>Strongly Agree (5)</span>
+                </p>
+                <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <div key={value} className="flex flex-col items-center">
+                      <label className="flex flex-col items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="assigned-stance"
+                          value={value}
+                          checked={parseInt(stanceAgreement.assigned) === value}
+                          onChange={(e) => setStanceAgreement(prev => ({
+                            ...prev,
+                            assigned: e.target.value
+                          }))}
+                          className="mb-2"
+                        />
+                        <span className="text-sm">{value}</span>
+                        <span className="text-xs text-gray-500 text-center mt-1">
+                          {value === 1 ? 'Strongly Disagree' : value === 5 ? 'Strongly Agree' : ''}
+                        </span>
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
 
-              <div>
-                <label className="block text-lg font-medium mb-2">
+              <div className="pb-6 border-b border-gray-200">
+                <p className="mb-4 text-gray-700">
                   How much do you agree with the opposite stance ({getOtherStance()})?
-                </label>
-                <input
-                  type="range"
-                  min="1"
-                  max="5"
-                  value={stanceAgreement.opposite || '3'}
-                  onChange={(e) => setStanceAgreement(prev => ({
-                    ...prev,
-                    opposite: e.target.value
-                  }))}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm">
-                  <span>Strongly Disagree (1)</span>
-                  <span>Strongly Agree (5)</span>
+                </p>
+                <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
+                  {[1, 2, 3, 4, 5].map((value) => (
+                    <div key={value} className="flex flex-col items-center">
+                      <label className="flex flex-col items-center cursor-pointer">
+                        <input
+                          type="radio"
+                          name="opposite-stance"
+                          value={value}
+                          checked={parseInt(stanceAgreement.opposite) === value}
+                          onChange={(e) => setStanceAgreement(prev => ({
+                            ...prev,
+                            opposite: e.target.value
+                          }))}
+                          className="mb-2"
+                        />
+                        <span className="text-sm">{value}</span>
+                        <span className="text-xs text-gray-500 text-center mt-1">
+                          {value === 1 ? 'Strongly Disagree' : value === 5 ? 'Strongly Agree' : ''}
+                        </span>
+                      </label>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -813,8 +829,28 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (stanceAgreement.assigned && stanceAgreement.opposite) {
-                  await saveStanceAgreement(stanceAgreement);
-                  setCurrentStep(11);
+                  try {
+                    // First, save to the specific endpoint
+                    await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
+                      assigned: parseInt(stanceAgreement.assigned),
+                      opposite: parseInt(stanceAgreement.opposite),
+                      timestamp: new Date()
+                    });
+
+                    // Then, update the main session document
+                    await axios.patch(`${API_URL}/sessions/${sessionId}`, {
+                      stanceAgreement: {
+                        assigned: parseInt(stanceAgreement.assigned),
+                        opposite: parseInt(stanceAgreement.opposite),
+                        timestamp: new Date()
+                      }
+                    });
+
+                    setCurrentStep(11);
+                  } catch (error) {
+                    console.error('Error saving stance agreement:', error);
+                    alert('Failed to save stance agreement. Please try again.');
+                  }
                 }
               }}
               disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
