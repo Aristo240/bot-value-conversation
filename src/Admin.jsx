@@ -597,12 +597,12 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
         {/* Sessions List */}
         <div className="space-y-8">
           {sessions.map((session) => (
-            <div key={session.sessionId} className="border rounded-lg p-6 bg-white shadow">
+            <div key={session.sessionId} className="border rounded-lg p-6 bg-white shadow mb-4">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className="font-bold">Session ID: {session.sessionId}</h3>
                   <p>Timestamp: {new Date(session.timestamp).toLocaleString()}</p>
-                  <p className="font-semibold">Bot Personality: {session.botPersonality || 'N/A'}</p>
+                  <p className="font-semibold">Bot Personality: {session.botPersonality}</p>
                   <p>Stance: {session.stance}</p>
                 </div>
                 
@@ -675,13 +675,23 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                   </div>
                 )}
 
-                {/* Chat History */}
-                {session.chat && (
+                {/* Stance Agreement */}
+                {session.stanceAgreement && (
                   <div className="bg-gray-50 p-4 rounded">
+                    <h4 className="font-semibold mb-2">Stance Agreement:</h4>
+                    <p>Agreement with Assigned Stance: {session.stanceAgreement.assigned}/5</p>
+                    <p>Agreement with Opposite Stance: {session.stanceAgreement.opposite}/5</p>
+                    <p>Timestamp: {new Date(session.stanceAgreement.timestamp).toLocaleString()}</p>
+                  </div>
+                )}
+
+                {/* Chat History */}
+                {session.chat && session.chat.length > 0 && (
+                  <div className="bg-gray-50 p-4 rounded col-span-2">
                     <h4 className="font-semibold mb-2">Chat History:</h4>
-                    <div className="space-y-2 max-h-60 overflow-y-auto">
-                      {session.chat.map((msg) => (
-                        <div key={msg.messageId} className={`p-2 ${msg.sender === 'bot' ? 'bg-blue-50' : 'bg-green-50'}`}>
+                    <div className="space-y-2">
+                      {session.chat.map((msg, idx) => (
+                        <div key={idx} className={`${msg.sender === 'bot' ? 'text-blue-600' : 'text-green-600'}`}>
                           <strong>{msg.sender}:</strong> {msg.text}
                         </div>
                       ))}
@@ -722,15 +732,6 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                         </div>
                       ))}
                     </div>
-                  </div>
-                )}
-
-                {/* Stance Agreement */}
-                {session.stanceAgreement && (
-                  <div className="bg-gray-50 p-4 rounded mt-4">
-                    <h4 className="font-semibold mb-2">Stance Agreement:</h4>
-                    <p>Assigned Stance: {session.stanceAgreement.assigned}/5</p>
-                    <p>Opposite Stance: {session.stanceAgreement.opposite}/5</p>
                   </div>
                 )}
 
