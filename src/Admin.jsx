@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { saveAs } from 'file-saver';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
@@ -101,102 +100,115 @@ function Admin() {
     }
   };
 
-  const exportToCSV = async (sessionData) => {
-    try {
-      // Create CSV headers
-      const headers = [
-        'SessionId',
-        'Timestamp',
-        'Stance',
+  const downloadInFormat = (data, filename, fileType) => {
+    const csvContent = convertToCSV(data);
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `${filename}.${fileType}`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const convertToCSV = (sessionData) => {
+    // Create CSV headers
+    const headers = [
+      'SessionId',
+      'Timestamp',
+      'Stance',
+      // Demographics
+      'Age',
+      'Gender',
+      'Education',
+      // PVQ21
+      ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
+      // Initial Assessment
+      'Initial_Interesting',
+      'Initial_Important',
+      'Initial_Agreement',
+      // Chat History
+      'Chat_History',
+      // Final Response
+      'Final_Response',
+      // SBSVS
+      ...Array.from({ length: 10 }, (_, i) => `SBSVS_Q${i + 1}`),
+      // Attitude Survey
+      'Attitude_Interesting',
+      'Attitude_Enjoyable',
+      'Attitude_Difficult',
+      'Attitude_Irritating',
+      'Attitude_Helpful',
+      'Attitude_Satisfying',
+      'Attitude_Effective',
+      'Attitude_Engaging',
+      'Attitude_Stimulating',
+      'Attitude_Informative',
+      'Attitude_Frustrating',
+      // Stance Agreement
+      'Stance_Agreement_Assigned',
+      'Stance_Agreement_Opposite',
+      // Alternative Uses
+      'Alternative_Uses'
+    ];
+
+    // Transform data for CSV
+    const rows = sessionData.map(session => {
+      return [
+        session.sessionId,
+        session.timestamp,
+        session.stance,
         // Demographics
-        'Age',
-        'Gender',
-        'Education',
+        session.demographics?.age || '',
+        session.demographics?.gender || '',
+        session.demographics?.education || '',
         // PVQ21
-        ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
+        ...Array.from({ length: 21 }, (_, i) => 
+          session.pvq21?.responses?.find(r => r.questionId === i + 1)?.value || ''
+        ),
         // Initial Assessment
-        'Initial_Interesting',
-        'Initial_Important',
-        'Initial_Agreement',
+        session.initialAssessment?.interesting || '',
+        session.initialAssessment?.important || '',
+        session.initialAssessment?.agreement || '',
         // Chat History
-        'Chat_History',
+        session.chat?.map(msg => `${msg.sender}: ${msg.text}`).join(' | ') || '',
         // Final Response
-        'Final_Response',
+        session.finalResponse?.text || '',
         // SBSVS
-        ...Array.from({ length: 10 }, (_, i) => `SBSVS_Q${i + 1}`),
+        ...Array.from({ length: 10 }, (_, i) => 
+          session.sbsvs?.responses?.find(r => r.questionId === i + 1)?.value || ''
+        ),
         // Attitude Survey
-        'Attitude_Interesting',
-        'Attitude_Enjoyable',
-        'Attitude_Difficult',
-        'Attitude_Irritating',
-        'Attitude_Helpful',
-        'Attitude_Satisfying',
-        'Attitude_Effective',
-        'Attitude_Engaging',
-        'Attitude_Stimulating',
-        'Attitude_Informative',
-        'Attitude_Frustrating',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Interesting')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Enjoyable')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Difficult')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Irritating')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Helpful')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Satisfying')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Effective')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Engaging')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Stimulating')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Informative')?.rating || '',
+        session.attitudeSurvey?.responses?.find(r => r.aspect === 'Frustrating')?.rating || '',
         // Stance Agreement
-        'Stance_Agreement_Assigned',
-        'Stance_Agreement_Opposite',
+        session.stanceAgreement?.assigned || '',
+        session.stanceAgreement?.opposite || '',
         // Alternative Uses
-        'Alternative_Uses'
-      ];
+        session.alternativeUses?.responses?.map(r => r.idea).join(' | ') || ''
+      ].map(value => `"${value}"`).join(',');
+    });
 
-      // Transform data for CSV
-      const rows = sessionData.map(session => {
-        return [
-          session.sessionId,
-          session.timestamp,
-          session.stance,
-          // Demographics
-          session.demographics?.age || '',
-          session.demographics?.gender || '',
-          session.demographics?.education || '',
-          // PVQ21
-          ...Array.from({ length: 21 }, (_, i) => 
-            session.pvq21?.responses?.find(r => r.questionId === i + 1)?.value || ''
-          ),
-          // Initial Assessment
-          session.initialAssessment?.interesting || '',
-          session.initialAssessment?.important || '',
-          session.initialAssessment?.agreement || '',
-          // Chat History
-          session.chat?.map(msg => `${msg.sender}: ${msg.text}`).join(' | ') || '',
-          // Final Response
-          session.finalResponse?.text || '',
-          // SBSVS
-          ...Array.from({ length: 10 }, (_, i) => 
-            session.sbsvs?.responses?.find(r => r.questionId === i + 1)?.value || ''
-          ),
-          // Attitude Survey
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Interesting')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Enjoyable')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Difficult')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Irritating')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Helpful')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Satisfying')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Effective')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Engaging')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Stimulating')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Informative')?.rating || '',
-          session.attitudeSurvey?.responses?.find(r => r.aspect === 'Frustrating')?.rating || '',
-          // Stance Agreement
-          session.stanceAgreement?.assigned || '',
-          session.stanceAgreement?.opposite || '',
-          // Alternative Uses
-          session.alternativeUses?.responses?.map(r => r.idea).join(' | ') || ''
-        ].map(value => `"${value}"`).join(',');
-      });
+    // Combine headers and rows
+    return [headers.join(','), ...rows].join('\n');
+  };
 
-      // Combine headers and rows
-      const csv = [headers.join(','), ...rows].join('\n');
-      
-      // Create and download CSV file
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      saveAs(blob, 'session_data.csv');
+  const exportToCSV = (sessionData) => {
+    try {
+      downloadInFormat(sessionData, 'session_data', 'csv');
     } catch (error) {
       console.error('Error exporting to CSV:', error);
+      showStatus('Failed to export data', true);
     }
   };
 
