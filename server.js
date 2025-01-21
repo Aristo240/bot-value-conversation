@@ -74,8 +74,8 @@ const SessionSchema = new mongoose.Schema({
     timestamp: Date
   },
   stanceAgreement: {
-    assigned: { type: Number },
-    opposite: { type: Number },
+    assigned: { type: Number, min: 1, max: 5 },
+    opposite: { type: Number, min: 1, max: 5 },
     timestamp: { type: Date }
   },
   alternativeUses: {
@@ -606,6 +606,7 @@ app.post('/api/sessions/:sessionId/initialAssessment', async (req, res) => {
   }
 });
 
+// Update the stanceAgreement endpoint
 app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -613,13 +614,26 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    session.stanceAgreement = {
-      assigned: req.body.assigned,
-      opposite: req.body.opposite,
+    // Ensure we're saving numbers
+    const stanceData = {
+      assigned: Number(req.body.assigned),
+      opposite: Number(req.body.opposite),
       timestamp: new Date()
     };
 
+    console.log('Saving stance data:', stanceData); // Debug log
+
+    // Validate the numbers
+    if (isNaN(stanceData.assigned) || isNaN(stanceData.opposite) ||
+        stanceData.assigned < 1 || stanceData.assigned > 5 ||
+        stanceData.opposite < 1 || stanceData.opposite > 5) {
+      return res.status(400).json({ message: 'Invalid stance agreement values' });
+    }
+
+    session.stanceAgreement = stanceData;
     await session.save();
+    
+    console.log('Saved session:', session); // Debug log
     res.status(201).json(session.stanceAgreement);
   } catch (error) {
     console.error('Error saving stance agreement:', error);

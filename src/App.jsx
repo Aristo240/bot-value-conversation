@@ -296,36 +296,30 @@ function MainApp() {
   };
 
   const saveStanceAgreement = async () => {
-    if (!stanceAgreement.assigned || !stanceAgreement.opposite) return;
-
     try {
-      // Save directly to the session document
-      const response = await axios.put(`${API_URL}/sessions/${sessionId}`, {
-        stanceAgreement: {
-          assigned: parseInt(stanceAgreement.assigned),
-          opposite: parseInt(stanceAgreement.opposite),
-          timestamp: new Date()
-        }
-      }, {
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      const stanceData = {
+        assigned: Number(stanceAgreement.assigned),
+        opposite: Number(stanceAgreement.opposite),
+        timestamp: new Date()
+      };
 
-      console.log('Stance agreement saved:', response.data);
+      console.log('Saving stance data:', stanceData); // Debug log
 
-      // Also save to the questionnaires collection
+      // First save to the specific endpoint
+      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, stanceData);
+
+      // Then update the main session
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        type: 'stanceAgreement',
-        data: stanceAgreement
+        stanceAgreement: stanceData
       });
 
+      console.log('Stance agreement saved successfully');
+      return true;
     } catch (error) {
       console.error('Error saving stance agreement:', error);
       alert('Failed to save stance agreement. Please try again.');
       return false;
     }
-    return true;
   };
 
   const saveAlternativeUses = async () => {
@@ -780,11 +774,14 @@ function MainApp() {
                           type="radio"
                           name="assigned-stance"
                           value={value}
-                          checked={parseInt(stanceAgreement.assigned) === value}
-                          onChange={(e) => setStanceAgreement(prev => ({
-                            ...prev,
-                            assigned: e.target.value
-                          }))}
+                          checked={Number(stanceAgreement.assigned) === value}
+                          onChange={(e) => {
+                            console.log('Setting assigned stance:', e.target.value); // Debug log
+                            setStanceAgreement(prev => ({
+                              ...prev,
+                              assigned: Number(e.target.value)
+                            }));
+                          }}
                           className="mb-2"
                         />
                         <span className="text-sm">{value}</span>
@@ -806,11 +803,14 @@ function MainApp() {
                           type="radio"
                           name="opposite-stance"
                           value={value}
-                          checked={parseInt(stanceAgreement.opposite) === value}
-                          onChange={(e) => setStanceAgreement(prev => ({
-                            ...prev,
-                            opposite: e.target.value
-                          }))}
+                          checked={Number(stanceAgreement.opposite) === value}
+                          onChange={(e) => {
+                            console.log('Setting opposite stance:', e.target.value); // Debug log
+                            setStanceAgreement(prev => ({
+                              ...prev,
+                              opposite: Number(e.target.value)
+                            }));
+                          }}
                           className="mb-2"
                         />
                         <span className="text-sm">{value}</span>
@@ -829,6 +829,7 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (stanceAgreement.assigned && stanceAgreement.opposite) {
+                  console.log('Saving stance agreement:', stanceAgreement); // Debug log
                   const saved = await saveStanceAgreement();
                   if (saved) {
                     setCurrentStep(11);
@@ -878,7 +879,7 @@ function MainApp() {
 
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if ([5, 6, 8].includes(currentStep)) {
+      if ([6, 7, 11].includes(currentStep)) {
         if (document.hidden) {
           // Show warning when tab becomes hidden
           setShowWarning(true);
@@ -894,7 +895,7 @@ function MainApp() {
     };
 
     const handleBeforeUnload = (e) => {
-      if ([5, 6, 8].includes(currentStep)) {
+      if ([6, 7, 11].includes(currentStep)) {
         e.preventDefault();
         e.returnValue = ''; // This is required for Chrome
       }
