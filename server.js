@@ -388,11 +388,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       session.attitudeSurvey = { ...session.attitudeSurvey, ...req.body.attitudeSurvey };
     }
     if (req.body.stanceAgreement) {
-      session.stanceAgreement = {
-        assigned: Number(req.body.stanceAgreement.assigned),
-        opposite: Number(req.body.stanceAgreement.opposite),
-        timestamp: new Date(req.body.stanceAgreement.timestamp || Date.now())
-      };
+      session.stanceAgreement = { ...session.stanceAgreement, ...req.body.stanceAgreement };
     }
     if (req.body.alternativeUses) {
       session.alternativeUses = { ...session.alternativeUses, ...req.body.alternativeUses };
@@ -619,13 +615,12 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
     }
 
     session.stanceAgreement = {
-      assigned: Number(req.body.assigned),
-      opposite: Number(req.body.opposite),
-      timestamp: new Date(req.body.timestamp)
+      assigned: parseInt(req.body.assigned),
+      opposite: parseInt(req.body.opposite),
+      timestamp: new Date()
     };
 
     await session.save();
-    console.log('Saved stance agreement:', session.stanceAgreement);
     res.status(201).json(session.stanceAgreement);
   } catch (error) {
     console.error('Error saving stance agreement:', error);

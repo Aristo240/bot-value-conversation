@@ -296,14 +296,13 @@ function MainApp() {
     }
   };
 
-  const saveStanceAgreement = async (data) => {
+  const saveStanceAgreement = async () => {
     try {
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
-        assigned: parseInt(data.assigned),
-        opposite: parseInt(data.opposite),
+      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
+        assigned: parseInt(stanceAgreement.assigned),
+        opposite: parseInt(stanceAgreement.opposite),
         timestamp: new Date()
       });
-      console.log('Stance agreement saved:', response.data);
       return true;
     } catch (error) {
       console.error('Error saving stance agreement:', error);
@@ -749,7 +748,7 @@ function MainApp() {
       case 10: // Stance Agreement
         const handleStanceAgreementSubmit = async () => {
           if (stanceAgreement.assigned && stanceAgreement.opposite) {
-            const saved = await saveStanceAgreement(stanceAgreement);
+            const saved = await saveStanceAgreement();
             if (saved) {
               setCurrentStep(11);
             }
