@@ -235,7 +235,14 @@ function MainApp() {
 
   const saveInitialAssessment = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/initialAssessment`, initialAttitudeResponses);
+      console.log('Saving initial assessment:', initialAttitudeResponses); // Debug log
+      const response = await axios.post(`${API_URL}/sessions/${sessionId}/initialAssessment`, {
+        interesting: parseInt(initialAttitudeResponses.interesting),
+        important: parseInt(initialAttitudeResponses.important),
+        agreement: parseInt(initialAttitudeResponses.agreement),
+        timestamp: new Date()
+      });
+      console.log('Initial assessment saved:', response.data); // Debug log
     } catch (error) {
       console.error('Error saving initial assessment:', error);
     }
@@ -288,7 +295,13 @@ function MainApp() {
 
   const saveStanceAgreement = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, stanceAgreement);
+      console.log('Saving stance agreement:', stanceAgreement); // Debug log
+      const response = await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
+        assigned: parseInt(stanceAgreement.assigned),
+        opposite: parseInt(stanceAgreement.opposite),
+        timestamp: new Date()
+      });
+      console.log('Stance agreement saved:', response.data); // Debug log
     } catch (error) {
       console.error('Error saving stance agreement:', error);
     }

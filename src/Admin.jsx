@@ -158,62 +158,46 @@ function Admin() {
   };
 
   const convertToCSV = (sessionData) => {
-    // Create CSV headers
     const headers = [
       'SessionId',
       'Timestamp',
       'Bot_Personality',
       'Stance',
+      // Initial Assessment
+      'Initial_Interesting',
+      'Initial_Important',
+      'Initial_Agreement',
       // Demographics
       'Age',
       'Gender',
       'Education',
       // PVQ21
       ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
-      // Initial Assessment
-      'Initial_Interesting',
-      'Initial_Important',
-      'Initial_Agreement',
-      // Chat History (each message gets its own column)
+      // Chat History
       'Chat_History',
       // Final Response
       'Final_Response',
       // SBSVS
       ...Array.from({ length: 10 }, (_, i) => `SBSVS_Q${i + 1}`),
       // Attitude Survey
-      'Attitude_Interesting',
-      'Attitude_Enjoyable',
-      'Attitude_Difficult',
-      'Attitude_Irritating',
-      'Attitude_Helpful',
-      'Attitude_Satisfying',
-      'Attitude_Effective',
-      'Attitude_Engaging',
-      'Attitude_Stimulating',
-      'Attitude_Informative',
-      'Attitude_Frustrating',
+      ...attitudeAspects.map(aspect => `Attitude_${aspect}`),
       // Stance Agreement
       'Stance_Agreement_Assigned',
       'Stance_Agreement_Opposite',
       // Alternative Uses
       'Alternative_Uses'
-    ];
+    ].join(',');
 
-    // Transform data for CSV
     const rows = sessionData.map(session => {
-      const chatHistory = session.chat?.map(msg => 
-        `${msg.sender} (${new Date(msg.timestamp).toLocaleString()}): ${msg.text}`
-      ).join('\n') || '';
-
-      const alternativeUses = session.alternativeUses?.responses?.map(
-        (r, i) => `${i + 1}. ${r.idea}`
-      ).join('\n') || '';
-
       return [
         session.sessionId,
         session.timestamp,
         session.botPersonality,
         session.stance,
+        // Initial Assessment
+        session.initialAssessment?.interesting || '',
+        session.initialAssessment?.important || '',
+        session.initialAssessment?.agreement || '',
         // Demographics
         session.demographics?.age || '',
         session.demographics?.gender || '',
@@ -222,12 +206,8 @@ function Admin() {
         ...Array.from({ length: 21 }, (_, i) => 
           session.pvq21?.responses?.find(r => r.questionId === i + 1)?.value || ''
         ),
-        // Initial Assessment
-        session.initialAssessment?.interesting || '',
-        session.initialAssessment?.important || '',
-        session.initialAssessment?.agreement || '',
         // Chat History
-        chatHistory,
+        session.chat?.map(msg => `${msg.sender}: ${msg.text}`).join('\n') || '',
         // Final Response
         session.finalResponse?.text || '',
         // SBSVS
@@ -242,11 +222,11 @@ function Admin() {
         session.stanceAgreement?.assigned || '',
         session.stanceAgreement?.opposite || '',
         // Alternative Uses
-        alternativeUses
+        session.alternativeUses?.responses?.map(r => r.idea).join('\n') || ''
       ].map(value => `"${value}"`).join(',');
     });
 
-    return [headers.join(','), ...rows].join('\n');
+    return [headers, ...rows].join('\n');
   };
 
   const convertToText = (sessionData) => {
@@ -749,8 +729,8 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 {session.stanceAgreement && (
                   <div className="bg-gray-50 p-4 rounded">
                     <h4 className="font-semibold mb-2">Stance Agreement:</h4>
-                    <p>Assigned: {session.stanceAgreement.assigned}</p>
-                    <p>Opposite: {session.stanceAgreement.opposite}</p>
+                    <p>Assigned Stance: {session.stanceAgreement.assigned}</p>
+                    <p>Opposite Stance: {session.stanceAgreement.opposite}</p>
                   </div>
                 )}
 

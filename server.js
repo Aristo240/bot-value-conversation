@@ -90,7 +90,13 @@ const SessionSchema = new mongoose.Schema({
     type: String,
     step: Number,
     timestamp: Date
-  }]
+  }],
+  initialAssessment: {
+    interesting: Number,
+    important: Number,
+    agreement: Number,
+    timestamp: Date
+  }
 });
 
 const ConditionCounterSchema = new mongoose.Schema({
