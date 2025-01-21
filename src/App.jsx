@@ -337,7 +337,7 @@ function MainApp() {
                   <p className="text-gray-700 mb-4">
                     You will engage in a 5-minute conversation with an AI bot, during which you will represent one of two perspectives that we will assign to you: 
                     <br />
-                    <strong style={{ fontWeight: 'bold' }}>protecting user safety on social media platforms</strong> or <strong style={{ fontWeight: 'bold' }}>preserving freedom of speech on social media platforms</strong>.
+                    <strong style={{ fontWeight: 'bold' }}>protecting user safety</strong> or <strong style={{ fontWeight: 'bold' }}>preserving freedom of speech</strong>  on social media platforms.
                     <br />
                     <br />
                     Your objectives during the conversation are:
