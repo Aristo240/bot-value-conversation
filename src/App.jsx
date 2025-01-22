@@ -171,9 +171,10 @@ function MainApp() {
         sbsvs: sbsvsResponses,
         attitudeSurvey: attitudeResponses,
         stanceAgreement: {
-          assigned: parseInt(stanceAgreement.assigned),
-          opposite: parseInt(stanceAgreement.opposite),
-          timestamp: new Date()
+          responses: {
+            assigned: parseInt(stanceAgreement.assigned),
+            opposite: parseInt(stanceAgreement.opposite)
+          }
         },
         alternativeUses: autResponses
       });
@@ -293,22 +294,6 @@ function MainApp() {
       });
     } catch (error) {
       console.error('Error saving attitude survey:', error);
-    }
-  };
-
-  const saveStanceAgreement = async () => {
-    try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        stanceAgreement: {
-          assigned: parseInt(stanceAgreement.assigned),
-          opposite: parseInt(stanceAgreement.opposite),
-          timestamp: new Date()
-        }
-      });
-      return true;
-    } catch (error) {
-      console.error('Error saving stance agreement:', error);
-      return false;
     }
   };
 
@@ -748,15 +733,6 @@ function MainApp() {
         );
 
       case 10: // Stance Agreement
-        const handleStanceAgreementSubmit = async () => {
-          if (stanceAgreement.assigned && stanceAgreement.opposite) {
-            const saved = await saveStanceAgreement();
-            if (saved) {
-              setCurrentStep(11);
-            }
-          }
-        };
-
         return (
           <div className="w-3/4 mx-auto p-8 min-h-screen">
             <h2 className="text-2xl font-bold mb-6">Stance Agreement</h2>
@@ -765,17 +741,6 @@ function MainApp() {
               responses={stanceAgreement}
               setResponses={setStanceAgreement}
             />
-            <button
-              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                !stanceAgreement.assigned || !stanceAgreement.opposite
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-              onClick={handleStanceAgreementSubmit}
-              disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
-            >
-              Continue
-            </button>
           </div>
         );
 

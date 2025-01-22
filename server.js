@@ -74,9 +74,10 @@ const SessionSchema = new mongoose.Schema({
     timestamp: Date
   },
   stanceAgreement: {
-    assigned: { type: Number, min: 1, max: 5 },
-    opposite: { type: Number, min: 1, max: 5 },
-    timestamp: { type: Date }
+    responses: {
+      assigned: Number,
+      opposite: Number
+    }
   },
   alternativeUses: {
     responses: [{
@@ -389,9 +390,10 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
     if (req.body.stanceAgreement) {
       session.stanceAgreement = {
-        assigned: parseInt(req.body.stanceAgreement.assigned),
-        opposite: parseInt(req.body.stanceAgreement.opposite),
-        timestamp: req.body.stanceAgreement.timestamp
+        responses: {
+          assigned: req.body.stanceAgreement.responses.assigned,
+          opposite: req.body.stanceAgreement.responses.opposite
+        }
       };
     }
     if (req.body.alternativeUses) {
@@ -621,9 +623,10 @@ app.put('/api/sessions/:sessionId', async (req, res) => {
     // Update the stance agreement
     if (req.body.stanceAgreement) {
       session.stanceAgreement = {
-        assigned: parseInt(req.body.stanceAgreement.assigned),
-        opposite: parseInt(req.body.stanceAgreement.opposite),
-        timestamp: new Date(req.body.stanceAgreement.timestamp)
+        responses: {
+          assigned: req.body.stanceAgreement.responses.assigned,
+          opposite: req.body.stanceAgreement.responses.opposite
+        }
       };
     }
 
