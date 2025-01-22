@@ -741,6 +741,23 @@ function MainApp() {
               responses={stanceAgreement}
               setResponses={setStanceAgreement}
             />
+            <button
+              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                !stanceAgreement.assigned || !stanceAgreement.opposite
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              }`}
+              onClick={() => {
+                if (stanceAgreement.assigned && stanceAgreement.opposite) {
+                  setCurrentStep(11);
+                }
+              }}
+              disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
+            >
+              {!stanceAgreement.assigned || !stanceAgreement.opposite
+                ? 'Please complete both questions'
+                : 'Continue'}
+            </button>
           </div>
         );
 
