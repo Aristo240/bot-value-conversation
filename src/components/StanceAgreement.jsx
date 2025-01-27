@@ -1,5 +1,5 @@
 import React from 'react';
-import { stances } from '../config/botConfig';
+import { stances } from '../../config/botConfig';
 
 const StanceAgreement = ({ stance, responses, setResponses }) => {
   const handleValueChange = (aspect, value) => {
