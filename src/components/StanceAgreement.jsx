@@ -8,11 +8,9 @@ const StanceAgreement = ({ stance, responses, setResponses }) => {
     setResponses(newResponses);
   };
 
-  // Get the opposite stance
+  // Get the opposite stance text
   const getOppositeStance = () => {
-    const stanceKeys = Object.keys(stances);
-    const oppositeKey = stanceKeys.find(key => stances[key] !== stances[stance]);
-    return stances[oppositeKey];
+    return stance === 'freedom' ? stances.safety : stances.freedom;
   };
 
   return (

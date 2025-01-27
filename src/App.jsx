@@ -134,14 +134,11 @@ function MainApp() {
         timestamp: new Date()
       };
 
-      setTimeout(() => {
-        setIsTyping(false);
-        setMessages((prevMessages) => [...prevMessages, botMessage]);
-      }, 120);
-
+      setIsTyping(false);
+      setMessages((prevMessages) => [...prevMessages, botMessage]);
       await axios.post(`${API_URL}/sessions/${sessionId}/messages`, botMessage);
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error in chat:', error);
       setIsTyping(false);
     }
   };
@@ -310,44 +307,33 @@ function MainApp() {
     }
   };
 
-  const saveDemographics = async (data) => {
+  const saveDemographics = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/demographics`, {
-        age: data.age,
-        gender: data.gender,
-        education: data.education,
-        timestamp: new Date()
-      });
+      await axios.post(`${API_URL}/sessions/${sessionId}/demographics`, demographicResponses);
     } catch (error) {
       console.error('Error saving demographics:', error);
+      throw error;
     }
   };
 
-  const savePVQ21 = async (data) => {
+  const savePVQ21 = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/pvq21`, {
-        responses: Object.entries(data.responses).map(([questionId, value]) => ({
-          questionId: parseInt(questionId),
-          value: parseInt(value)
-        })),
-        timestamp: new Date()
-      });
+      await axios.post(`${API_URL}/sessions/${sessionId}/pvq21`, pvq21Responses);
     } catch (error) {
       console.error('Error saving PVQ21:', error);
+      throw error;
     }
   };
 
   const saveStanceAgreement = async () => {
     try {
-      console.log('Saving stance agreement:', stanceAgreement); // Debug log
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
+      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
         assigned: parseInt(stanceAgreement.assigned),
         opposite: parseInt(stanceAgreement.opposite)
       });
-      console.log('Stance agreement saved:', response.data); // Debug log
     } catch (error) {
       console.error('Error saving stance agreement:', error);
-      throw error; // Propagate the error
+      throw error;
     }
   };
 
@@ -371,7 +357,7 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (demographicResponses.age && demographicResponses.gender && demographicResponses.education) {
-                  await saveDemographics(demographicResponses);
+                  await saveDemographics();
                   setCurrentStep(3);
                 }
               }}
@@ -398,7 +384,7 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (Object.keys(pvq21Responses.responses || {}).length === 21) {
-                  await savePVQ21(pvq21Responses);
+                  await savePVQ21();
                   setCurrentStep(4);
                 }
               }}

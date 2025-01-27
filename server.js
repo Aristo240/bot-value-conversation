@@ -277,10 +277,23 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    session.chat.push(req.body);
+
+    const message = {
+      messageId: req.body.messageId,
+      text: req.body.text,
+      sender: req.body.sender,
+      timestamp: new Date()
+    };
+
+    if (!session.chat) {
+      session.chat = [];
+    }
+    
+    session.chat.push(message);
     await session.save();
-    res.status(201).json(session);
+    res.status(200).json(message);
   } catch (error) {
+    console.error('Error saving message:', error);
     res.status(400).json({ message: error.message });
   }
 });
@@ -416,14 +429,12 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
     
-    // Update the session with the new stance agreement values
     session.stanceAgreement = {
       assigned: parseInt(req.body.assigned),
       opposite: parseInt(req.body.opposite)
     };
     
     await session.save();
-    console.log('Saved stance agreement:', session.stanceAgreement); // Debug log
     res.status(200).json(session.stanceAgreement);
   } catch (error) {
     console.error('Error saving stance agreement:', error);
@@ -577,7 +588,7 @@ app.post('/api/sessions/:sessionId/events', async (req, res) => {
   }
 });
 
-// Add separate endpoints for each type of data
+// Demographics endpoint
 app.post('/api/sessions/:sessionId/demographics', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -585,15 +596,22 @@ app.post('/api/sessions/:sessionId/demographics', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
     
-    session.demographics = req.body;
+    session.demographics = {
+      age: req.body.age,
+      gender: req.body.gender,
+      education: req.body.education,
+      timestamp: new Date()
+    };
+    
     await session.save();
-    res.status(201).json(session.demographics);
+    res.status(200).json(session.demographics);
   } catch (error) {
     console.error('Error saving demographics:', error);
     res.status(400).json({ message: error.message });
   }
 });
 
+// PVQ21 endpoint
 app.post('/api/sessions/:sessionId/pvq21', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -601,9 +619,13 @@ app.post('/api/sessions/:sessionId/pvq21', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
     
-    session.pvq21 = req.body;
+    session.pvq21 = {
+      responses: req.body.responses,
+      timestamp: new Date()
+    };
+    
     await session.save();
-    res.status(201).json(session.pvq21);
+    res.status(200).json(session.pvq21);
   } catch (error) {
     console.error('Error saving PVQ21:', error);
     res.status(400).json({ message: error.message });
