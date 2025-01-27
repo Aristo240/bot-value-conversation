@@ -381,36 +381,62 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Merge the updates with existing data
+    // Update each section with proper structure
     if (req.body.demographics) {
-      session.demographics = { ...session.demographics, ...req.body.demographics };
+      session.demographics = {
+        ...req.body.demographics,
+        timestamp: new Date()
+      };
     }
+
     if (req.body.pvq21) {
-      session.pvq21 = { ...session.pvq21, ...req.body.pvq21 };
+      session.pvq21 = {
+        responses: req.body.pvq21.responses,
+        timestamp: new Date()
+      };
     }
+
     if (req.body.initialAssessment) {
-      session.initialAssessment = { ...session.initialAssessment, ...req.body.initialAssessment };
+      session.initialAssessment = {
+        ...req.body.initialAssessment,
+        timestamp: new Date()
+      };
     }
+
+    if (req.body.chat) {
+      session.chat = req.body.chat.map(msg => ({
+        ...msg,
+        timestamp: new Date(msg.timestamp)
+      }));
+    }
+
     if (req.body.finalResponse) {
-      session.finalResponse = { ...session.finalResponse, ...req.body.finalResponse };
+      session.finalResponse = {
+        text: req.body.finalResponse.text,
+        timestamp: new Date()
+      };
     }
+
     if (req.body.sbsvs) {
-      session.sbsvs = { ...session.sbsvs, ...req.body.sbsvs };
+      session.sbsvs = req.body.sbsvs;
     }
+
     if (req.body.attitudeSurvey) {
-      session.attitudeSurvey = { ...session.attitudeSurvey, ...req.body.attitudeSurvey };
+      session.attitudeSurvey = req.body.attitudeSurvey;
     }
+
     if (req.body.stanceAgreement) {
       session.stanceAgreement = {
         assigned: parseInt(req.body.stanceAgreement.assigned),
         opposite: parseInt(req.body.stanceAgreement.opposite)
       };
     }
+
     if (req.body.alternativeUses) {
-      session.alternativeUses = { ...session.alternativeUses, ...req.body.alternativeUses };
-    }
-    if (req.body.chat) {
-      session.chat = req.body.chat;
+      session.alternativeUses = req.body.alternativeUses.map(response => ({
+        text: response,
+        timestamp: new Date()
+      }));
     }
 
     await session.save();
