@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import FileSaver from 'file-saver';
+
+// Import the questions and aspects
+import { SBSVSQuestions } from './components/SBSVS';
+import { attitudeAspects } from './components/AttitudeSurvey';
 
 // Create ErrorBoundary as a class component using React's built-in functionality
 class ErrorBoundary extends React.Component {
@@ -39,21 +44,6 @@ class ErrorBoundary extends React.Component {
 }
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
-
-// Add the missing attitudeAspects array
-const attitudeAspects = [
-  'Interesting',
-  'Enjoyable',
-  'Difficult',
-  'Irritating',
-  'Helpful',
-  'Satisfying',
-  'Effective',
-  'Engaging',
-  'Stimulating',
-  'Informative',
-  'Frustrating'
-];
 
 function Admin() {
   const [sessions, setSessions] = useState([]);

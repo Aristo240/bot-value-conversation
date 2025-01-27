@@ -1,6 +1,6 @@
 import React from 'react';
 
-const attitudeAspects = [
+export const attitudeAspects = [
   "Interesting", "Enjoyable", "Difficult", "Irritating", "Helpful",
   "Satisfying", "Effective", "Engaging", "Stimulating", "Informative", "Frustrating"
 ];
