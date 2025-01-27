@@ -391,9 +391,10 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     if (req.body.stanceAgreement) {
       session.stanceAgreement = {
         responses: {
-          assigned: req.body.stanceAgreement.responses.assigned,
-          opposite: req.body.stanceAgreement.responses.opposite
-        }
+          assigned: parseInt(req.body.stanceAgreement.responses.assigned),
+          opposite: parseInt(req.body.stanceAgreement.responses.opposite)
+        },
+        timestamp: new Date()
       };
     }
     if (req.body.alternativeUses) {
@@ -407,6 +408,30 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     res.status(201).json(session);
   } catch (error) {
     console.error('Error saving questionnaire responses:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Add a dedicated endpoint for stance agreement
+app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+    
+    session.stanceAgreement = {
+      responses: {
+        assigned: parseInt(req.body.responses.assigned),
+        opposite: parseInt(req.body.responses.opposite)
+      },
+      timestamp: new Date()
+    };
+    
+    await session.save();
+    res.status(201).json(session.stanceAgreement);
+  } catch (error) {
+    console.error('Error saving stance agreement:', error);
     res.status(400).json({ message: error.message });
   }
 });

@@ -337,6 +337,19 @@ function MainApp() {
     }
   };
 
+  const saveStanceAgreement = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
+        responses: {
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite)
+        }
+      });
+    } catch (error) {
+      console.error('Error saving stance agreement:', error);
+    }
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1: // Consent Form
@@ -747,8 +760,9 @@ function MainApp() {
                   ? 'opacity-50 cursor-not-allowed'
                   : ''
               }`}
-              onClick={() => {
+              onClick={async () => {
                 if (stanceAgreement.assigned && stanceAgreement.opposite) {
+                  await saveStanceAgreement();
                   setCurrentStep(11);
                 }
               }}
