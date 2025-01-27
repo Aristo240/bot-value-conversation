@@ -73,16 +73,14 @@ const SessionSchema = new mongoose.Schema({
 
   // Case 8: SBSVS
   sbsvs: {
-    type: Map,
-    of: Number,
-    timestamp: Date
+    type: Object,
+    default: {}
   },
 
   // Case 9: Attitude Survey
   attitudeSurvey: {
-    type: Map,
-    of: Number,
-    timestamp: Date
+    type: Object,
+    default: {}
   },
 
   // Case 10: Stance Agreement
@@ -797,28 +795,18 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
 // Update SBSVS endpoint
 app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
   try {
-    console.log('Received SBSVS data:', req.body); // Debug log
+    console.log('Received SBSVS data:', req.body);
     
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Validate the responses
-    if (!req.body || typeof req.body !== 'object') {
-      return res.status(400).json({ 
-        message: 'Invalid SBSVS format. Expected an object with responses.' 
-      });
-    }
-
-    // Convert responses to numbers and store
-    const responses = {};
+    // Store SBSVS responses directly as an object
+    session.sbsvs = {};
     Object.entries(req.body).forEach(([key, value]) => {
-      responses[key] = parseInt(value, 10);
+      session.sbsvs[key] = parseInt(value, 10);
     });
-
-    session.sbsvs = responses;
-    console.log('Saving SBSVS data:', session.sbsvs); // Debug log
 
     await session.save();
     res.status(200).json(session.sbsvs);
@@ -831,28 +819,18 @@ app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
 // Update Attitude Survey endpoint
 app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
   try {
-    console.log('Received Attitude Survey data:', req.body); // Debug log
+    console.log('Received Attitude Survey data:', req.body);
     
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Validate the responses
-    if (!req.body || typeof req.body !== 'object') {
-      return res.status(400).json({ 
-        message: 'Invalid Attitude Survey format. Expected an object with responses.' 
-      });
-    }
-
-    // Convert responses to numbers and store
-    const responses = {};
+    // Store attitude survey responses directly as an object
+    session.attitudeSurvey = {};
     Object.entries(req.body).forEach(([key, value]) => {
-      responses[key] = parseInt(value, 10);
+      session.attitudeSurvey[key] = parseInt(value, 10);
     });
-
-    session.attitudeSurvey = responses;
-    console.log('Saving Attitude Survey data:', session.attitudeSurvey); // Debug log
 
     await session.save();
     res.status(200).json(session.attitudeSurvey);
