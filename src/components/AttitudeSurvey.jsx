@@ -1,17 +1,16 @@
 import React from 'react';
 
+// Export the aspects array
 export const attitudeAspects = [
   "Interesting", "Enjoyable", "Difficult", "Irritating", "Helpful",
   "Satisfying", "Effective", "Engaging", "Stimulating", "Informative", "Frustrating"
 ];
 
-export const AttitudeSurvey = ({ stance, responses, setResponses }) => {
+const AttitudeSurvey = ({ stance, responses, setResponses }) => {
   const handleValueChange = (aspect, value) => {
-    console.log('Attitude Survey value change:', { aspect, value }); // Debug log
-    setResponses(prev => ({
-      ...prev,
-      [aspect]: parseInt(value, 10)
-    }));
+    const newResponses = { ...responses };
+    newResponses[aspect] = value;
+    setResponses(newResponses);
   };
 
   return (

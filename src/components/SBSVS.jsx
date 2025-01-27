@@ -1,6 +1,7 @@
 import React from 'react';
 
-const SBSVSQuestions = [
+// Export the questions array
+export const SBSVSQuestions = [
   {
     id: 1,
     text: "Caring about the welfare of people with whom one is in personal contact. Being responsible, loyal, honest and forgiving."
@@ -43,7 +44,7 @@ const SBSVSQuestions = [
   }
 ];
 
-export const SBSVS = ({ responses, setResponses }) => {
+const SBSVS = ({ responses, setResponses }) => {
   const handleValueChange = (questionId, value) => {
     console.log('SBSVS value change:', { questionId, value }); // Debug log
     setResponses(prev => ({

@@ -1,8 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import FileSaver from 'file-saver';
-
-// Import the questions and aspects
 import { SBSVSQuestions } from './components/SBSVS';
 import { attitudeAspects } from './components/AttitudeSurvey';
 
