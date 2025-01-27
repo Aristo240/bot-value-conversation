@@ -397,31 +397,37 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Update each section with proper structure
+    // Update each section with proper validation and timestamps
     if (req.body.demographics) {
       session.demographics = {
-        ...req.body.demographics,
+        age: parseInt(req.body.demographics.age),
+        gender: req.body.demographics.gender,
+        education: req.body.demographics.education,
         timestamp: new Date()
       };
     }
 
     if (req.body.pvq21) {
       session.pvq21 = {
-        responses: req.body.pvq21.responses,
+        responses: new Map(Object.entries(req.body.pvq21.responses)),
         timestamp: new Date()
       };
     }
 
     if (req.body.initialAssessment) {
       session.initialAssessment = {
-        ...req.body.initialAssessment,
+        interesting: parseInt(req.body.initialAssessment.interesting),
+        important: parseInt(req.body.initialAssessment.important),
+        agreement: parseInt(req.body.initialAssessment.agreement),
         timestamp: new Date()
       };
     }
 
     if (req.body.chat) {
       session.chat = req.body.chat.map(msg => ({
-        ...msg,
+        messageId: msg.messageId,
+        text: msg.text,
+        sender: msg.sender,
         timestamp: new Date(msg.timestamp)
       }));
     }
@@ -434,17 +440,20 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
 
     if (req.body.sbsvs) {
-      session.sbsvs = req.body.sbsvs;
+      session.sbsvs = new Map(Object.entries(req.body.sbsvs));
+      session.sbsvs.timestamp = new Date();
     }
 
     if (req.body.attitudeSurvey) {
-      session.attitudeSurvey = req.body.attitudeSurvey;
+      session.attitudeSurvey = new Map(Object.entries(req.body.attitudeSurvey));
+      session.attitudeSurvey.timestamp = new Date();
     }
 
     if (req.body.stanceAgreement) {
       session.stanceAgreement = {
         assigned: parseInt(req.body.stanceAgreement.assigned),
-        opposite: parseInt(req.body.stanceAgreement.opposite)
+        opposite: parseInt(req.body.stanceAgreement.opposite),
+        timestamp: new Date()
       };
     }
 
@@ -455,11 +464,15 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       }));
     }
 
+    // Save all updates
     await session.save();
-    res.status(201).json(session);
+    res.status(200).json(session);
   } catch (error) {
-    console.error('Error saving questionnaire responses:', error);
-    res.status(400).json({ message: error.message });
+    console.error('Error saving questionnaire data:', error);
+    res.status(400).json({ 
+      message: error.message,
+      details: error.stack
+    });
   }
 });
 
@@ -558,32 +571,44 @@ app.get('/api/admin/sessions/:sessionId/response', authenticateAdmin, async (req
 
 app.get('/api/admin/sessions/:sessionId/full', authenticateAdmin, async (req, res) => {
   try {
-    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    const session = await Session.findOne({ sessionId: req.params.sessionId })
+      .select({
+        sessionId: 1,
+        timestamp: 1,
+        stance: 1,
+        botPersonality: 1,
+        aiModel: 1,
+        demographics: 1,
+        pvq21: 1,
+        initialAssessment: 1,
+        chat: 1,
+        finalResponse: 1,
+        sbsvs: 1,
+        attitudeSurvey: 1,
+        stanceAgreement: 1,
+        alternativeUses: 1
+      })
+      .lean()
+      .exec();
+
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    
-    // Ensure all fields are included in the response
-    const fullSession = {
-      sessionId: session.sessionId,
-      timestamp: session.timestamp,
-      stance: session.stance,
-      botPersonality: session.botPersonality,
-      aiModel: session.aiModel,
-      aiModelVersion: session.aiModelVersion,
-      demographics: session.demographics,
-      pvq21: session.pvq21,
-      initialAssessment: session.initialAssessment,
-      chat: session.chat,
-      finalResponse: session.finalResponse,
-      sbsvs: session.sbsvs,
-      attitudeSurvey: session.attitudeSurvey,
-      alternativeUses: session.alternativeUses,
-      events: session.events
+
+    // Convert Maps to regular objects for JSON serialization
+    const formattedSession = {
+      ...session,
+      pvq21: session.pvq21 ? {
+        ...session.pvq21,
+        responses: Object.fromEntries(session.pvq21.responses)
+      } : null,
+      sbsvs: session.sbsvs ? Object.fromEntries(session.sbsvs) : null,
+      attitudeSurvey: session.attitudeSurvey ? Object.fromEntries(session.attitudeSurvey) : null
     };
-    
-    res.json(fullSession);
+
+    res.json(formattedSession);
   } catch (error) {
+    console.error('Error fetching full session data:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -739,10 +764,29 @@ app.put('/api/sessions/:sessionId', async (req, res) => {
 });
 
 // Update the GET endpoint for fetching sessions
-app.get('/api/admin/sessions', async (req, res) => {
+app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   try {
-    const sessions = await Session.find({}).sort({ timestamp: -1 });
-    console.log('Sessions fetched:', sessions); // Debug log
+    const sessions = await Session.find()
+      .select({
+        sessionId: 1,
+        timestamp: 1,
+        stance: 1,
+        botPersonality: 1,
+        aiModel: 1,
+        demographics: 1,
+        pvq21: 1,
+        initialAssessment: 1,
+        chat: 1,
+        finalResponse: 1,
+        sbsvs: 1,
+        attitudeSurvey: 1,
+        stanceAgreement: 1,
+        alternativeUses: 1
+      })
+      .sort({ timestamp: -1 })
+      .lean()
+      .exec();
+
     res.json(sessions);
   } catch (error) {
     console.error('Error fetching sessions:', error);
