@@ -622,24 +622,44 @@ app.post('/api/sessions/:sessionId/demographics', async (req, res) => {
   }
 });
 
-// PVQ21 endpoint
+// Update the PVQ21 endpoint
 app.post('/api/sessions/:sessionId/pvq21', async (req, res) => {
   try {
+    console.log('Received PVQ21 data:', req.body); // Debug log
+    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
-    
+
+    // Validate the responses
+    if (!req.body.responses || typeof req.body.responses !== 'object') {
+      return res.status(400).json({ 
+        message: 'Invalid responses format. Expected an object with question responses.' 
+      });
+    }
+
+    // Convert responses to the correct format for MongoDB
+    const responses = {};
+    Object.entries(req.body.responses).forEach(([key, value]) => {
+      responses[key] = parseInt(value, 10);
+    });
+
     session.pvq21 = {
-      responses: req.body.responses,
+      responses: responses,
       timestamp: new Date()
     };
-    
+
+    console.log('Saving PVQ21 data:', session.pvq21); // Debug log
+
     await session.save();
     res.status(200).json(session.pvq21);
   } catch (error) {
-    console.error('Error saving PVQ21:', error);
-    res.status(400).json({ message: error.message });
+    console.error('PVQ21 save error:', error); // Debug log
+    res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 

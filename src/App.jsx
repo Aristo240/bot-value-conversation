@@ -317,15 +317,17 @@ function MainApp() {
 
   const savePVQ21 = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/pvq21`, {
-        responses: Object.entries(pvq21Responses.responses || {}).map(([questionId, value]) => ({
-          questionId: parseInt(questionId),
-          value: value
-        })),
-        timestamp: new Date()
-      });
+      console.log('Saving PVQ21 responses:', pvq21Responses); // Debug log
+      const response = await axios.post(
+        `${API_URL}/sessions/${sessionId}/pvq21`,
+        {
+          responses: pvq21Responses.responses || {}
+        }
+      );
+      console.log('PVQ21 save response:', response.data); // Debug log
+      return response.data;
     } catch (error) {
-      console.error('Error saving PVQ21:', error);
+      console.error('Error saving PVQ21:', error.response?.data || error.message);
       throw error;
     }
   };
@@ -381,10 +383,13 @@ function MainApp() {
           <div className="w-3/4 mx-auto p-8 min-h-screen">
             <PVQ21
               responses={pvq21Responses.responses || {}}
-              setResponses={(newResponses) => setPvq21Responses({
-                responses: newResponses,
-                timestamp: new Date()
-              })}
+              setResponses={(newResponses) => {
+                console.log('New PVQ21 responses:', newResponses); // Debug log
+                setPvq21Responses({
+                  responses: newResponses,
+                  timestamp: new Date()
+                });
+              }}
               gender={demographicResponses.gender}
             />
             <button

@@ -91,9 +91,10 @@ export default function PVQ21({ responses, setResponses, gender }) {
   const questions = getPVQ21Questions(gender);
 
   const handleValueChange = (questionId, value) => {
+    console.log('Handling value change:', { questionId, value }); // Debug log
     setResponses({
       ...responses,
-      [questionId]: value
+      [questionId]: parseInt(value, 10)
     });
   };
 
