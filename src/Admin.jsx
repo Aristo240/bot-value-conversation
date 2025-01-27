@@ -159,13 +159,19 @@ function Admin() {
 
     try {
       const credentials = btoa(`${username}:${password}`);
-      setToken(credentials);
-      localStorage.setItem('adminToken', credentials);
-      setIsAuthenticated(true);
-      await fetchData(); // Fetch data immediately after successful login
+      const response = await axios.post(`${API_URL}/admin/sessions`, {}, {
+        headers: { Authorization: `Bearer ${credentials}` }
+      });
+
+      if (response.status === 200) {
+        setToken(credentials);
+        localStorage.setItem('adminToken', credentials);
+        setIsAuthenticated(true);
+        await fetchData();
+      }
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.response?.data?.message || 'Login failed');
+      setError('Invalid username or password');
       setIsAuthenticated(false);
       setToken(null);
       localStorage.removeItem('adminToken');
@@ -496,7 +502,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               <div className="grid grid-cols-2 gap-2">
                 {attitudeAspects.map((aspect) => (
                   <div key={aspect} className="bg-white p-2 rounded">
-                    <strong>{aspect}:</strong> {session.attitudeSurvey?.[aspect] || 'N/A'}
+                    <strong>{aspect}:</strong> {session.attitudeSurvey?.[aspect.toLowerCase()] || 'N/A'}
                   </div>
                 ))}
               </div>
@@ -556,8 +562,18 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
           text: userResponse,
           timestamp: new Date()
         },
-        sbsvs: sbsvsResponses,
-        attitudeSurvey: attitudeSurveyResponses,
+        sbsvs: Object.fromEntries(
+          Object.entries(sbsvsResponses).map(([questionId, value]) => [
+            questionId,
+            parseInt(value, 10)
+          ])
+        ),
+        attitudeSurvey: Object.fromEntries(
+          Object.entries(attitudeSurveyResponses).map(([aspect, value]) => [
+            aspect.toLowerCase(),
+            parseInt(value, 10)
+          ])
+        ),
         stanceAgreement: {
           assigned: parseInt(stanceAgreement.assigned),
           opposite: parseInt(stanceAgreement.opposite)

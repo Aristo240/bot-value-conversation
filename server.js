@@ -134,31 +134,42 @@ async function initializeCounters() {
   }
 }
 
-// Add or update authentication middleware
+// Update the admin login endpoint to use environment variables
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (username === process.env.ADMIN_USERNAME && 
+        password === process.env.ADMIN_PASSWORD) {
+      const token = Buffer.from(`${username}:${password}`).toString('base64');
+      res.json({ token });
+    } else {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update the authentication middleware
 const authenticateAdmin = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ message: 'No token provided' });
     }
 
     const token = authHeader.split(' ')[1];
-    
-    // Verify against environment variables
-    const username = process.env.ADMIN_USERNAME;
-    const password = process.env.ADMIN_PASSWORD;
-    
-    const providedAuth = Buffer.from(token, 'base64').toString();
-    const [providedUsername, providedPassword] = providedAuth.split(':');
+    const credentials = Buffer.from(token, 'base64').toString().split(':');
+    const [username, password] = credentials;
 
-    if (providedUsername !== username || providedPassword !== password) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+    if (username === process.env.ADMIN_USERNAME && 
+        password === process.env.ADMIN_PASSWORD) {
+      next();
+    } else {
+      res.status(401).json({ message: 'Invalid token' });
     }
-
-    next();
   } catch (error) {
-    console.error('Authentication error:', error);
     res.status(401).json({ message: 'Authentication failed' });
   }
 };
@@ -387,7 +398,7 @@ Assistant (remember to maintain personality and focus on stance):`;
   }
 });
 
-// Save all questionnaire responses
+// Update the questionnaires endpoint to handle all data properly
 app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -438,12 +449,24 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
 
     if (req.body.sbsvs) {
-      session.sbsvs = new Map(Object.entries(req.body.sbsvs));
+      session.sbsvs = {};
+      Object.entries(req.body.sbsvs).forEach(([key, value]) => {
+        const parsedValue = parseInt(value, 10);
+        if (!isNaN(parsedValue) && parsedValue >= -1 && parsedValue <= 7) {
+          session.sbsvs[key] = parsedValue;
+        }
+      });
       session.sbsvs.timestamp = new Date();
     }
 
     if (req.body.attitudeSurvey) {
-      session.attitudeSurvey = new Map(Object.entries(req.body.attitudeSurvey));
+      session.attitudeSurvey = {};
+      Object.entries(req.body.attitudeSurvey).forEach(([key, value]) => {
+        const parsedValue = parseInt(value, 10);
+        if (!isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= 7) {
+          session.attitudeSurvey[key.toLowerCase()] = parsedValue;
+        }
+      });
       session.attitudeSurvey.timestamp = new Date();
     }
 
@@ -492,23 +515,6 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
   } catch (error) {
     console.error('Error saving stance agreement:', error);
     res.status(400).json({ message: error.message });
-  }
-});
-
-// Update the admin endpoints to use authentication
-app.post('/api/admin/login', async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    
-    if (username === process.env.ADMIN_USERNAME && 
-        password === process.env.ADMIN_PASSWORD) {
-      const token = Buffer.from(`${username}:${password}`).toString('base64');
-      res.json({ token });
-    } else {
-      res.status(401).json({ message: 'Invalid credentials' });
-    }
-  } catch (error) {
-    res.status(500).json({ message: error.message });
   }
 });
 
@@ -792,7 +798,7 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Update SBSVS endpoint
+// Update SBSVS endpoint to handle data properly
 app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
   try {
     console.log('Received SBSVS data:', req.body);
@@ -802,11 +808,15 @@ app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Store SBSVS responses directly as an object
+    // Store SBSVS responses with proper validation
     session.sbsvs = {};
     Object.entries(req.body).forEach(([key, value]) => {
-      session.sbsvs[key] = parseInt(value, 10);
+      const parsedValue = parseInt(value, 10);
+      if (!isNaN(parsedValue) && parsedValue >= -1 && parsedValue <= 7) {
+        session.sbsvs[key] = parsedValue;
+      }
     });
+    session.sbsvs.timestamp = new Date();
 
     await session.save();
     res.status(200).json(session.sbsvs);
@@ -816,7 +826,7 @@ app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
   }
 });
 
-// Update Attitude Survey endpoint
+// Update Attitude Survey endpoint to handle data properly
 app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
   try {
     console.log('Received Attitude Survey data:', req.body);
@@ -826,11 +836,15 @@ app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Store attitude survey responses directly as an object
+    // Store attitude survey responses with proper validation
     session.attitudeSurvey = {};
     Object.entries(req.body).forEach(([key, value]) => {
-      session.attitudeSurvey[key] = parseInt(value, 10);
+      const parsedValue = parseInt(value, 10);
+      if (!isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= 7) {
+        session.attitudeSurvey[key.toLowerCase()] = parsedValue;
+      }
     });
+    session.attitudeSurvey.timestamp = new Date();
 
     await session.save();
     res.status(200).json(session.attitudeSurvey);
