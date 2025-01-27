@@ -166,14 +166,13 @@ const authenticateAdmin = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const credentials = Buffer.from(token, 'base64').toString().split(':');
-    const [username, password] = credentials;
+    const [username, password] = atob(token).split(':');
 
     if (username === process.env.ADMIN_USERNAME && 
         password === process.env.ADMIN_PASSWORD) {
       next();
     } else {
-      res.status(401).json({ message: 'Invalid token' });
+      res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
     res.status(401).json({ message: 'Authentication failed' });
@@ -802,85 +801,47 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   }
 });
 
-// sbsvs endpoint
+// SBSVS endpoint
 app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
   try {
-    console.log('Received sbsvs data:', req.body); // Debug log
-    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Validate the responses
-    if (!req.body.responses || typeof req.body.responses !== 'object') {
-      return res.status(400).json({ 
-        message: 'Invalid responses format. Expected an object with question responses.' 
-      });
-    }
-
-    // Convert responses to the correct format for MongoDB
-    const responses = {};
-    Object.entries(req.body.responses).forEach(([key, value]) => {
-      responses[key] = parseInt(value, 10);
-    });
-
+    // Save in the same format as PVQ21
     session.sbsvs = {
-      responses: responses,
+      responses: req.body.responses,
       timestamp: new Date()
     };
-
-    console.log('Saving sbsvs data:', session.sbsvs); // Debug log
 
     await session.save();
     res.status(200).json(session.sbsvs);
   } catch (error) {
-    console.error('sbsvs save error:', error); // Debug log
-    res.status(500).json({ 
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    console.error('SBSVS save error:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 
-// attitudeSurvey endpoint
+// Attitude Survey endpoint
 app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
   try {
-    console.log('Received attitudeSurvey data:', req.body); // Debug log
-    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Validate the responses
-    if (!req.body.responses || typeof req.body.responses !== 'object') {
-      return res.status(400).json({ 
-        message: 'Invalid responses format. Expected an object with question responses.' 
-      });
-    }
-
-    // Convert responses to the correct format for MongoDB
-    const responses = {};
-    Object.entries(req.body.responses).forEach(([key, value]) => {
-      responses[key] = parseInt(value, 10);
-    });
-
+    // Save in the same format as PVQ21
     session.attitudeSurvey = {
-      responses: responses,
+      responses: req.body.responses,
       timestamp: new Date()
     };
-
-    console.log('Saving attitudeSurvey data:', session.attitudeSurvey); // Debug log
 
     await session.save();
     res.status(200).json(session.attitudeSurvey);
   } catch (error) {
-    console.error('attitudeSurvey save error:', error); // Debug log
-    res.status(500).json({ 
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    console.error('Attitude Survey save error:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 

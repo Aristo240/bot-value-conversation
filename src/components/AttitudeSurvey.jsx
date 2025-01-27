@@ -11,8 +11,6 @@ export const attitudeAspects = [
 
 const AttitudeSurvey = ({ stance, responses, setResponses, sessionId }) => {
   const handleValueChange = async (aspect, value) => {
-    console.log('Handling Attitude Survey value change:', { aspect, value }); // Debug log
-    
     try {
       const newResponses = {
         ...responses,
@@ -20,10 +18,9 @@ const AttitudeSurvey = ({ stance, responses, setResponses, sessionId }) => {
       };
       setResponses(newResponses);
       
-      // Save to server immediately
+      // Save to server in the same format as PVQ21
       await axios.post(`${API_URL}/sessions/${sessionId}/attitudeSurvey`, {
-        responses: newResponses,
-        timestamp: new Date()
+        responses: newResponses
       });
     } catch (error) {
       console.error('Error saving Attitude Survey response:', error);

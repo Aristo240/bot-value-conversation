@@ -110,15 +110,18 @@ function Admin() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/admin/login`, {
-        username,
-        password
+      // Create base64 encoded credentials
+      const credentials = btoa(`${username}:${password}`);
+      
+      // Test the credentials with a request
+      const response = await axios.get(`${API_URL}/admin/sessions`, {
+        headers: { Authorization: `Bearer ${credentials}` }
       });
 
-      if (response.data.token) {
-        localStorage.setItem('adminToken', response.data.token);
+      if (response.status === 200) {
+        localStorage.setItem('adminToken', credentials);
         setIsAuthenticated(true);
-        await fetchData(response.data.token);
+        setSessions(response.data);
       }
     } catch (error) {
       console.error('Login error:', error);

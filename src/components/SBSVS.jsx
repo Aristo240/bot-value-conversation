@@ -49,8 +49,6 @@ export const SBSVSQuestions = [
 
 const SBSVS = ({ responses, setResponses, sessionId }) => {
   const handleValueChange = async (questionId, value) => {
-    console.log('Handling SBSVS value change:', { questionId, value }); // Debug log
-    
     try {
       const newResponses = {
         ...responses,
@@ -58,10 +56,9 @@ const SBSVS = ({ responses, setResponses, sessionId }) => {
       };
       setResponses(newResponses);
       
-      // Save to server immediately
+      // Save to server in the same format as PVQ21
       await axios.post(`${API_URL}/sessions/${sessionId}/sbsvs`, {
-        responses: newResponses,
-        timestamp: new Date()
+        responses: newResponses
       });
     } catch (error) {
       console.error('Error saving SBSVS response:', error);
