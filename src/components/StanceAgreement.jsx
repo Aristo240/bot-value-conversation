@@ -4,7 +4,6 @@ const StanceAgreement = ({ stance, responses, setResponses }) => {
   const handleValueChange = (aspect, value) => {
     const newResponses = { ...responses };
     newResponses[aspect] = parseInt(value);
-    newResponses.timestamp = new Date();
     setResponses(newResponses);
   };
 

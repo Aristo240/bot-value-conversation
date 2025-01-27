@@ -74,10 +74,9 @@ const SessionSchema = new mongoose.Schema({
     timestamp: Date
   },
   stanceAgreement: {
-    responses: {
-      assigned: Number,
-      opposite: Number
-    }
+    assigned: Number,
+    opposite: Number,
+    timestamp: Date
   },
   alternativeUses: {
     responses: [{
@@ -390,11 +389,8 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
     if (req.body.stanceAgreement) {
       session.stanceAgreement = {
-        responses: {
-          assigned: parseInt(req.body.stanceAgreement.responses.assigned),
-          opposite: parseInt(req.body.stanceAgreement.responses.opposite)
-        },
-        timestamp: new Date()
+        assigned: parseInt(req.body.stanceAgreement.assigned),
+        opposite: parseInt(req.body.stanceAgreement.opposite)
       };
     }
     if (req.body.alternativeUses) {
@@ -412,7 +408,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
   }
 });
 
-// Add a dedicated endpoint for stance agreement
+// Update the stanceAgreement endpoint
 app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -421,11 +417,8 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
     }
     
     session.stanceAgreement = {
-      responses: {
-        assigned: parseInt(req.body.responses.assigned),
-        opposite: parseInt(req.body.responses.opposite)
-      },
-      timestamp: new Date()
+      assigned: parseInt(req.body.assigned),
+      opposite: parseInt(req.body.opposite)
     };
     
     await session.save();
@@ -648,10 +641,8 @@ app.put('/api/sessions/:sessionId', async (req, res) => {
     // Update the stance agreement
     if (req.body.stanceAgreement) {
       session.stanceAgreement = {
-        responses: {
-          assigned: req.body.stanceAgreement.responses.assigned,
-          opposite: req.body.stanceAgreement.responses.opposite
-        }
+        assigned: req.body.stanceAgreement.assigned,
+        opposite: req.body.stanceAgreement.opposite
       };
     }
 

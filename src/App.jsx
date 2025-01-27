@@ -340,10 +340,8 @@ function MainApp() {
   const saveStanceAgreement = async () => {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
-        responses: {
-          assigned: parseInt(stanceAgreement.assigned),
-          opposite: parseInt(stanceAgreement.opposite)
-        }
+        assigned: parseInt(stanceAgreement.assigned),
+        opposite: parseInt(stanceAgreement.opposite)
       });
     } catch (error) {
       console.error('Error saving stance agreement:', error);

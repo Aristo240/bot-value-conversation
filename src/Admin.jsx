@@ -266,7 +266,6 @@ ${session.attitudeSurvey?.responses?.map(r => `${r.aspect}: ${r.rating}`).join('
 Stance Agreement:
 Assigned Stance: ${session.stanceAgreement?.assigned || 'N/A'}
 Opposite Stance: ${session.stanceAgreement?.opposite || 'N/A'}
-Timestamp: ${session.stanceAgreement?.timestamp ? new Date(session.stanceAgreement.timestamp).toLocaleString() : 'N/A'}
 
 Alternative Uses:
 ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join('\n') || 'N/A'}
