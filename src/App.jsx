@@ -29,7 +29,7 @@ function MainApp() {
   const messagesEndRef = useRef(null);
   const [showTimeUpPopup, setShowTimeUpPopup] = useState(false);
   const [sbsvsResponses, setSbsvsResponses] = useState({});
-  const [attitudeResponses, setAttitudeResponses] = useState({});
+  const [attitudeSurveyResponses, setAttitudeSurveyResponses] = useState({});
   const [stanceAgreement, setStanceAgreement] = useState({
     assigned: null,
     opposite: null
@@ -166,7 +166,7 @@ function MainApp() {
           timestamp: new Date()
         },
         sbsvs: sbsvsResponses,
-        attitudeSurvey: attitudeResponses,
+        attitudeSurvey: attitudeSurveyResponses,
         stanceAgreement: {
           assigned: parseInt(stanceAgreement.assigned),
           opposite: parseInt(stanceAgreement.opposite),
@@ -209,7 +209,7 @@ function MainApp() {
 
   const isQuestionnairesComplete = () => {
     const sbsvsComplete = Object.keys(sbsvsResponses).length === 10;
-    const attitudeComplete = Object.keys(attitudeResponses).length === 11;
+    const attitudeComplete = Object.keys(attitudeSurveyResponses).length === 11;
     const stanceComplete = stanceAgreement.assigned !== null && stanceAgreement.opposite !== null;
     
     return sbsvsComplete && attitudeComplete && stanceComplete;
@@ -222,8 +222,8 @@ function MainApp() {
       missing.push(`SBSVS (${10 - Object.keys(sbsvsResponses).length} remaining)`);
     }
     
-    if (Object.keys(attitudeResponses).length < 11) {
-      missing.push(`Attitude Survey (${11 - Object.keys(attitudeResponses).length} remaining)`);
+    if (Object.keys(attitudeSurveyResponses).length < 11) {
+      missing.push(`Attitude Survey (${11 - Object.keys(attitudeSurveyResponses).length} remaining)`);
     }
     
     if (!stanceAgreement.assigned || !stanceAgreement.opposite) {
@@ -281,7 +281,7 @@ function MainApp() {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         attitudeSurvey: {
-          responses: Object.entries(attitudeResponses).map(([aspect, rating]) => ({
+          responses: Object.entries(attitudeSurveyResponses).map(([aspect, rating]) => ({
             aspect,
             rating
           })),
@@ -295,14 +295,16 @@ function MainApp() {
 
   const saveAlternativeUses = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        alternativeUses: {
-          responses: autResponses,
-          timestamp: new Date()
-        }
-      });
+      console.log('Saving Alternative Uses responses:', autResponses); // Debug log
+      const response = await axios.post(
+        `${API_URL}/sessions/${sessionId}/alternativeUses`,
+        autResponses
+      );
+      console.log('Alternative Uses save response:', response.data); // Debug log
+      return response.data;
     } catch (error) {
-      console.error('Error saving alternative uses:', error);
+      console.error('Error saving alternative uses:', error.response?.data || error.message);
+      throw error;
     }
   };
 
@@ -724,7 +726,7 @@ function MainApp() {
 
       case 9: // Attitude Survey
         const handleAttitudeSurveySubmit = async () => {
-          if (Object.keys(attitudeResponses).length === 11) {
+          if (Object.keys(attitudeSurveyResponses).length === 11) {
             await saveAttitudeSurvey();
             setCurrentStep(10);
           }
@@ -734,18 +736,18 @@ function MainApp() {
             <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 2</h2>
             <AttitudeSurvey 
               stance={stances[stance]}
-              responses={attitudeResponses}
-              setResponses={setAttitudeResponses}
+              responses={attitudeSurveyResponses}
+              setResponses={setAttitudeSurveyResponses}
             />
             <button
               className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                Object.keys(attitudeResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
+                Object.keys(attitudeSurveyResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               onClick={handleAttitudeSurveySubmit}
-              disabled={Object.keys(attitudeResponses).length < 11}
+              disabled={Object.keys(attitudeSurveyResponses).length < 11}
             >
-              {Object.keys(attitudeResponses).length < 11
-                ? `Please complete all ${11 - Object.keys(attitudeResponses).length} remaining questions`
+              {Object.keys(attitudeSurveyResponses).length < 11
+                ? `Please complete all ${11 - Object.keys(attitudeSurveyResponses).length} remaining questions`
                 : 'Continue'
               }
             </button>
@@ -789,16 +791,19 @@ function MainApp() {
         );
 
       case 11: // Alternative Uses Task
-        const handleAUTComplete = async () => {
-          await saveAlternativeUses();
-          setCurrentStep(12);
-        };
         return (
           <div className="w-3/4 mx-auto p-8 min-h-screen">
             <AlternativeUsesTask
               responses={autResponses}
               setResponses={setAutResponses}
-              onComplete={handleAUTComplete}
+              onComplete={async () => {
+                try {
+                  await saveAlternativeUses();
+                  setCurrentStep(12);
+                } catch (error) {
+                  console.error('Failed to save alternative uses:', error);
+                }
+              }}
             />
           </div>
         );

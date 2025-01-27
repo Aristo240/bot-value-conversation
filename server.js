@@ -722,6 +722,107 @@ app.get('/api/admin/sessions', async (req, res) => {
   }
 });
 
+// Update SBSVS endpoint
+app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
+  try {
+    console.log('Received SBSVS data:', req.body); // Debug log
+    
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Validate the responses
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ 
+        message: 'Invalid SBSVS format. Expected an object with responses.' 
+      });
+    }
+
+    // Convert responses to numbers and store
+    const responses = {};
+    Object.entries(req.body).forEach(([key, value]) => {
+      responses[key] = parseInt(value, 10);
+    });
+
+    session.sbsvs = responses;
+    console.log('Saving SBSVS data:', session.sbsvs); // Debug log
+
+    await session.save();
+    res.status(200).json(session.sbsvs);
+  } catch (error) {
+    console.error('SBSVS save error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update Attitude Survey endpoint
+app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
+  try {
+    console.log('Received Attitude Survey data:', req.body); // Debug log
+    
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Validate the responses
+    if (!req.body || typeof req.body !== 'object') {
+      return res.status(400).json({ 
+        message: 'Invalid Attitude Survey format. Expected an object with responses.' 
+      });
+    }
+
+    // Convert responses to numbers and store
+    const responses = {};
+    Object.entries(req.body).forEach(([key, value]) => {
+      responses[key] = parseInt(value, 10);
+    });
+
+    session.attitudeSurvey = responses;
+    console.log('Saving Attitude Survey data:', session.attitudeSurvey); // Debug log
+
+    await session.save();
+    res.status(200).json(session.attitudeSurvey);
+  } catch (error) {
+    console.error('Attitude Survey save error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// Update Alternative Uses endpoint
+app.post('/api/sessions/:sessionId/alternativeUses', async (req, res) => {
+  try {
+    console.log('Received Alternative Uses data:', req.body); // Debug log
+    
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Validate the responses
+    if (!Array.isArray(req.body)) {
+      return res.status(400).json({ 
+        message: 'Invalid format. Expected an array of responses.' 
+      });
+    }
+
+    // Format and store the responses
+    session.alternativeUses = req.body.map(response => ({
+      text: response.idea,
+      timestamp: new Date(response.timestamp)
+    }));
+
+    console.log('Saving Alternative Uses data:', session.alternativeUses); // Debug log
+
+    await session.save();
+    res.status(200).json(session.alternativeUses);
+  } catch (error) {
+    console.error('Alternative Uses save error:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));

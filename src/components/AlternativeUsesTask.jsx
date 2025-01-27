@@ -14,10 +14,12 @@ const AlternativeUsesTask = ({ onComplete, responses, setResponses }) => {
       }, 1000);
     } else if (timeLeft === 0) {
       clearInterval(interval);
-      onComplete();
+      if (responses && responses.length > 0) {
+        onComplete();
+      }
     }
     return () => clearInterval(interval);
-  }, [isActive, timeLeft, onComplete]);
+  }, [isActive, timeLeft, onComplete, responses]);
 
   const handleStart = () => {
     setIsActive(true);
@@ -28,7 +30,7 @@ const AlternativeUsesTask = ({ onComplete, responses, setResponses }) => {
     e.preventDefault();
     if (currentIdea.trim()) {
       const newResponse = {
-        id: Date.now(),
+        id: Date.now().toString(),
         idea: currentIdea.trim(),
         timestamp: new Date().toISOString()
       };
