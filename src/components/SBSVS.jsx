@@ -45,9 +45,11 @@ const SBSVSQuestions = [
 
 export const SBSVS = ({ responses, setResponses }) => {
   const handleValueChange = (questionId, value) => {
-    const newResponses = { ...responses };
-    newResponses[questionId] = value;
-    setResponses(newResponses);
+    console.log('SBSVS value change:', { questionId, value }); // Debug log
+    setResponses(prev => ({
+      ...prev,
+      [questionId]: parseInt(value, 10)
+    }));
   };
 
   const getScaleLabel = (value) => {

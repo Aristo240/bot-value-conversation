@@ -136,16 +136,32 @@ async function initializeCounters() {
   }
 }
 
-// Admin authentication middleware
+// Add or update authentication middleware
 const authenticateAdmin = async (req, res, next) => {
-  const username = req.body?.username || req.headers?.username;
-  const password = req.body?.password || req.headers?.password;
-  
-  if (username === process.env.ADMIN_USERNAME && 
-      password === process.env.ADMIN_PASSWORD) {
+  try {
+    const authHeader = req.headers.authorization;
+    
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'No token provided' });
+    }
+
+    const token = authHeader.split(' ')[1];
+    
+    // Verify against environment variables
+    const username = process.env.ADMIN_USERNAME;
+    const password = process.env.ADMIN_PASSWORD;
+    
+    const providedAuth = Buffer.from(token, 'base64').toString();
+    const [providedUsername, providedPassword] = providedAuth.split(':');
+
+    if (providedUsername !== username || providedPassword !== password) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
+
     next();
-  } else {
-    res.status(401).json({ message: 'Invalid credentials' });
+  } catch (error) {
+    console.error('Authentication error:', error);
+    res.status(401).json({ message: 'Authentication failed' });
   }
 };
 
@@ -468,9 +484,21 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
   }
 });
 
-// Admin routes
-app.post('/api/admin/login', authenticateAdmin, (req, res) => {
-  res.json({ success: true });
+// Update the admin endpoints to use authentication
+app.post('/api/admin/login', async (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    if (username === process.env.ADMIN_USERNAME && 
+        password === process.env.ADMIN_PASSWORD) {
+      const token = Buffer.from(`${username}:${password}`).toString('base64');
+      res.json({ token });
+    } else {
+      res.status(401).json({ message: 'Invalid credentials' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 app.post('/api/admin/sessions', authenticateAdmin, async (req, res) => {

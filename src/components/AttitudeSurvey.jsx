@@ -7,9 +7,11 @@ const attitudeAspects = [
 
 export const AttitudeSurvey = ({ stance, responses, setResponses }) => {
   const handleValueChange = (aspect, value) => {
-    const newResponses = { ...responses };
-    newResponses[aspect] = value;
-    setResponses(newResponses);
+    console.log('Attitude Survey value change:', { aspect, value }); // Debug log
+    setResponses(prev => ({
+      ...prev,
+      [aspect]: parseInt(value, 10)
+    }));
   };
 
   return (
