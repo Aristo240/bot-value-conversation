@@ -164,20 +164,20 @@ function Admin() {
       'Bot_Personality',
       'Stance',
       // Initial Assessment
-      'Initial_Interesting',
-      'Initial_Important',
-      'Initial_Agreement',
+      'Initial_Assessment_Interesting',
+      'Initial_Assessment_Important',
+      'Initial_Assessment_Agreement',
       // Demographics
-      'Age',
-      'Gender',
-      'Education',
-      // PVQ21
+      'Demographics_Age',
+      'Demographics_Gender',
+      'Demographics_Education',
+      // PVQ21 (21 questions)
       ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
       // Chat History
       'Chat_History',
       // Final Response
       'Final_Response',
-      // SBSVS
+      // SBSVS (10 questions)
       ...Array.from({ length: 10 }, (_, i) => `SBSVS_Q${i + 1}`),
       // Attitude Survey
       ...attitudeAspects.map(aspect => `Attitude_${aspect}`),
@@ -189,6 +189,13 @@ function Admin() {
     ].join(',');
 
     const rows = sessionData.map(session => {
+      // Create an array of PVQ21 values, handling potential undefined responses
+      const pvq21Values = Array.from({ length: 21 }, (_, i) => {
+        const questionId = i + 1;
+        const response = session.pvq21?.responses?.find(r => r.questionId === questionId);
+        return response ? response.value : '';
+      });
+
       return [
         session.sessionId,
         session.timestamp,
@@ -203,18 +210,17 @@ function Admin() {
         session.demographics?.gender || '',
         session.demographics?.education || '',
         // PVQ21
-        ...Array.from({ length: 21 }, (_, i) => {
-          const response = session.pvq21?.responses?.find(r => r.questionId === i + 1);
-          return response ? response.value : '';
-        }),
+        ...pvq21Values,
         // Chat History
         session.chat?.map(msg => `${msg.sender}: ${msg.text}`).join('\n') || '',
         // Final Response
         session.finalResponse?.text || '',
         // SBSVS
-        ...Array.from({ length: 10 }, (_, i) => 
-          session.sbsvs?.responses?.find(r => r.questionId === i + 1)?.value || ''
-        ),
+        ...Array.from({ length: 10 }, (_, i) => {
+          const questionId = i + 1;
+          const response = session.sbsvs?.responses?.find(r => r.questionId === questionId);
+          return response ? response.value : '';
+        }),
         // Attitude Survey
         ...attitudeAspects.map(aspect => 
           session.attitudeSurvey?.responses?.find(r => r.aspect === aspect)?.rating || ''
@@ -269,7 +275,7 @@ Opposite Stance: ${session.stanceAgreement?.opposite || 'N/A'}
 Alternative Uses:
 ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join('\n') || 'N/A'}
 -------------------`;
-    }).join('\n\n');
+    }).join('\n\n---\n\n');
   };
 
   const exportData = (sessionData) => {
@@ -669,12 +675,15 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 <div className="bg-gray-50 p-4 rounded">
                   <h4 className="font-semibold mb-2">PVQ21 Responses:</h4>
                   <div className="grid grid-cols-3 gap-2">
-                    {session.pvq21?.responses?.sort((a, b) => a.questionId - b.questionId)
-                      .map((response) => (
-                        <div key={response.questionId} className="text-sm">
-                          Q{response.questionId}: {response.value}
+                    {Array.from({ length: 21 }, (_, i) => {
+                      const questionId = i + 1;
+                      const response = session.pvq21?.responses?.find(r => r.questionId === questionId);
+                      return (
+                        <div key={questionId} className="text-sm">
+                          Q{questionId}: {response ? response.value : 'N/A'}
                         </div>
-                      )) || 'No responses'}
+                      );
+                    })}
                   </div>
                 </div>
 
