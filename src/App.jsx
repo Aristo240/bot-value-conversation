@@ -168,10 +168,9 @@ function MainApp() {
         sbsvs: sbsvsResponses,
         attitudeSurvey: attitudeResponses,
         stanceAgreement: {
-          responses: {
-            assigned: parseInt(stanceAgreement.assigned),
-            opposite: parseInt(stanceAgreement.opposite)
-          }
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite),
+          timestamp: new Date()
         },
         alternativeUses: autResponses
       });
@@ -318,7 +317,13 @@ function MainApp() {
 
   const savePVQ21 = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/pvq21`, pvq21Responses);
+      await axios.post(`${API_URL}/sessions/${sessionId}/pvq21`, {
+        responses: Object.entries(pvq21Responses.responses || {}).map(([questionId, value]) => ({
+          questionId: parseInt(questionId),
+          value: value
+        })),
+        timestamp: new Date()
+      });
     } catch (error) {
       console.error('Error saving PVQ21:', error);
       throw error;
@@ -327,9 +332,12 @@ function MainApp() {
 
   const saveStanceAgreement = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/stanceAgreement`, {
-        assigned: parseInt(stanceAgreement.assigned),
-        opposite: parseInt(stanceAgreement.opposite)
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        stanceAgreement: {
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite),
+          timestamp: new Date()
+        }
       });
     } catch (error) {
       console.error('Error saving stance agreement:', error);
@@ -378,17 +386,22 @@ function MainApp() {
             />
             <button
               className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                Object.keys(pvq21Responses.responses || {}).length !== 21
+                !pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 21
                   ? 'opacity-50 cursor-not-allowed'
                   : ''
               }`}
               onClick={async () => {
-                if (Object.keys(pvq21Responses.responses || {}).length === 21) {
-                  await savePVQ21();
-                  setCurrentStep(4);
+                if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 21) {
+                  try {
+                    await savePVQ21();
+                    setCurrentStep(4);
+                  } catch (error) {
+                    console.error('Failed to save PVQ21:', error);
+                    // Optionally show an error message to the user
+                  }
                 }
               }}
-              disabled={Object.keys(pvq21Responses.responses || {}).length !== 21}
+              disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 21}
             >
               Continue
             </button>
@@ -754,7 +767,8 @@ function MainApp() {
                     setCurrentStep(11);
                   } catch (error) {
                     console.error('Failed to save stance agreement:', error);
-                    // Optionally show an error message to the user
+                    // Show error message to user
+                    alert('Failed to save your responses. Please try again.');
                   }
                 }
               }}

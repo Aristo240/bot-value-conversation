@@ -203,9 +203,10 @@ function Admin() {
         session.demographics?.gender || '',
         session.demographics?.education || '',
         // PVQ21
-        ...Array.from({ length: 21 }, (_, i) => 
-          session.pvq21?.responses?.find(r => r.questionId === i + 1)?.value || ''
-        ),
+        ...Array.from({ length: 21 }, (_, i) => {
+          const response = session.pvq21?.responses?.find(r => r.questionId === i + 1);
+          return response ? response.value : '';
+        }),
         // Chat History
         session.chat?.map(msg => `${msg.sender}: ${msg.text}`).join('\n') || '',
         // Final Response
@@ -668,11 +669,12 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                 <div className="bg-gray-50 p-4 rounded">
                   <h4 className="font-semibold mb-2">PVQ21 Responses:</h4>
                   <div className="grid grid-cols-3 gap-2">
-                    {session.pvq21?.responses?.map((response) => (
-                      <div key={response.questionId}>
-                        Q{response.questionId}: {response.value}
-                      </div>
-                    )) || 'No responses'}
+                    {session.pvq21?.responses?.sort((a, b) => a.questionId - b.questionId)
+                      .map((response) => (
+                        <div key={response.questionId} className="text-sm">
+                          Q{response.questionId}: {response.value}
+                        </div>
+                      )) || 'No responses'}
                   </div>
                 </div>
 
