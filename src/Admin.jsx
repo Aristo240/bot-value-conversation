@@ -133,16 +133,16 @@ function Admin() {
     checkAuth();
   }, [token]);
 
-  // Update fetchData to include authentication
+  // Modify the fetchData function to correctly fetch sessions
   const fetchData = async () => {
     if (!token) return;
 
     try {
       const [sessionsResponse, countsResponse] = await Promise.all([
-        axios.post(`${API_URL}/admin/sessions`, {}, {
+        axios.get(`${API_URL}/admin/sessions`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        axios.get(`${API_URL}/admin/condition-counts`, {
+        axios.get(`${API_URL}/admin/conditionCounts`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -150,12 +150,19 @@ function Admin() {
       setSessions(sessionsResponse.data);
       setConditionCounts(countsResponse.data);
     } catch (error) {
+      console.error('Error fetching data:', error);
       if (error.response?.status === 401) {
         handleLogout();
       }
-      console.error('Error fetching data:', error);
     }
   };
+
+  // Add useEffect to fetch data when authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -163,18 +170,17 @@ function Admin() {
     setIsLoading(true);
 
     try {
-      const response = await axios.post(`${API_URL}/admin/login`, {
-        username,
-        password
-      });
-
-      const { token } = response.data;
-      localStorage.setItem('adminToken', token);
-      setToken(token);
+      const credentials = btoa(`${username}:${password}`);
+      setToken(credentials);
+      localStorage.setItem('adminToken', credentials);
       setIsAuthenticated(true);
+      await fetchData(); // Fetch data immediately after successful login
     } catch (error) {
       console.error('Login error:', error);
       setError(error.response?.data?.message || 'Login failed');
+      setIsAuthenticated(false);
+      setToken(null);
+      localStorage.removeItem('adminToken');
     } finally {
       setIsLoading(false);
     }
@@ -193,18 +199,15 @@ function Admin() {
 
   const deleteSession = async (sessionId) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
-      setIsLoading(true);
       try {
         await axios.delete(`${API_URL}/admin/sessions/${sessionId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
-        await fetchData();
+        await fetchData(); // Refresh the data after deletion
         showStatus('Session deleted successfully');
       } catch (error) {
         console.error('Error deleting session:', error);
         showStatus('Failed to delete session', true);
-      } finally {
-        setIsLoading(false);
       }
     }
   };
@@ -533,117 +536,130 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-        <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
-          <h2 className="text-2xl font-bold mb-6">Admin Login</h2>
-          {error && <p className="text-red-500 mb-4">{error}</p>}
-          <div className="mb-4">
-            <input
-              type="text"
-              placeholder="Username"
-              className="w-full p-2 border rounded"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-            />
-          </div>
-          <div className="mb-6">
-            <input
-              type="password"
-              placeholder="Password"
-              className="w-full p-2 border rounded"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
-          <button
-            type="submit"
-            className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
-          </button>
-        </form>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Admin Dashboard</h1>
-          <button
-            onClick={handleLogout}
-            className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
-          >
-            Logout
-          </button>
+    <ErrorBoundary>
+      {isLoading ? (
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500"></div>
         </div>
-
-        {downloadStatus && (
-          <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
-            downloadStatus.includes('Failed') ? 'bg-red-500' : 'bg-green-500'
-          } text-white`}>
-            {downloadStatus}
-          </div>
-        )}
-
-        <div className="flex justify-between items-center mb-6">
-          <div className="flex gap-4">
-            <select
-              value={selectedFileType}
-              onChange={(e) => setSelectedFileType(e.target.value)}
-              className="p-2 border rounded"
-            >
-              {fileTypes.map((type) => (
-                <option key={type.value} value={type.value}>
-                  {type.label}
-                </option>
-              ))}
-            </select>
+      ) : !isAuthenticated ? (
+        <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+          <form onSubmit={handleLogin} className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-2xl font-bold mb-6">Admin Login</h2>
+            {error && <p className="text-red-500 mb-4">{error}</p>}
+            <div className="mb-4">
+              <input
+                type="text"
+                placeholder="Username"
+                className="w-full p-2 border rounded"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+              />
+            </div>
+            <div className="mb-6">
+              <input
+                type="password"
+                placeholder="Password"
+                className="w-full p-2 border rounded"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
             <button
-              onClick={downloadAllSessions}
-              className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
+              type="submit"
+              className="w-full bg-blue-500 text-white py-2 px-4 rounded hover:bg-blue-600"
+              disabled={isLoading}
             >
-              Download All Sessions
+              {isLoading ? 'Logging in...' : 'Login'}
             </button>
-          </div>
+          </form>
         </div>
-
-        <div className="mb-8 bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {conditionCounts.map((condition) => (
-              <div
-                key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
-                className="p-4 bg-gray-50 rounded-lg"
-              >
-                <p>Model: {condition.aiModel}</p>
-                <p>Stance: {condition.stance}</p>
-                <p>Personality: {condition.personality}</p>
-                <p className="text-lg font-bold text-blue-600">
-                  Count: {condition.count}
-                </p>
+      ) : (
+        <div className="min-h-screen bg-gray-100 p-8">
+          <div className="max-w-7xl mx-auto">
+            {/* Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+              <div className="flex gap-4">
+                <button
+                  onClick={fetchData}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Refresh Data
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  Logout
+                </button>
               </div>
-            ))}
+            </div>
+
+            {/* Download status notification */}
+            {downloadStatus && (
+              <div className={`fixed top-4 right-4 p-4 rounded-lg shadow-lg ${
+                downloadStatus.includes('Failed') ? 'bg-red-500' : 'bg-green-500'
+              } text-white`}>
+                {downloadStatus}
+              </div>
+            )}
+
+            {/* Download options */}
+            <div className="flex justify-between items-center mb-6">
+              <div className="flex gap-4">
+                <select
+                  value={selectedFileType}
+                  onChange={(e) => setSelectedFileType(e.target.value)}
+                  className="p-2 border rounded"
+                >
+                  {fileTypes.map((type) => (
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={downloadAllSessions}
+                  className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
+                >
+                  Download All Sessions
+                </button>
+              </div>
+            </div>
+
+            {/* Condition counts */}
+            <div className="mb-8 bg-white p-6 rounded-lg shadow">
+              <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {conditionCounts.map((condition) => (
+                  <div
+                    key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
+                    className="p-4 bg-gray-50 rounded-lg"
+                  >
+                    <p>Model: {condition.aiModel}</p>
+                    <p>Stance: {condition.stance}</p>
+                    <p>Personality: {condition.personality}</p>
+                    <p className="text-lg font-bold text-blue-600">
+                      Count: {condition.count}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Sessions list */}
+            <div className="space-y-4">
+              {sessions.length === 0 ? (
+                <p className="text-center text-gray-500">No sessions found</p>
+              ) : (
+                sessions.map(renderSessionData)
+              )}
+            </div>
           </div>
         </div>
-
-        <div className="space-y-4">
-          {sessions.map(renderSessionData)}
-        </div>
-      </div>
-    </div>
+      )}
+    </ErrorBoundary>
   );
 }
 
