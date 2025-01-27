@@ -277,28 +277,28 @@ function Admin() {
       'Stance',
       'Bot_Personality',
       'AI_Model',
-      // Demographics
+      // Demographics (Case 2)
       'Age',
       'Gender',
       'Education',
-      // PVQ21
+      // PVQ21 (Case 3)
       ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
-      // Initial Assessment
+      // Initial Assessment (Case 4)
       'Initial_Interest',
       'Initial_Importance',
       'Initial_Agreement',
-      // Chat
+      // Chat History (Case 5-6)
       'Chat_History',
-      // Final Response
+      // Final Response (Case 7)
       'Final_Response',
-      // SBSVS
+      // SBSVS (Case 8)
       ...Array.from({ length: 10 }, (_, i) => `SBSVS_Q${i + 1}`),
-      // Attitude Survey
+      // Attitude Survey (Case 9)
       ...attitudeAspects.map(aspect => `Attitude_${aspect}`),
-      // Stance Agreement
+      // Stance Agreement (Case 10)
       'Stance_Agreement_Assigned',
       'Stance_Agreement_Opposite',
-      // Alternative Uses
+      // Alternative Uses (Case 11)
       'Alternative_Uses'
     ].join(',');
 
@@ -309,23 +309,34 @@ function Admin() {
         Stance: session.stance,
         Bot_Personality: session.botPersonality,
         AI_Model: session.aiModel,
+        // Demographics
         Age: session.demographics?.age || '',
         Gender: session.demographics?.gender || '',
         Education: session.demographics?.education || '',
+        // PVQ21
         ...Array.from({ length: 21 }, (_, i) => session.pvq21?.responses?.[i + 1] || ''),
+        // Initial Assessment
         Initial_Interest: session.initialAssessment?.interesting || '',
         Initial_Importance: session.initialAssessment?.important || '',
         Initial_Agreement: session.initialAssessment?.agreement || '',
+        // Chat History
         Chat_History: JSON.stringify(session.chat || []),
+        // Final Response
         Final_Response: session.finalResponse?.text || '',
+        // SBSVS
         ...Array.from({ length: 10 }, (_, i) => session.sbsvs?.[i + 1] || ''),
+        // Attitude Survey
         ...attitudeAspects.map(aspect => session.attitudeSurvey?.[aspect] || ''),
+        // Stance Agreement
         Stance_Agreement_Assigned: session.stanceAgreement?.assigned || '',
         Stance_Agreement_Opposite: session.stanceAgreement?.opposite || '',
-        Alternative_Uses: JSON.stringify(session.alternativeUses || [])
+        // Alternative Uses
+        Alternative_Uses: JSON.stringify(session.alternativeUses?.map(use => use.text) || [])
       };
 
-      return Object.values(row).join(',');
+      return Object.values(row)
+        .map(value => typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value)
+        .join(',');
     });
 
     return [headers, ...rows].join('\n');
@@ -428,7 +439,7 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
 
         {isExpanded && (
           <div className="space-y-4 mt-4">
-            {/* Case 2: Demographics */}
+            {/* Demographics (Case 2) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Demographics:</h4>
               <p>Age: {session.demographics?.age || 'N/A'}</p>
@@ -436,7 +447,7 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
               <p>Education: {session.demographics?.education || 'N/A'}</p>
             </div>
 
-            {/* Case 3: PVQ21 */}
+            {/* PVQ21 (Case 3) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">PVQ21 Responses:</h4>
               <div className="grid grid-cols-3 gap-2">
@@ -448,7 +459,7 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
               </div>
             </div>
 
-            {/* Case 4: Initial Assessment */}
+            {/* Initial Assessment (Case 4) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Initial Assessment:</h4>
               <p>Interest: {session.initialAssessment?.interesting || 'N/A'}</p>
@@ -456,30 +467,25 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
               <p>Agreement: {session.initialAssessment?.agreement || 'N/A'}</p>
             </div>
 
-            {/* Case 5-6: Chat History */}
+            {/* Chat History (Case 5-6) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Chat History:</h4>
               <div className="space-y-2">
                 {session.chat?.map((msg, i) => (
-                  <div 
-                    key={i} 
-                    className={`p-2 rounded ${
-                      msg.sender === 'user' ? 'bg-blue-100' : 'bg-green-100'
-                    }`}
-                  >
+                  <div key={i} className={`p-2 rounded ${msg.sender === 'user' ? 'bg-blue-100' : 'bg-green-100'}`}>
                     <strong>{msg.sender}:</strong> {msg.text}
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Case 7: Final Response */}
+            {/* Final Response (Case 7) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Final Response:</h4>
               <p>{session.finalResponse?.text || 'N/A'}</p>
             </div>
 
-            {/* Case 8: SBSVS */}
+            {/* SBSVS (Case 8) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">SBSVS Responses:</h4>
               <div className="grid grid-cols-2 gap-2">
@@ -491,7 +497,7 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
               </div>
             </div>
 
-            {/* Case 9: Attitude Survey */}
+            {/* Attitude Survey (Case 9) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Attitude Survey:</h4>
               <div className="grid grid-cols-2 gap-2">
@@ -503,14 +509,14 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
               </div>
             </div>
 
-            {/* Case 10: Stance Agreement */}
+            {/* Stance Agreement (Case 10) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Stance Agreement:</h4>
               <p>Assigned: {session.stanceAgreement?.assigned || 'N/A'}</p>
               <p>Opposite: {session.stanceAgreement?.opposite || 'N/A'}</p>
             </div>
 
-            {/* Case 11: Alternative Uses */}
+            {/* Alternative Uses (Case 11) */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Alternative Uses:</h4>
               <div className="space-y-2">
