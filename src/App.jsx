@@ -380,8 +380,11 @@ function MainApp() {
         return (
           <div className="w-3/4 mx-auto p-8 min-h-screen">
             <PVQ21
-              responses={pvq21Responses}
-              setResponses={setPvq21Responses}
+              responses={pvq21Responses.responses || {}}
+              setResponses={(newResponses) => setPvq21Responses({
+                responses: newResponses,
+                timestamp: new Date()
+              })}
               gender={demographicResponses.gender}
             />
             <button
@@ -397,7 +400,6 @@ function MainApp() {
                     setCurrentStep(4);
                   } catch (error) {
                     console.error('Failed to save PVQ21:', error);
-                    // Optionally show an error message to the user
                   }
                 }
               }}
