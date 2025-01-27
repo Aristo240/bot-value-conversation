@@ -192,7 +192,7 @@ function Admin() {
     ].join(',');
 
     const rows = sessionData.map(session => {
-      // Ensure responses arrays exist and are arrays
+      // Ensure pvq21 responses is an array
       const pvq21Responses = Array.isArray(session?.pvq21?.responses) 
         ? session.pvq21.responses 
         : [];
@@ -208,7 +208,7 @@ function Admin() {
       // Create an array of PVQ21 values with safer checks
       const pvq21Values = Array.from({ length: 21 }, (_, i) => {
         const questionId = i + 1;
-        const response = pvq21Responses.find(r => r?.questionId === questionId);
+        const response = pvq21Responses.find(r => r && typeof r === 'object' && r.questionId === questionId);
         return response?.value || '';
       });
 
