@@ -73,14 +73,20 @@ const SessionSchema = new mongoose.Schema({
 
   // Case 8: SBSVS
   sbsvs: {
-    type: Object,
-    default: {}
+    responses: {
+      type: Map,
+      of: Number
+    },
+    timestamp: Date
   },
 
   // Case 9: Attitude Survey
   attitudeSurvey: {
-    type: Object,
-    default: {}
+    responses: {
+      type: Map,
+      of: Number
+    },
+    timestamp: Date
   },
 
   // Case 10: Stance Agreement
@@ -449,25 +455,17 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
 
     if (req.body.sbsvs) {
-      session.sbsvs = {};
-      Object.entries(req.body.sbsvs).forEach(([key, value]) => {
-        const parsedValue = parseInt(value, 10);
-        if (!isNaN(parsedValue) && parsedValue >= -1 && parsedValue <= 7) {
-          session.sbsvs[key] = parsedValue;
-        }
-      });
-      session.sbsvs.timestamp = new Date();
+      session.sbsvs = {
+        responses: new Map(Object.entries(req.body.sbsvs.responses)),
+        timestamp: new Date()
+      };
     }
 
     if (req.body.attitudeSurvey) {
-      session.attitudeSurvey = {};
-      Object.entries(req.body.attitudeSurvey).forEach(([key, value]) => {
-        const parsedValue = parseInt(value, 10);
-        if (!isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= 7) {
-          session.attitudeSurvey[key.toLowerCase()] = parsedValue;
-        }
-      });
-      session.attitudeSurvey.timestamp = new Date();
+      session.attitudeSurvey = {
+        responses: new Map(Object.entries(req.body.attitudeSurvey.responses)),
+        timestamp: new Date()
+      };
     }
 
     if (req.body.stanceAgreement) {
@@ -497,7 +495,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
   }
 });
 
-// Update the stanceAgreement endpoint
+// stanceAgreement endpoint
 app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -606,8 +604,14 @@ app.get('/api/admin/sessions/:sessionId/full', authenticateAdmin, async (req, re
         ...session.pvq21,
         responses: Object.fromEntries(session.pvq21.responses)
       } : null,
-      sbsvs: session.sbsvs ? Object.fromEntries(session.sbsvs) : null,
-      attitudeSurvey: session.attitudeSurvey ? Object.fromEntries(session.attitudeSurvey) : null
+      sbsvs: session.sbsvs ? {
+        ...session.pvqsbsvs21,
+        responses: Object.fromEntries(session.sbsvs.responses)
+      } : null,
+      attitudeSurvey: session.attitudeSurvey ? {
+        ...session.attitudeSurvey,
+        responses: Object.fromEntries(session.attitudeSurvey.responses)
+      } : null,
     };
 
     res.json(formattedSession);
@@ -679,7 +683,7 @@ app.post('/api/sessions/:sessionId/demographics', async (req, res) => {
   }
 });
 
-// Update the PVQ21 endpoint
+// PVQ21 endpoint
 app.post('/api/sessions/:sessionId/pvq21', async (req, res) => {
   try {
     console.log('Received PVQ21 data:', req.body); // Debug log
@@ -798,63 +802,85 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Update SBSVS endpoint
+// sbsvs endpoint
 app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
   try {
+    console.log('Received sbsvs data:', req.body); // Debug log
+    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Store SBSVS responses with proper validation
+    // Validate the responses
+    if (!req.body.responses || typeof req.body.responses !== 'object') {
+      return res.status(400).json({ 
+        message: 'Invalid responses format. Expected an object with question responses.' 
+      });
+    }
+
+    // Convert responses to the correct format for MongoDB
+    const responses = {};
+    Object.entries(req.body.responses).forEach(([key, value]) => {
+      responses[key] = parseInt(value, 10);
+    });
+
     session.sbsvs = {
-      responses: {},
+      responses: responses,
       timestamp: new Date()
     };
 
-    Object.entries(req.body.responses).forEach(([key, value]) => {
-      const parsedValue = parseInt(value, 10);
-      if (!isNaN(parsedValue) && parsedValue >= -1 && parsedValue <= 7) {
-        session.sbsvs.responses[key] = parsedValue;
-      }
-    });
+    console.log('Saving sbsvs data:', session.sbsvs); // Debug log
 
-    session.markModified('sbsvs');
     await session.save();
     res.status(200).json(session.sbsvs);
   } catch (error) {
-    console.error('SBSVS save error:', error);
-    res.status(500).json({ message: error.message });
+    console.error('sbsvs save error:', error); // Debug log
+    res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
-// Update Attitude Survey endpoint
+// attitudeSurvey endpoint
 app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
   try {
+    console.log('Received attitudeSurvey data:', req.body); // Debug log
+    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Store attitude survey responses with proper validation
+    // Validate the responses
+    if (!req.body.responses || typeof req.body.responses !== 'object') {
+      return res.status(400).json({ 
+        message: 'Invalid responses format. Expected an object with question responses.' 
+      });
+    }
+
+    // Convert responses to the correct format for MongoDB
+    const responses = {};
+    Object.entries(req.body.responses).forEach(([key, value]) => {
+      responses[key] = parseInt(value, 10);
+    });
+
     session.attitudeSurvey = {
-      responses: {},
+      responses: responses,
       timestamp: new Date()
     };
 
-    Object.entries(req.body.responses).forEach(([key, value]) => {
-      const parsedValue = parseInt(value, 10);
-      if (!isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= 7) {
-        session.attitudeSurvey.responses[key.toLowerCase()] = parsedValue;
-      }
-    });
+    console.log('Saving attitudeSurvey data:', session.attitudeSurvey); // Debug log
 
-    session.markModified('attitudeSurvey');
     await session.save();
     res.status(200).json(session.attitudeSurvey);
   } catch (error) {
-    console.error('Attitude Survey save error:', error);
-    res.status(500).json({ message: error.message });
+    console.error('attitudeSurvey save error:', error); // Debug log
+    res.status(500).json({ 
+      message: error.message,
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
@@ -905,12 +931,3 @@ mongoose.connect(process.env.MONGODB_URI)
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
-
-// Add these constants at the top of the file
-const SBSVSQuestions = [
-  // ... copy questions from SBSVS.jsx ...
-];
-
-const getPVQ21Questions = (gender) => [
-  // ... copy questions from PVQ21.jsx ...
-];
