@@ -1,6 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { ErrorBoundary } from 'react-error-boundary';
+
+// Create ErrorBoundary as a class component using React's built-in functionality
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError(error) {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error, errorInfo) {
+    console.error('Admin Error:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="text-center p-8">
+          <h2 className="text-xl font-bold text-red-600">Something went wrong</h2>
+          <button
+            onClick={() => {
+              this.setState({ hasError: false });
+              window.location.reload();
+            }}
+            className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+          >
+            Reload Page
+          </button>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
