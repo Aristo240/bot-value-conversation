@@ -383,57 +383,51 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
     const isExpanded = expandedSession === session.sessionId;
 
     return (
-      <div key={session.sessionId} className="border rounded-lg p-6 bg-white shadow mb-4">
+      <div key={session.sessionId} className="bg-white rounded-lg shadow-md p-6 mb-4">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="font-bold">Session ID: {session.sessionId}</h3>
-            <p>Timestamp: {new Date(session.timestamp).toLocaleString()}</p>
+            <h3 className="text-lg font-bold">Session ID: {session.sessionId}</h3>
+            <p>Date: {new Date(session.timestamp).toLocaleString()}</p>
             <p>Stance: {session.stance}</p>
             <p>Bot Personality: {session.botPersonality}</p>
-            <p className="font-semibold">AI Model: {session.aiModel}</p>
+            <p>AI Model: {session.aiModel}</p>
           </div>
-          <div className="flex flex-col gap-2">
-            <div className="flex gap-2 mb-2">
-              <select
-                value={downloadType[session.sessionId] || 'csv'}
-                onChange={(e) => setDownloadType({
-                  ...downloadType,
-                  [session.sessionId]: e.target.value
-                })}
-                className="p-2 border rounded"
-              >
-                {fileTypes.map((type) => (
-                  <option key={type.value} value={type.value}>
-                    {type.label}
-                  </option>
-                ))}
-              </select>
-              <button
-                onClick={() => downloadSession(session, downloadType[session.sessionId] || 'csv')}
-                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-              >
-                Download
-              </button>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => deleteSession(session.sessionId)}
-                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-              <button
-                onClick={() => setExpandedSession(isExpanded ? null : session.sessionId)}
-                className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-              >
-                {isExpanded ? 'Collapse' : 'Expand'}
-              </button>
-            </div>
+          <div className="flex gap-2">
+            <select
+              value={downloadType[session.sessionId] || 'csv'}
+              onChange={(e) => setDownloadType({
+                ...downloadType,
+                [session.sessionId]: e.target.value
+              })}
+              className="border rounded px-2 py-1"
+            >
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+              <option value="txt">TXT</option>
+            </select>
+            <button
+              onClick={() => downloadSession(session, downloadType[session.sessionId] || 'csv')}
+              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+            >
+              Download
+            </button>
+            <button
+              onClick={() => deleteSession(session.sessionId)}
+              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setExpandedSession(isExpanded ? null : session.sessionId)}
+              className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+            >
+              {isExpanded ? 'Collapse' : 'Expand'}
+            </button>
           </div>
         </div>
 
         {isExpanded && (
-          <div className="mt-4 space-y-4">
+          <div className="space-y-4 mt-4">
             {/* Case 2: Demographics */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Demographics:</h4>
@@ -446,9 +440,9 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">PVQ21 Responses:</h4>
               <div className="grid grid-cols-3 gap-2">
-                {Array.from({ length: 21 }, (_, i) => i + 1).map(q => (
-                  <div key={q} className="p-2 bg-white rounded">
-                    <strong>Q{q}:</strong> {session.pvq21?.responses?.[q] || 'N/A'}
+                {Object.entries(session.pvq21?.responses || {}).map(([q, value]) => (
+                  <div key={q} className="bg-white p-2 rounded">
+                    <strong>Q{q}:</strong> {value}
                   </div>
                 ))}
               </div>
@@ -457,11 +451,9 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
             {/* Case 4: Initial Assessment */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Initial Assessment:</h4>
-              <div className="grid grid-cols-1 gap-2">
-                <p>Interest: {session.initialAssessment?.interesting || 'N/A'}</p>
-                <p>Importance: {session.initialAssessment?.important || 'N/A'}</p>
-                <p>Agreement: {session.initialAssessment?.agreement || 'N/A'}</p>
-              </div>
+              <p>Interest: {session.initialAssessment?.interesting || 'N/A'}</p>
+              <p>Importance: {session.initialAssessment?.important || 'N/A'}</p>
+              <p>Agreement: {session.initialAssessment?.agreement || 'N/A'}</p>
             </div>
 
             {/* Case 5-6: Chat History */}
@@ -472,33 +464,28 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
                   <div 
                     key={i} 
                     className={`p-2 rounded ${
-                      msg.sender === 'bot' ? 'bg-blue-100' : 'bg-green-100'
+                      msg.sender === 'user' ? 'bg-blue-100' : 'bg-green-100'
                     }`}
                   >
                     <strong>{msg.sender}:</strong> {msg.text}
-                    <div className="text-xs text-gray-500">
-                      {new Date(msg.timestamp).toLocaleString()}
-                    </div>
                   </div>
-                )) || 'N/A'}
+                ))}
               </div>
             </div>
 
             {/* Case 7: Final Response */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Final Response:</h4>
-              <div className="p-2 bg-white rounded">
-                {session.finalResponse?.text || 'N/A'}
-              </div>
+              <p>{session.finalResponse?.text || 'N/A'}</p>
             </div>
 
             {/* Case 8: SBSVS */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">SBSVS Responses:</h4>
               <div className="grid grid-cols-2 gap-2">
-                {Array.from({ length: 10 }, (_, i) => i + 1).map(q => (
-                  <div key={q} className="p-2 bg-white rounded">
-                    <strong>Q{q}:</strong> {session.sbsvs?.[q] || 'N/A'}
+                {Object.entries(session.sbsvs || {}).map(([q, value]) => (
+                  <div key={q} className="bg-white p-2 rounded">
+                    <strong>Q{q}:</strong> {value}
                   </div>
                 ))}
               </div>
@@ -508,9 +495,9 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Attitude Survey:</h4>
               <div className="grid grid-cols-2 gap-2">
-                {attitudeAspects.map(aspect => (
-                  <div key={aspect} className="p-2 bg-white rounded">
-                    <strong>{aspect}:</strong> {session.attitudeSurvey?.[aspect] || 'N/A'}
+                {Object.entries(session.attitudeSurvey || {}).map(([aspect, value]) => (
+                  <div key={aspect} className="bg-white p-2 rounded">
+                    <strong>{aspect}:</strong> {value}
                   </div>
                 ))}
               </div>
@@ -519,10 +506,8 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
             {/* Case 10: Stance Agreement */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Stance Agreement:</h4>
-              <div className="grid grid-cols-1 gap-2">
-                <p>Assigned Stance: {session.stanceAgreement?.assigned || 'N/A'}</p>
-                <p>Opposite Stance: {session.stanceAgreement?.opposite || 'N/A'}</p>
-              </div>
+              <p>Assigned: {session.stanceAgreement?.assigned || 'N/A'}</p>
+              <p>Opposite: {session.stanceAgreement?.opposite || 'N/A'}</p>
             </div>
 
             {/* Case 11: Alternative Uses */}
@@ -530,10 +515,10 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
               <h4 className="font-semibold mb-2">Alternative Uses:</h4>
               <div className="space-y-2">
                 {session.alternativeUses?.map((use, i) => (
-                  <div key={i} className="p-2 bg-white rounded">
+                  <div key={i} className="bg-white p-2 rounded">
                     {use.text}
                   </div>
-                )) || 'N/A'}
+                ))}
               </div>
             </div>
           </div>
