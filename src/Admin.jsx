@@ -526,6 +526,58 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
     );
   };
 
+  const handleSubmitAllResponses = async () => {
+    setIsSubmitting(true);
+    setSubmitError('');
+    
+    try {
+      // Format the data correctly before sending
+      const formattedData = {
+        demographics: {
+          age: parseInt(demographicResponses.age),
+          gender: demographicResponses.gender,
+          education: demographicResponses.education
+        },
+        pvq21: {
+          responses: pvq21Responses.responses || {}
+        },
+        initialAssessment: {
+          interesting: parseInt(initialAttitudeResponses.interesting),
+          important: parseInt(initialAttitudeResponses.important),
+          agreement: parseInt(initialAttitudeResponses.agreement)
+        },
+        chat: messages.map(msg => ({
+          messageId: msg.messageId,
+          text: msg.text,
+          sender: msg.sender,
+          timestamp: msg.timestamp
+        })),
+        finalResponse: {
+          text: userResponse,
+          timestamp: new Date()
+        },
+        sbsvs: sbsvsResponses,
+        attitudeSurvey: attitudeSurveyResponses,
+        stanceAgreement: {
+          assigned: parseInt(stanceAgreement.assigned),
+          opposite: parseInt(stanceAgreement.opposite)
+        },
+        alternativeUses: autResponses.map(use => ({
+          text: use.text,
+          timestamp: use.timestamp
+        }))
+      };
+
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, formattedData);
+      setCurrentStep(12);
+    } catch (error) {
+      console.error('Error submitting responses:', error);
+      setSubmitError('There was an error submitting your responses. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <ErrorBoundary>
       {isLoading ? (
