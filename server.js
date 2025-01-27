@@ -24,79 +24,79 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'dist')));
 
-// MongoDB Schema
+// MongoDB Schema with all cases
 const SessionSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true },
   timestamp: { type: Date, default: Date.now },
-  stance: { type: String, required: true },
-  botPersonality: { type: String, required: true },
+  stance: String,
+  botPersonality: String,
   aiModel: String,
-  aiModelVersion: String,
-  consent: {
-    accepted: Boolean,
-    timestamp: Date
-  },
+  
+  // Case 2: Demographics
   demographics: {
     age: Number,
     gender: String,
     education: String,
     timestamp: Date
   },
+
+  // Case 3: PVQ21
   pvq21: {
-    responses: [{
-      questionId: Number,
-      value: Number
-    }],
+    responses: {
+      type: Map,
+      of: Number
+    },
     timestamp: Date
   },
+
+  // Case 4: Initial Assessment
+  initialAssessment: {
+    interesting: Number,
+    important: Number,
+    agreement: Number,
+    timestamp: Date
+  },
+
+  // Case 5-6: Chat History
   chat: [{
     messageId: String,
     text: String,
     sender: String,
     timestamp: Date
   }],
+
+  // Case 7: Final Response
   finalResponse: {
     text: String,
     timestamp: Date
   },
+
+  // Case 8: SBSVS
   sbsvs: {
-    responses: [{
-      questionId: Number,
-      value: Number
-    }],
+    type: Map,
+    of: Number,
     timestamp: Date
   },
+
+  // Case 9: Attitude Survey
   attitudeSurvey: {
-    responses: [{
-      aspect: String,
-      rating: Number
-    }],
+    type: Map,
+    of: Number,
     timestamp: Date
   },
+
+  // Case 10: Stance Agreement
   stanceAgreement: {
     assigned: Number,
     opposite: Number,
     timestamp: Date
   },
-  alternativeUses: {
-    responses: [{
-      id: String,
-      idea: String,
-      timestamp: Date
-    }],
+
+  // Case 11: Alternative Uses
+  alternativeUses: [{
+    text: String,
     timestamp: Date
-  },
-  events: [{
-    type: String,
-    step: Number,
-    timestamp: Date
-  }],
-  initialAssessment: {
-    interesting: Number,
-    important: Number,
-    agreement: Number,
-    timestamp: Date
-  }
+  }]
 });
 
 const ConditionCounterSchema = new mongoose.Schema({
@@ -477,23 +477,8 @@ app.post('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   try {
     const sessions = await Session.find()
       .sort({ timestamp: -1 })
-      .select({
-        sessionId: 1,
-        timestamp: 1,
-        stance: 1,
-        botPersonality: 1,
-        aiModel: 1,
-        aiModelVersion: 1,
-        demographics: 1,
-        pvq21: 1,
-        initialAssessment: 1,
-        chat: 1,
-        finalResponse: 1,
-        sbsvs: 1,
-        attitudeSurvey: 1,
-        alternativeUses: 1,
-        events: 1
-      });
+      .lean()
+      .exec();
     res.json(sessions);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -503,7 +488,7 @@ app.post('/api/admin/sessions', authenticateAdmin, async (req, res) => {
 app.delete('/api/admin/sessions/:sessionId', authenticateAdmin, async (req, res) => {
   try {
     await Session.findOneAndDelete({ sessionId: req.params.sessionId });
-    res.json({ message: 'Session deleted successfully' });
+    res.status(200).json({ message: 'Session deleted successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

@@ -32,6 +32,7 @@ function Admin() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingZip] = useState(false);
   const [expandedSession, setExpandedSession] = useState(null);
+  const [downloadType, setDownloadType] = useState({});
 
   const fileTypes = [
     { value: 'csv', label: 'CSV' },
@@ -118,23 +119,32 @@ function Admin() {
     }
   };
 
-  const downloadSession = (session) => {
-    let content;
-    const filename = `session_${session.sessionId}_${new Date().toISOString()}`;
+  const downloadSession = async (session, fileType) => {
+    try {
+      setDownloadStatus('Preparing download...');
+      let content;
+      const filename = `session_${session.sessionId}_${new Date().toISOString()}`;
 
-    switch (selectedFileType) {
-      case 'json':
-        content = JSON.stringify(session, null, 2);
-        downloadFile(content, filename, 'application/json');
-        break;
-      case 'csv':
-        content = convertToCSV([session]);
-        downloadFile(content, filename, 'text/csv');
-        break;
-      case 'txt':
-        content = convertToText(session);
-        downloadFile(content, filename, 'text/plain');
-        break;
+      switch (fileType) {
+        case 'json':
+          content = JSON.stringify(session, null, 2);
+          downloadFile(content, filename, 'application/json', 'json');
+          break;
+        case 'csv':
+          content = convertToCSV([session]);
+          downloadFile(content, filename, 'text/csv', 'csv');
+          break;
+        case 'txt':
+          content = convertToText(session);
+          downloadFile(content, filename, 'text/plain', 'txt');
+          break;
+      }
+      setDownloadStatus('Download completed!');
+      setTimeout(() => setDownloadStatus(''), 3000);
+    } catch (error) {
+      console.error('Download error:', error);
+      setDownloadStatus('Download failed');
+      setTimeout(() => setDownloadStatus(''), 3000);
     }
   };
 
@@ -290,27 +300,45 @@ ${session.alternativeUses?.map(use => use.text).join('\n') || 'N/A'}
             <p>Timestamp: {new Date(session.timestamp).toLocaleString()}</p>
             <p>Stance: {session.stance}</p>
             <p>Bot Personality: {session.botPersonality}</p>
-            <p>AI Model: {session.aiModel}</p>
+            <p className="font-semibold">AI Model: {session.aiModel}</p>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => downloadSession(session)}
-              className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
-            >
-              Download
-            </button>
-            <button
-              onClick={() => deleteSession(session.sessionId)}
-              className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-            >
-              Delete
-            </button>
-            <button
-              onClick={() => setExpandedSession(isExpanded ? null : session.sessionId)}
-              className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
-            >
-              {isExpanded ? 'Collapse' : 'Expand'}
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2 mb-2">
+              <select
+                value={downloadType[session.sessionId] || 'csv'}
+                onChange={(e) => setDownloadType({
+                  ...downloadType,
+                  [session.sessionId]: e.target.value
+                })}
+                className="p-2 border rounded"
+              >
+                {fileTypes.map((type) => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+              <button
+                onClick={() => downloadSession(session, downloadType[session.sessionId] || 'csv')}
+                className="bg-blue-500 text-white px-3 py-1 rounded hover:bg-blue-600"
+              >
+                Download
+              </button>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => deleteSession(session.sessionId)}
+                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setExpandedSession(isExpanded ? null : session.sessionId)}
+                className="bg-gray-500 text-white px-3 py-1 rounded hover:bg-gray-600"
+              >
+                {isExpanded ? 'Collapse' : 'Expand'}
+              </button>
+            </div>
           </div>
         </div>
 
