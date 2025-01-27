@@ -91,14 +91,10 @@ export default function PVQ21({ responses, setResponses, gender }) {
   const questions = getPVQ21Questions(gender);
 
   const handleValueChange = (questionId, value) => {
-    setResponses(prev => ({
-      ...prev,
-      responses: [
-        ...(prev.responses || []).filter(r => r.questionId !== questionId),
-        { questionId, value }
-      ].sort((a, b) => a.questionId - b.questionId),
-      timestamp: new Date()
-    }));
+    setResponses({
+      ...responses,
+      [questionId]: value
+    });
   };
 
   return (
@@ -130,7 +126,7 @@ export default function PVQ21({ responses, setResponses, gender }) {
                     type="radio"
                     name={`question-${question.id}`}
                     value={value}
-                    checked={responses?.responses?.find(r => r.questionId === question.id)?.value === value}
+                    checked={responses[question.id] === value}
                     onChange={() => handleValueChange(question.id, value)}
                     className="mb-1"
                   />
