@@ -1,4 +1,7 @@
 import React from 'react';
+import axios from 'axios';
+
+const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
 // Export the aspects array
 export const attitudeAspects = [
@@ -6,11 +9,25 @@ export const attitudeAspects = [
   "Satisfying", "Effective", "Engaging", "Stimulating", "Informative", "Frustrating"
 ];
 
-const AttitudeSurvey = ({ stance, responses, setResponses }) => {
-  const handleValueChange = (aspect, value) => {
-    const newResponses = { ...responses };
-    newResponses[aspect] = value;
-    setResponses(newResponses);
+const AttitudeSurvey = ({ stance, responses, setResponses, sessionId }) => {
+  const handleValueChange = async (aspect, value) => {
+    console.log('Handling Attitude Survey value change:', { aspect, value }); // Debug log
+    
+    try {
+      const newResponses = {
+        ...responses,
+        [aspect.toLowerCase()]: parseInt(value, 10)
+      };
+      setResponses(newResponses);
+      
+      // Save to server immediately
+      await axios.post(`${API_URL}/sessions/${sessionId}/attitudeSurvey`, {
+        responses: newResponses,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error saving Attitude Survey response:', error);
+    }
   };
 
   return (
@@ -30,7 +47,7 @@ const AttitudeSurvey = ({ stance, responses, setResponses }) => {
                     type="radio"
                     name={`attitude-${aspect}`}
                     value={value}
-                    checked={responses[aspect] === value}
+                    checked={responses[aspect.toLowerCase()] === value}
                     onChange={() => handleValueChange(aspect, value)}
                     className="mb-1"
                   />

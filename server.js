@@ -798,26 +798,28 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   }
 });
 
-// Update SBSVS endpoint to handle data properly
+// Update SBSVS endpoint
 app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
   try {
-    console.log('Received SBSVS data:', req.body);
-    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
     // Store SBSVS responses with proper validation
-    session.sbsvs = {};
-    Object.entries(req.body).forEach(([key, value]) => {
+    session.sbsvs = {
+      responses: {},
+      timestamp: new Date()
+    };
+
+    Object.entries(req.body.responses).forEach(([key, value]) => {
       const parsedValue = parseInt(value, 10);
       if (!isNaN(parsedValue) && parsedValue >= -1 && parsedValue <= 7) {
-        session.sbsvs[key] = parsedValue;
+        session.sbsvs.responses[key] = parsedValue;
       }
     });
-    session.sbsvs.timestamp = new Date();
 
+    session.markModified('sbsvs');
     await session.save();
     res.status(200).json(session.sbsvs);
   } catch (error) {
@@ -826,26 +828,28 @@ app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
   }
 });
 
-// Update Attitude Survey endpoint to handle data properly
+// Update Attitude Survey endpoint
 app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
   try {
-    console.log('Received Attitude Survey data:', req.body);
-    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
       return res.status(404).json({ message: 'Session not found' });
     }
 
     // Store attitude survey responses with proper validation
-    session.attitudeSurvey = {};
-    Object.entries(req.body).forEach(([key, value]) => {
+    session.attitudeSurvey = {
+      responses: {},
+      timestamp: new Date()
+    };
+
+    Object.entries(req.body.responses).forEach(([key, value]) => {
       const parsedValue = parseInt(value, 10);
       if (!isNaN(parsedValue) && parsedValue >= 1 && parsedValue <= 7) {
-        session.attitudeSurvey[key.toLowerCase()] = parsedValue;
+        session.attitudeSurvey.responses[key.toLowerCase()] = parsedValue;
       }
     });
-    session.attitudeSurvey.timestamp = new Date();
 
+    session.markModified('attitudeSurvey');
     await session.save();
     res.status(200).json(session.attitudeSurvey);
   } catch (error) {

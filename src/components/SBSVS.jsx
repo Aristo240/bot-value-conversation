@@ -1,4 +1,7 @@
 import React from 'react';
+import axios from 'axios';
+
+const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
 // Export the questions array
 export const SBSVSQuestions = [
@@ -44,13 +47,25 @@ export const SBSVSQuestions = [
   }
 ];
 
-const SBSVS = ({ responses, setResponses }) => {
-  const handleValueChange = (questionId, value) => {
-    console.log('SBSVS value change:', { questionId, value }); // Debug log
-    setResponses(prev => ({
-      ...prev,
-      [questionId]: parseInt(value, 10)
-    }));
+const SBSVS = ({ responses, setResponses, sessionId }) => {
+  const handleValueChange = async (questionId, value) => {
+    console.log('Handling SBSVS value change:', { questionId, value }); // Debug log
+    
+    try {
+      const newResponses = {
+        ...responses,
+        [questionId]: parseInt(value, 10)
+      };
+      setResponses(newResponses);
+      
+      // Save to server immediately
+      await axios.post(`${API_URL}/sessions/${sessionId}/sbsvs`, {
+        responses: newResponses,
+        timestamp: new Date()
+      });
+    } catch (error) {
+      console.error('Error saving SBSVS response:', error);
+    }
   };
 
   const getScaleLabel = (value) => {
