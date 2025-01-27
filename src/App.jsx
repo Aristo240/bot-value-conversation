@@ -265,10 +265,7 @@ function MainApp() {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         sbsvs: {
-          responses: Object.entries(sbsvsResponses).map(([questionId, value]) => ({
-            questionId: parseInt(questionId),
-            value: value
-          })),
+          responses: sbsvsResponses,
           timestamp: new Date()
         }
       });
@@ -281,10 +278,7 @@ function MainApp() {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         attitudeSurvey: {
-          responses: Object.entries(attitudeSurveyResponses).map(([aspect, rating]) => ({
-            aspect,
-            rating
-          })),
+          responses: attitudeSurveyResponses,
           timestamp: new Date()
         }
       });

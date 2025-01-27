@@ -79,30 +79,37 @@ function Admin() {
     { value: 'alternativeUses', label: 'Alternative Uses' }
   ];
 
-  // Check authentication on mount
+  // Modify the useEffect for auto-login
   useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (token) {
-      checkAuth(token);
-    } else {
-      setIsLoading(false);
-    }
-  }, []);
+    const autoLogin = async () => {
+      setIsLoading(true);
+      try {
+        // Create base64 encoded credentials from environment variables
+        const credentials = btoa(`${process.env.REACT_APP_ADMIN_USERNAME}:${process.env.REACT_APP_ADMIN_PASSWORD}`);
+        
+        // Test the credentials with a request
+        const response = await axios.get(`${API_URL}/admin/sessions`, {
+          headers: { Authorization: `Bearer ${credentials}` }
+        });
 
-  const checkAuth = async (token) => {
-    try {
-      await axios.get(`${API_URL}/admin/sessions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setIsAuthenticated(true);
-      fetchData(token);
-    } catch (error) {
-      localStorage.removeItem('adminToken');
-      setIsAuthenticated(false);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+        if (response.status === 200) {
+          localStorage.setItem('adminToken', credentials);
+          setIsAuthenticated(true);
+          setSessions(response.data);
+        }
+      } catch (error) {
+        console.error('Auto-login error:', error);
+        setError('Auto-login failed. Please log in manually.');
+        setIsAuthenticated(false);
+        localStorage.removeItem('adminToken');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Try auto-login first
+    autoLogin();
+  }, []); // Empty dependency array means this runs once on mount
 
   const handleLogin = async (e) => {
     e.preventDefault();
