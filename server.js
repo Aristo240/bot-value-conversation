@@ -416,13 +416,15 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
     
+    // Update the session with the new stance agreement values
     session.stanceAgreement = {
       assigned: parseInt(req.body.assigned),
       opposite: parseInt(req.body.opposite)
     };
     
     await session.save();
-    res.status(201).json(session.stanceAgreement);
+    console.log('Saved stance agreement:', session.stanceAgreement); // Debug log
+    res.status(200).json(session.stanceAgreement);
   } catch (error) {
     console.error('Error saving stance agreement:', error);
     res.status(400).json({ message: error.message });

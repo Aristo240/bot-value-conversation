@@ -184,7 +184,6 @@ function Admin() {
       // Stance Agreement
       'Stance_Agreement_Assigned',
       'Stance_Agreement_Opposite',
-      'Stance_Agreement_Timestamp',
       // Alternative Uses
       'Alternative_Uses'
     ].join(',');
@@ -222,7 +221,6 @@ function Admin() {
         // Stance Agreement
         session.stanceAgreement?.assigned || '',
         session.stanceAgreement?.opposite || '',
-        session.stanceAgreement?.timestamp ? new Date(session.stanceAgreement.timestamp).toISOString() : '',
         // Alternative Uses
         session.alternativeUses?.responses?.map(r => r.idea).join('\n') || ''
       ].map(value => `"${value}"`).join(',');
@@ -664,7 +662,6 @@ ${session.alternativeUses?.responses?.map((r, i) => `${i + 1}. ${r.idea}`).join(
                   <h4 className="font-semibold mb-2">Stance Agreement:</h4>
                   <p>Agreement with Assigned Stance: {session.stanceAgreement?.assigned || 'N/A'}</p>
                   <p>Agreement with Opposite Stance: {session.stanceAgreement?.opposite || 'N/A'}</p>
-                  <p>Timestamp: {session.stanceAgreement?.timestamp ? new Date(session.stanceAgreement.timestamp).toLocaleString() : 'N/A'}</p>
                 </div>
 
                 {/* PVQ21 Section */}

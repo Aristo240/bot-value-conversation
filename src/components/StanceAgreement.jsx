@@ -1,4 +1,5 @@
 import React from 'react';
+import { stances } from '../config/botConfig';
 
 const StanceAgreement = ({ stance, responses, setResponses }) => {
   const handleValueChange = (aspect, value) => {
@@ -7,12 +8,19 @@ const StanceAgreement = ({ stance, responses, setResponses }) => {
     setResponses(newResponses);
   };
 
+  // Get the opposite stance
+  const getOppositeStance = () => {
+    const stanceKeys = Object.keys(stances);
+    const oppositeKey = stanceKeys.find(key => stances[key] !== stances[stance]);
+    return stances[oppositeKey];
+  };
+
   return (
     <div className="space-y-6">
       {/* Assigned Stance Agreement */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">How much do you agree with the stance you were assigned (<strong style={{ fontWeight: 'bold' }}>{stance}</strong>)?</span>
+          <span className="text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>?</span>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
           <span className="text-sm text-gray-600">Strongly Disagree</span>
@@ -36,7 +44,7 @@ const StanceAgreement = ({ stance, responses, setResponses }) => {
       {/* Opposite Stance Agreement */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">How much do you agree with the opposite stance?</span>
+          <span className="text-gray-700">How much do you agree with <strong style={{ fontWeight: 'bold' }}>{getOppositeStance()}</strong>?</span>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
           <span className="text-sm text-gray-600">Strongly Disagree</span>
