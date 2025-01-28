@@ -18,9 +18,9 @@ const AttitudeSurvey = ({ stance, responses, setResponses, sessionId }) => {
       };
       setResponses(newResponses);
       
-      // Save to server in the same format as PVQ21
+      // Save directly to attitudeSurvey field instead of nested responses
       await axios.post(`${API_URL}/sessions/${sessionId}/attitudeSurvey`, {
-        responses: newResponses
+        [aspect.toLowerCase()]: parseInt(value, 10)
       });
     } catch (error) {
       console.error('Error saving Attitude Survey response:', error);

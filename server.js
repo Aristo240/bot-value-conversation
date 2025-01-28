@@ -794,7 +794,14 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
       .lean()
       .exec();
 
-    res.json(sessions);
+    // Format the sessions to handle Map objects and ensure attitudeSurvey is properly formatted
+    const formattedSessions = sessions.map(session => ({
+      ...session,
+      sbsvs: session.sbsvs?.responses ? Object.fromEntries(Object.entries(session.sbsvs.responses)) : null,
+      attitudeSurvey: session.attitudeSurvey || null
+    }));
+
+    res.json(formattedSessions);
   } catch (error) {
     console.error('Error fetching sessions:', error);
     res.status(500).json({ message: error.message });
@@ -831,9 +838,15 @@ app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Save in the same format as PVQ21
+    // Initialize attitudeSurvey if it doesn't exist
+    if (!session.attitudeSurvey) {
+      session.attitudeSurvey = {};
+    }
+
+    // Update with the new response
     session.attitudeSurvey = {
-      responses: req.body.responses,
+      ...session.attitudeSurvey,
+      ...req.body,
       timestamp: new Date()
     };
 

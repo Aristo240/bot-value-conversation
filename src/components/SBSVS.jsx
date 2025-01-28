@@ -56,7 +56,7 @@ const SBSVS = ({ responses, setResponses, sessionId }) => {
       };
       setResponses(newResponses);
       
-      // Save to server in the same format as PVQ21
+      // Save to server
       await axios.post(`${API_URL}/sessions/${sessionId}/sbsvs`, {
         responses: newResponses
       });
