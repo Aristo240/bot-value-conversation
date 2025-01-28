@@ -250,12 +250,14 @@ function MainApp() {
 
   const saveFinalResponse = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      console.log('Saving final response:', userResponse);
+      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         finalResponse: {
           text: userResponse,
           timestamp: new Date()
         }
       });
+      console.log('Final response save response:', response.data);
     } catch (error) {
       console.error('Error saving final response:', error);
     }
@@ -263,12 +265,14 @@ function MainApp() {
 
   const saveSBSVS = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      console.log('Saving SBSVS responses:', sbsvsResponses);
+      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         sbsvs: {
           responses: sbsvsResponses,
           timestamp: new Date()
         }
       });
+      console.log('SBSVS save response:', response.data);
     } catch (error) {
       console.error('Error saving SBSVS:', error);
     }
@@ -276,12 +280,14 @@ function MainApp() {
 
   const saveAttitudeSurvey = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      console.log('Saving Attitude Survey responses:', attitudeSurveyResponses);
+      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         attitudeSurvey: {
           responses: attitudeSurveyResponses,
           timestamp: new Date()
         }
       });
+      console.log('Attitude Survey save response:', response.data);
     } catch (error) {
       console.error('Error saving attitude survey:', error);
     }
@@ -304,7 +310,9 @@ function MainApp() {
 
   const saveDemographics = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/demographics`, demographicResponses);
+      console.log('Saving demographics:', demographicResponses);
+      const response = await axios.post(`${API_URL}/sessions/${sessionId}/demographics`, demographicResponses);
+      console.log('Demographics save response:', response.data);
     } catch (error) {
       console.error('Error saving demographics:', error);
       throw error;
@@ -330,13 +338,15 @@ function MainApp() {
 
   const saveStanceAgreement = async () => {
     try {
-      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      console.log('Saving stance agreement:', stanceAgreement);
+      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         stanceAgreement: {
           assigned: parseInt(stanceAgreement.assigned),
           opposite: parseInt(stanceAgreement.opposite),
           timestamp: new Date()
         }
       });
+      console.log('Stance agreement save response:', response.data);
     } catch (error) {
       console.error('Error saving stance agreement:', error);
       throw error;
