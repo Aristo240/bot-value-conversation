@@ -275,42 +275,45 @@ function Admin() {
     ].join(',');
 
     const rows = sessions.map(session => {
-      const row = {
-        SessionId: session.sessionId,
-        Timestamp: session.timestamp,
-        Stance: session.stance,
-        Bot_Personality: session.botPersonality,
-        AI_Model: session.aiModel,
-        // Demographics
-        Age: session.demographics?.age || '',
-        Gender: session.demographics?.gender || '',
-        Education: session.demographics?.education || '',
-        // PVQ21
-        ...Array.from({ length: 21 }, (_, i) => session.pvq21?.responses?.[`${i + 1}`] || ''),
-        // Initial Assessment
-        Initial_Interest: session.initialAssessment?.interesting || '',
-        Initial_Importance: session.initialAssessment?.important || '',
-        Initial_Agreement: session.initialAssessment?.agreement || '',
-        // Chat History
-        Chat_History: JSON.stringify(session.chat || []),
-        // Final Response
-        Final_Response: session.finalResponse?.text || '',
-        // SBSVS
-        ...Array.from({ length: 10 }, (_, i) => {
-          const questionId = (i + 1).toString();
-          return session.sbsvs?.[questionId] || '';
-        }),
-        // Attitude Survey
-        ...attitudeAspects.map(aspect => session.attitudeSurvey?.[aspect] || ''),
-        // Stance Agreement
-        Stance_Agreement_Assigned: session.stanceAgreement?.assigned || '',
-        Stance_Agreement_Opposite: session.stanceAgreement?.opposite || '',
-        // Alternative Uses
-        Alternative_Uses: JSON.stringify((session.alternativeUses || []).map(use => use.text))
-      };
+      const pvq21Responses = session.pvq21?.responses || {};
+      const sbsvsResponses = session.sbsvs?.responses || {};
 
-      return Object.values(row)
-        .map(value => typeof value === 'string' ? `"${value.replace(/"/g, '""')}"` : value)
+      const row = [
+        session.sessionId,
+        session.timestamp,
+        session.stance,
+        session.botPersonality,
+        session.aiModel,
+        // Demographics
+        session.demographics?.age || '',
+        session.demographics?.gender || '',
+        session.demographics?.education || '',
+        // PVQ21 - Get all 21 responses
+        ...Array.from({ length: 21 }, (_, i) => pvq21Responses[i + 1] || ''),
+        // Initial Assessment
+        session.initialAssessment?.interesting || '',
+        session.initialAssessment?.important || '',
+        session.initialAssessment?.agreement || '',
+        // Chat History
+        JSON.stringify(session.chat || []).replace(/"/g, '""'),
+        // Final Response
+        (session.finalResponse?.text || '').replace(/"/g, '""'),
+        // SBSVS - Get all 10 responses
+        ...Array.from({ length: 10 }, (_, i) => sbsvsResponses[i + 1] || ''),
+        // Attitude Survey
+        ...attitudeAspects.map(aspect => session.attitudeSurvey?.responses?.[aspect.toLowerCase()] || ''),
+        // Stance Agreement
+        session.stanceAgreement?.assigned || '',
+        session.stanceAgreement?.opposite || '',
+        // Alternative Uses
+        JSON.stringify((session.alternativeUses || []).map(use => use.text)).replace(/"/g, '""')
+      ];
+
+      return row
+        .map(value => {
+          if (value === null || value === undefined) return '';
+          return typeof value === 'string' ? `"${value}"` : value;
+        })
         .join(',');
     });
 
