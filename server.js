@@ -455,14 +455,14 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
 
     if (req.body.sbsvs) {
       session.sbsvs = {
-        responses: new Map(Object.entries(req.body.sbsvs.responses)),
+        responses: req.body.sbsvs.responses,
         timestamp: new Date()
       };
     }
 
     if (req.body.attitudeSurvey) {
       session.attitudeSurvey = {
-        responses: new Map(Object.entries(req.body.attitudeSurvey.responses)),
+        responses: req.body.attitudeSurvey.responses,
         timestamp: new Date()
       };
     }

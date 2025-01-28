@@ -464,7 +464,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               <div className="grid grid-cols-2 gap-2">
                 {SBSVSQuestions.map((question) => (
                   <div key={question.id} className="bg-white p-2 rounded">
-                    <strong>Q{question.id}:</strong> {session.sbsvs?.[question.id] || 'N/A'}
+                    <strong>Q{question.id}:</strong> {session.sbsvs?.responses?.[question.id] || 'N/A'}
                     <div className="text-sm text-gray-500 mt-1">{question.text}</div>
                   </div>
                 ))}
@@ -477,7 +477,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               <div className="grid grid-cols-2 gap-2">
                 {attitudeAspects.map((aspect) => (
                   <div key={aspect} className="bg-white p-2 rounded">
-                    <strong>{aspect}:</strong> {session.attitudeSurvey?.[aspect.toLowerCase()] || 'N/A'}
+                    <strong>{aspect}:</strong> {session.attitudeSurvey?.responses?.[aspect.toLowerCase()] || 'N/A'}
                   </div>
                 ))}
               </div>
