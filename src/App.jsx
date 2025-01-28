@@ -702,6 +702,7 @@ function MainApp() {
             <SBSVS 
               responses={sbsvsResponses} 
               setResponses={setSbsvsResponses} 
+              sessionId={sessionId}
             />
             <button
               className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
@@ -732,6 +733,7 @@ function MainApp() {
               stance={stances[stance]}
               responses={attitudeSurveyResponses}
               setResponses={setAttitudeSurveyResponses}
+              sessionId={sessionId}
             />
             <button
               className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
