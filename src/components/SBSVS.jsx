@@ -50,6 +50,11 @@ export const SBSVSQuestions = [
 const SBSVS = ({ responses, setResponses, sessionId }) => {
   const handleValueChange = async (questionId, value) => {
     try {
+      if (!sessionId) {
+        console.error('No sessionId provided to SBSVS component');
+        return;
+      }
+
       const newResponses = {
         ...responses,
         [questionId]: parseInt(value, 10)

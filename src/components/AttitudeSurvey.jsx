@@ -12,13 +12,18 @@ export const attitudeAspects = [
 const AttitudeSurvey = ({ stance, responses, setResponses, sessionId }) => {
   const handleValueChange = async (aspect, value) => {
     try {
+      if (!sessionId) {
+        console.error('No sessionId provided to AttitudeSurvey component');
+        return;
+      }
+
       const newResponses = {
         ...responses,
         [aspect.toLowerCase()]: parseInt(value, 10)
       };
       setResponses(newResponses);
       
-      // Save directly to attitudeSurvey field instead of nested responses
+      // Save to server
       await axios.post(`${API_URL}/sessions/${sessionId}/attitudeSurvey`, {
         [aspect.toLowerCase()]: parseInt(value, 10)
       });

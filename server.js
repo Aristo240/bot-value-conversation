@@ -596,21 +596,14 @@ app.get('/api/admin/sessions/:sessionId/full', authenticateAdmin, async (req, re
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Convert Maps to regular objects for JSON serialization
+    // Format the session data
     const formattedSession = {
       ...session,
-      pvq21: session.pvq21 ? {
-        ...session.pvq21,
-        responses: Object.fromEntries(session.pvq21.responses)
-      } : null,
       sbsvs: session.sbsvs ? {
-        ...session.pvqsbsvs21,
-        responses: Object.fromEntries(session.sbsvs.responses)
+        ...session.sbsvs,
+        responses: session.sbsvs.responses || {}
       } : null,
-      attitudeSurvey: session.attitudeSurvey ? {
-        ...session.attitudeSurvey,
-        responses: Object.fromEntries(session.attitudeSurvey.responses)
-      } : null,
+      attitudeSurvey: session.attitudeSurvey || null
     };
 
     res.json(formattedSession);
@@ -774,31 +767,18 @@ app.put('/api/sessions/:sessionId', async (req, res) => {
 app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   try {
     const sessions = await Session.find()
-      .select({
-        sessionId: 1,
-        timestamp: 1,
-        stance: 1,
-        botPersonality: 1,
-        aiModel: 1,
-        demographics: 1,
-        pvq21: 1,
-        initialAssessment: 1,
-        chat: 1,
-        finalResponse: 1,
-        sbsvs: 1,
-        attitudeSurvey: 1,
-        stanceAgreement: 1,
-        alternativeUses: 1
-      })
       .sort({ timestamp: -1 })
       .lean()
       .exec();
 
-    // Format the sessions to handle Map objects and ensure attitudeSurvey is properly formatted
+    // Format the sessions to handle both SBSVS and attitudeSurvey data
     const formattedSessions = sessions.map(session => ({
       ...session,
-      sbsvs: session.sbsvs?.responses ? Object.fromEntries(Object.entries(session.sbsvs.responses)) : null,
-      attitudeSurvey: session.attitudeSurvey || null
+      sbsvs: session.sbsvs ? {
+        ...session.sbsvs,
+        responses: session.sbsvs.responses || {}
+      } : {},
+      attitudeSurvey: session.attitudeSurvey || {}
     }));
 
     res.json(formattedSessions);
@@ -816,13 +796,20 @@ app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
       return res.status(404).json({ message: 'Session not found' });
     }
 
-    // Save in the same format as PVQ21
+    // Initialize sbsvs if it doesn't exist
+    if (!session.sbsvs) {
+      session.sbsvs = {};
+    }
+
+    // Update with the new responses
     session.sbsvs = {
+      ...session.sbsvs,
       responses: req.body.responses,
       timestamp: new Date()
     };
 
     await session.save();
+    console.log('Saved SBSVS data:', session.sbsvs); // Debug log
     res.status(200).json(session.sbsvs);
   } catch (error) {
     console.error('SBSVS save error:', error);
@@ -851,6 +838,7 @@ app.post('/api/sessions/:sessionId/attitudeSurvey', async (req, res) => {
     };
 
     await session.save();
+    console.log('Saved attitude survey data:', session.attitudeSurvey); // Debug log
     res.status(200).json(session.attitudeSurvey);
   } catch (error) {
     console.error('Attitude Survey save error:', error);
