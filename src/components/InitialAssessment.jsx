@@ -12,7 +12,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
       {/* Interest Assessment */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">To what extent do you find <strong style={{ fontWeight: 'bold' }}>{stance}</strong> interesting?</span>
+          <span className="text-gray-700">How interesting do you find the topic of <strong style={{ fontWeight: 'bold' }}>{stance}</strong>?</span>
           <div className="flex text-sm text-gray-500">
           </div>
         </div>
@@ -38,7 +38,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
       {/* Importance Assessment */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">To what extent do you find <strong style={{ fontWeight: 'bold' }}>{stance}</strong> important?</span>
+          <span className="text-gray-700">How important do you think <strong style={{ fontWeight: 'bold' }}>{stance}</strong>?</span>
           <div className="flex text-sm text-gray-500">
           </div>
         </div>
@@ -64,12 +64,12 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
       {/* Agreement Assessment */}
       <div className="pb-6 border-b border-gray-200">
         <div className="flex justify-between mb-2">
-          <span className="text-gray-700">To what extent do you agree with <strong style={{ fontWeight: 'bold' }}>{stance}</strong>?</span>
+          <span className="text-gray-700">To what extent do you support <strong style={{ fontWeight: 'bold' }}>{stance}</strong>?</span>
           <div className="flex text-sm text-gray-500">
           </div>
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-          <span className="text-sm text-gray-600">Agree</span>
+          <span className="text-sm text-gray-600">Support</span>
           {[1, 2, 3, 4, 5, 6, 7].map((value) => (
             <label key={value} className="flex flex-col items-center">
               <input
@@ -83,7 +83,7 @@ const InitialAssessment = ({ stance, responses, setResponses }) => {
               <span className="text-sm text-gray-600">{value}</span>
             </label>
           ))}
-          <span className="text-sm text-gray-600">Extremely agree</span>
+          <span className="text-sm text-gray-600">Extremely support</span>
         </div>
       </div>
     </div>
