@@ -33,7 +33,7 @@ const getInitialText = (assignedStance) => {
   const firstStance = assignedStance === 'freedom' ? freedomStanceText : safetyStanceText;
   const secondStance = assignedStance === 'freedom' ? safetyStanceText : freedomStanceText;
   
-  return `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. A highly debated issue is the balance between ${firstStance} versus ${secondStance}. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+  return `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. A highly debated issue is the balance between ${firstStance}, versus ${secondStance}. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
 };
 
 // Main experiment component

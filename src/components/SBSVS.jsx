@@ -92,7 +92,7 @@ const SBSVS = ({ responses, setResponses, sessionId }) => {
       <h2 className="text-2xl font-bold mb-6">Values Survey (SBSVS)</h2>
       <div className="mb-8">
         <p className="font-medium text-gray-700 mb-4">
-        Below is a list of ten values. For each value, please state how important it is for you, by writing the appropriate score in the column next to the value.
+        Below is a list of ten values. For each value, please state how important it is for you.
         </p>
       </div>
       <div className="space-y-8">
