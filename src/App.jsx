@@ -24,7 +24,16 @@ const getOrderedStanceText = (assignedStance) => {
 
 const getInitialText = (assignedStance) => {
   const { assignedStanceText, oppositeStanceText } = getOrderedStanceText(assignedStance);
-  return `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. <strong style={{ fontWeight: 'bold' }}>A highly debated issue is the balance between ${assignedStanceText}, allowing people to spread their thoughts and ideas widely, versus ${oppositeStanceText}.</strong> Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+  
+  // Create the stance descriptions with the additional phrase only for freedom of speech
+  const freedomStanceText = `${stances.freedom}, allowing people to spread their thoughts and ideas widely`;
+  const safetyStanceText = stances.safety;
+  
+  // Determine which stance is first and second in the text
+  const firstStance = assignedStance === 'freedom' ? freedomStanceText : safetyStanceText;
+  const secondStance = assignedStance === 'freedom' ? safetyStanceText : freedomStanceText;
+  
+  return `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. <strong style={{ fontWeight: 'bold' }}>A highly debated issue is the balance between ${firstStance} versus ${secondStance}.</strong> Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
 };
 
 // Main experiment component
