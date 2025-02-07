@@ -13,7 +13,19 @@ import StanceAgreement from './components/StanceAgreement';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
-const initialText = `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. <strong style={{ fontWeight: 'bold' }}>A highly debated issue is the balance between preserving freedom of speech, allowing people to spread their thoughts and ideas widely, versus applying rules and restrictions to protect user safety and prevent harm.</strong> Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+const getOrderedStanceText = (assignedStance) => {
+  const assignedStanceText = stances[assignedStance];
+  const oppositeStanceText = assignedStance === 'freedom' ? stances.safety : stances.freedom;
+  return {
+    assignedStanceText,
+    oppositeStanceText
+  };
+};
+
+const getInitialText = (assignedStance) => {
+  const { assignedStanceText, oppositeStanceText } = getOrderedStanceText(assignedStance);
+  return `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. <strong style={{ fontWeight: 'bold' }}>A highly debated issue is the balance between ${assignedStanceText}, allowing people to spread their thoughts and ideas widely, versus ${oppositeStanceText}.</strong> Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+};
 
 // Main experiment component
 function MainApp() {
@@ -422,6 +434,8 @@ function MainApp() {
         );
 
       case 4: // Task Explanation & Description
+        const { assignedStanceText, oppositeStanceText } = getOrderedStanceText(stance);
+        const initialText = getInitialText(stance);
         return (
           <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
             <h2 className="text-2xl font-bold mb-6">Social Media Discussion Study</h2>
@@ -441,7 +455,7 @@ function MainApp() {
                 <p className="text-gray-700 mb-4">
                   You will engage in a 5-minute conversation with an AI bot, during which you will represent one of two perspectives that we will assign to you: 
                   <br />
-                  <strong style={{ fontWeight: 'bold' }}>protecting user safety</strong> or <strong style={{ fontWeight: 'bold' }}>preserving freedom of speech</strong>  on social media platforms.
+                  <strong style={{ fontWeight: 'bold' }}>{assignedStanceText}</strong> or <strong style={{ fontWeight: 'bold' }}>{oppositeStanceText}</strong> on social media platforms.
                   <br />
                   <br />
                   Your objectives during the conversation are:
@@ -452,7 +466,7 @@ function MainApp() {
                     <span className="mr-2">•</span>
                     <span>Explore and deepen your understanding of the perspective you were assigned to</span>
                   </li>
-                  <li className="flex items-start">
+                 <li className="flex items-start">
                     <span className="mr-2">•</span>
                     <span>Develop arguments about why this perspective is important</span>
                   </li>
@@ -460,7 +474,7 @@ function MainApp() {
                     <span className="mr-2">•</span>
                     <span>Consider why this perspective might be more crucial than the opposite one</span>
                   </li>
-                </ul>
+                 </ul>
               </div>
             </div>
 
@@ -520,7 +534,7 @@ function MainApp() {
               <div className="p-4">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Reference Text:</h3>
-                  <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: initialText }} />
+                  <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: getInitialText(stance) }} />
                 </div>
                 <div className="bg-blue-50 p-4 rounded">
                   <h3 className="text-lg font-semibold mb-2">Your Stance:</h3>

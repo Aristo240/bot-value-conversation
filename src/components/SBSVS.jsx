@@ -89,7 +89,12 @@ const SBSVS = ({ responses, setResponses, sessionId }) => {
 
   return (
     <div className="p-6 border rounded-lg bg-white">
-      <h2 className="text-2xl font-bold mb-6">Values Survey</h2>
+      <h2 className="text-2xl font-bold mb-6">Values Survey (SBSVS)</h2>
+      <div className="mb-8">
+        <p className="font-medium text-gray-700 mb-4">
+        Below is a list of ten values. For each value, please state how important it is for you, by writing the appropriate score in the column next to the value.
+        </p>
+      </div>
       <div className="space-y-8">
         {SBSVSQuestions.map((question) => (
           <div key={question.id} className="pb-6 border-b border-gray-200">

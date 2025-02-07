@@ -106,12 +106,12 @@ export default function PVQ21({ responses, setResponses, gender }) {
           Here we briefly describe some people. Please read each description and think about how much each person is or is not like you:
         </p>
         <div className="grid grid-cols-6 gap-2 mb-2 text-sm text-center text-gray-600">
-          <div>1<br/>Very much like me</div>
-          <div>2<br/>Like me</div>
-          <div>3<br/>Somewhat like me</div>
-          <div>4<br/>A little like me</div>
-          <div>5<br/>Not like me</div>
-          <div>6<br/>Not like me at all</div>
+          <div>1<br/>Not like me at all</div>
+          <div>2<br/>Not like me</div>
+          <div>3<br/>A little like me</div>
+          <div>4<br/>Somewhat like me</div>
+          <div>5<br/>Like me</div>
+          <div>6<br/>Very much like me</div>
         </div>
       </div>
 
@@ -120,7 +120,7 @@ export default function PVQ21({ responses, setResponses, gender }) {
           <div key={question.id} className="pb-6 border-b border-gray-200">
             <p className="mb-4 text-gray-700">{question.text}</p>
             <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
-              <span className="text-sm text-gray-600">Very much like me</span>
+              <span className="text-sm text-gray-600">Not like me at all</span>
               {[1, 2, 3, 4, 5, 6].map((value) => (
                 <label key={value} className="flex flex-col items-center">
                   <input
@@ -134,7 +134,7 @@ export default function PVQ21({ responses, setResponses, gender }) {
                   <span className="text-sm text-gray-600">{value}</span>
                 </label>
               ))}
-              <span className="text-sm text-gray-600">Not like me at all</span>
+              <span className="text-sm text-gray-600">Very much like me</span>
             </div>
           </div>
         ))}
