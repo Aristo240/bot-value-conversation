@@ -929,44 +929,39 @@ app.post('/api/verify-recaptcha', async (req, res) => {
   try {
     const { token, sessionId } = req.body;
     
-    console.log('Received verification request:', { 
-      tokenLength: token?.length,
-      sessionId,
-      secretKeyLength: process.env.RECAPTCHA_SECRET_KEY?.length
-    });
+    if (!token) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'No token provided' 
+      });
+    }
+
+    console.log('Verifying token with length:', token.length);
 
     // Verify the token with Google's reCAPTCHA API
     const verifyURL = 'https://www.google.com/recaptcha/api/siteverify';
-    const params = {
+    const params = new URLSearchParams({
       secret: process.env.RECAPTCHA_SECRET_KEY,
       response: token
-    };
+    });
 
-    console.log('Sending verification request to Google:', {
-      url: verifyURL,
-      params: {
-        secret: `${params.secret?.substring(0, 10)}...`,
-        responseTokenLength: params.response?.length
+    const response = await axios.post(verifyURL, params.toString(), {
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded'
       }
     });
 
-    const response = await axios.post(verifyURL, null, { params });
-
-    console.log('Google reCAPTCHA raw response:', response.data);
+    console.log('Google verification response:', response.data);
 
     // Save verification result to session if sessionId is provided
-    if (sessionId) {
+    if (sessionId && response.data.success) {
       const session = await Session.findOne({ sessionId });
       if (session) {
         session.recaptcha = {
-          verified: response.data.success,
+          verified: true,
           timestamp: new Date()
         };
         await session.save();
-        console.log('Updated session with verification result:', {
-          sessionId,
-          verified: response.data.success
-        });
       }
     }
 
@@ -978,7 +973,7 @@ app.post('/api/verify-recaptcha', async (req, res) => {
     console.error('reCAPTCHA verification error:', error.response?.data || error.message);
     res.status(500).json({ 
       success: false, 
-      error: 'Internal server error',
+      error: 'Verification failed',
       details: error.response?.data || error.message
     });
   }

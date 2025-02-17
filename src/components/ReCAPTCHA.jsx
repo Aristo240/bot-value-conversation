@@ -6,35 +6,35 @@ const SITE_KEY = '6LdvDtoqAAAAALZam9WW6FuvqBExmlgomMNTquNH';
 
 function ReCAPTCHA({ onVerify, onFail, sessionId }) {
   const [error, setError] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     // Load reCAPTCHA script
     const script = document.createElement('script');
     script.src = 'https://www.google.com/recaptcha/api.js';
     script.async = true;
+    script.onload = () => setIsLoading(false);
     document.head.appendChild(script);
 
     // Add debugging
     console.log('Current SITE_KEY:', SITE_KEY);
     console.log('Environment variable:', process.env.REACT_APP_RECAPTCHA_SITE_KEY);
 
-    // Define the callback function globally before the script loads
+    // Define the callback function globally
     window.onCaptchaSubmit = async (token) => {
       try {
-        console.log('reCAPTCHA callback triggered with token length:', token?.length);
-        
-        const response = await axios.post('/api/verify-recaptcha', { 
+        const response = await axios.post('/api/verify-recaptcha', {
           token,
-          sessionId 
+          sessionId
         });
-        
-        console.log('Verification response:', response.data);
-        
+
         if (response.data.success) {
           setError(null);
           onVerify();
         } else {
-          setError(response.data.error || 'Verification failed');
+          const errorMessage = response.data.error || 'Verification failed';
+          console.error('Verification failed:', errorMessage);
+          setError(errorMessage);
           onFail();
         }
       } catch (error) {
@@ -56,15 +56,19 @@ function ReCAPTCHA({ onVerify, onFail, sessionId }) {
       <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full">
         <h2 className="text-2xl font-bold mb-6 text-center">Verify You're Human</h2>
         <p className="mb-6 text-gray-600 text-center">
-          Please complete the verification below to continue.
+          Please check the box below to verify that you're human.
         </p>
-        <div className="flex justify-center">
-          <div 
-            className="g-recaptcha" 
-            data-sitekey={SITE_KEY}
-            data-callback="onCaptchaSubmit"
-          ></div>
-        </div>
+        {isLoading ? (
+          <div className="text-center">Loading verification...</div>
+        ) : (
+          <div className="flex justify-center">
+            <div 
+              className="g-recaptcha" 
+              data-sitekey={SITE_KEY}
+              data-callback="onCaptchaSubmit"
+            ></div>
+          </div>
+        )}
         {/* Add debug info */}
         <div className="mt-4 text-xs text-gray-500">
           Debug - Site Key: {SITE_KEY}
