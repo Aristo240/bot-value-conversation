@@ -9,7 +9,6 @@ import { dirname } from 'path';
 import path from 'path';
 import { getSystemPrompt } from './config/botConfig.js';
 import axios from 'axios';
-import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -119,7 +118,6 @@ const SessionSchema = new mongoose.Schema({
   // Add field for reCAPTCHA verification
   recaptcha: {
     verified: Boolean,
-    score: Number,
     timestamp: Date
   }
 });
