@@ -9,6 +9,7 @@ import { dirname } from 'path';
 import path from 'path';
 import { getSystemPrompt } from './config/botConfig.js';
 import axios from 'axios';
+import { RecaptchaEnterpriseServiceClient } from '@google-cloud/recaptcha-enterprise';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -118,6 +119,7 @@ const SessionSchema = new mongoose.Schema({
   // Add field for reCAPTCHA verification
   recaptcha: {
     verified: Boolean,
+    score: Number,
     timestamp: Date
   }
 });
@@ -936,9 +938,7 @@ app.post('/api/verify-recaptcha', async (req, res) => {
       });
     }
 
-    console.log('Verifying token with length:', token.length);
-
-    // Verify the token with Google's reCAPTCHA API
+    // Verify with reCAPTCHA v2
     const verifyURL = 'https://www.google.com/recaptcha/api/siteverify';
     const params = new URLSearchParams({
       secret: process.env.RECAPTCHA_SECRET_KEY,
@@ -951,9 +951,7 @@ app.post('/api/verify-recaptcha', async (req, res) => {
       }
     });
 
-    console.log('Google verification response:', response.data);
-
-    // Save verification result to session if sessionId is provided
+    // Save verification result to session
     if (sessionId && response.data.success) {
       const session = await Session.findOne({ sessionId });
       if (session) {
@@ -970,11 +968,10 @@ app.post('/api/verify-recaptcha', async (req, res) => {
       error: response.data.success ? null : 'reCAPTCHA verification failed'
     });
   } catch (error) {
-    console.error('reCAPTCHA verification error:', error.response?.data || error.message);
+    console.error('reCAPTCHA verification error:', error);
     res.status(500).json({ 
       success: false, 
-      error: 'Verification failed',
-      details: error.response?.data || error.message
+      error: 'Verification failed'
     });
   }
 });
