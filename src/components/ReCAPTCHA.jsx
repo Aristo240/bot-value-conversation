@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import axios from 'axios';
 
-const SITE_KEY = '6LevANoqAAAAADCInNJ4dFDpxmPOGqCQnXhktLTT';
+const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
 
 function ReCAPTCHA({ onVerify, onFail, sessionId }) {
   useEffect(() => {
