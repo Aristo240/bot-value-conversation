@@ -36,23 +36,23 @@ const AttentionCheck = ({ onPass, onFail, isSecondAttempt = false }) => {
           <div className="space-y-3">
             <label className="flex items-center space-x-3">
               <input
-                type="radio"
+                type="checkbox"
                 name="age"
                 value="over18"
                 checked={selectedOption === 'over18'}
-                onChange={(e) => setSelectedOption(e.target.value)}
-                className="form-radio h-5 w-5 text-blue-600"
+                onChange={(e) => setSelectedOption(selectedOption === 'over18' ? null : e.target.value)}
+                className="form-checkbox h-5 w-5 text-blue-600"
               />
               <span>Over 18 years old</span>
             </label>
             <label className="flex items-center space-x-3">
               <input
-                type="radio"
+                type="checkbox"
                 name="age"
                 value="under18"
                 checked={selectedOption === 'under18'}
-                onChange={(e) => setSelectedOption(e.target.value)}
-                className="form-radio h-5 w-5 text-blue-600"
+                onChange={(e) => setSelectedOption(selectedOption === 'under18' ? null : e.target.value)}
+                className="form-checkbox h-5 w-5 text-blue-600"
               />
               <span>Under 18 years old</span>
             </label>
