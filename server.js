@@ -929,6 +929,8 @@ app.post('/api/verify-recaptcha', async (req, res) => {
   try {
     const { token, sessionId } = req.body;
     
+    console.log('Received verification request:', { token, sessionId });
+
     // Verify the token with Google's reCAPTCHA API
     const response = await axios.post(
       'https://www.google.com/recaptcha/api/siteverify',
@@ -940,6 +942,8 @@ app.post('/api/verify-recaptcha', async (req, res) => {
         }
       }
     );
+
+    console.log('Google reCAPTCHA response:', response.data);
 
     // Save verification result to session if sessionId is provided
     if (sessionId) {

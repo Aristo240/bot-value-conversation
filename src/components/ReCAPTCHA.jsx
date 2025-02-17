@@ -16,31 +16,33 @@ function ReCAPTCHA({ onVerify, onFail, sessionId }) {
     console.log('Current SITE_KEY:', SITE_KEY);
     console.log('Environment variable:', process.env.REACT_APP_RECAPTCHA_SITE_KEY);
 
-    return () => {
-      document.head.removeChild(script);
-    };
-  }, []);
-
-  const handleSubmit = async (token) => {
-    try {
-      const response = await axios.post('/api/verify-recaptcha', { 
-        token,
-        sessionId 
-      });
-      
-      if (response.data.success) {
-        onVerify();
-      } else {
+    // Define the callback function globally before the script loads
+    window.onCaptchaSubmit = async (token) => {
+      try {
+        console.log('reCAPTCHA callback triggered with token:', token);
+        const response = await axios.post('/api/verify-recaptcha', { 
+          token,
+          sessionId 
+        });
+        
+        console.log('Verification response:', response.data);
+        
+        if (response.data.success) {
+          onVerify();
+        } else {
+          onFail();
+        }
+      } catch (error) {
+        console.error('reCAPTCHA verification failed:', error);
         onFail();
       }
-    } catch (error) {
-      console.error('reCAPTCHA verification failed:', error);
-      onFail();
-    }
-  };
+    };
 
-  // Define the callback function globally
-  window.onCaptchaSubmit = handleSubmit;
+    return () => {
+      document.head.removeChild(script);
+      delete window.onCaptchaSubmit;
+    };
+  }, [onVerify, onFail, sessionId]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-100">
