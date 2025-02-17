@@ -383,10 +383,9 @@ function MainApp() {
       case 1: // Consent Form
         return <ConsentForm onConsent={() => setCurrentStep(1.5)} />;
 
-      case 1.5: // ReCAPTCHA
+      case 1.5: // Math CAPTCHA
         return (
           <ReCAPTCHA
-            sessionId={sessionId}
             onVerify={() => {
               setCurrentStep(1.6);
             }}

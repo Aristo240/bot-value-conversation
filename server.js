@@ -924,64 +924,6 @@ app.post('/api/sessions/:sessionId/initialAttentionCheck', async (req, res) => {
   }
 });
 
-// Update the reCAPTCHA verification endpoint
-app.post('/api/verify-recaptcha', async (req, res) => {
-  try {
-    const { token, sessionId } = req.body;
-    
-    if (!token) {
-      return res.status(400).json({ 
-        success: false, 
-        error: 'No token provided' 
-      });
-    }
-
-    // Verify with reCAPTCHA v2
-    const verifyURL = 'https://www.google.com/recaptcha/api/siteverify';
-    const params = new URLSearchParams({
-      secret: process.env.RECAPTCHA_SECRET_KEY,
-      response: token
-    });
-
-    const response = await axios.post(verifyURL, params.toString(), {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
-    });
-
-    // Save verification result to session
-    if (sessionId && response.data.success) {
-      const session = await Session.findOne({ sessionId });
-      if (session) {
-        session.recaptcha = {
-          verified: true,
-          timestamp: new Date()
-        };
-        await session.save();
-      }
-    }
-
-    res.json({ 
-      success: response.data.success,
-      error: response.data.success ? null : 'reCAPTCHA verification failed'
-    });
-  } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: 'Verification failed'
-    });
-  }
-});
-
-// Temporary debug route - remove in production
-app.get('/api/debug-env', (req, res) => {
-  res.json({
-    hasSecretKey: !!process.env.RECAPTCHA_SECRET_KEY,
-    secretKeyLength: process.env.RECAPTCHA_SECRET_KEY?.length
-  });
-});
-
 // Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));
