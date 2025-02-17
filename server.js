@@ -935,13 +935,13 @@ app.post('/api/verify-recaptcha', async (req, res) => {
       null,
       {
         params: {
-          secret: RECAPTCHA_SECRET_KEY,
+          secret: process.env.RECAPTCHA_SECRET_KEY,
           response: token
         }
       }
     );
 
-    // Save verification result to session
+    // Save verification result to session if sessionId is provided
     if (sessionId) {
       const session = await Session.findOne({ sessionId });
       if (session) {
@@ -953,15 +953,10 @@ app.post('/api/verify-recaptcha', async (req, res) => {
       }
     }
 
-    // Check if verification was successful
-    if (response.data.success) {
-      res.json({ success: true });
-    } else {
-      res.json({ 
-        success: false, 
-        error: 'reCAPTCHA verification failed'
-      });
-    }
+    res.json({ 
+      success: response.data.success,
+      error: response.data.success ? null : 'reCAPTCHA verification failed'
+    });
   } catch (error) {
     console.error('reCAPTCHA verification error:', error);
     res.status(500).json({ 

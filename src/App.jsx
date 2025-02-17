@@ -386,6 +386,7 @@ function MainApp() {
       case 1.5: // ReCAPTCHA
         return (
           <ReCAPTCHA
+            sessionId={sessionId}
             onVerify={() => {
               setCurrentStep(1.6);
             }}
