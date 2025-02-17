@@ -10,6 +10,8 @@ import PVQ21 from './components/PVQ21';
 import InitialAssessment from './components/InitialAssessment';
 import AlternativeUsesTask from './components/AlternativeUsesTask';
 import StanceAgreement from './components/StanceAgreement';
+import ReCAPTCHA from './components/ReCAPTCHA';
+import AttentionCheck from './components/AttentionCheck';
 
 const API_URL = 'https://bot-value-conversation-1.onrender.com/api';
 
@@ -66,6 +68,8 @@ function MainApp() {
   });
   const [initialAttitudeResponses, setInitialAttitudeResponses] = useState({});
   const [showWarning, setShowWarning] = useState(false);
+  const [isRobot, setIsRobot] = useState(false);
+  const [attentionCheckAttempts, setAttentionCheckAttempts] = useState(0);
 
   useEffect(() => {
     const initializeSession = async () => {
@@ -377,7 +381,46 @@ function MainApp() {
   const renderStep = () => {
     switch (currentStep) {
       case 1: // Consent Form
-        return <ConsentForm onConsent={() => setCurrentStep(2)} />;
+        return <ConsentForm onConsent={() => setCurrentStep(1.5)} />;
+
+      case 1.5: // ReCAPTCHA
+        return (
+          <ReCAPTCHA
+            onVerify={() => {
+              setCurrentStep(1.6);
+            }}
+            onFail={() => {
+              setIsRobot(true);
+              // Log the robot attempt
+              axios.post(`${API_URL}/sessions/${sessionId}/events`, {
+                type: 'robot_detected',
+                timestamp: new Date()
+              }).catch(error => console.error('Error logging robot detection:', error));
+            }}
+          />
+        );
+
+      case 1.6: // Attention Check
+        return (
+          <AttentionCheck
+            isSecondAttempt={attentionCheckAttempts === 1}
+            onPass={() => {
+              setCurrentStep(2);
+            }}
+            onFail={() => {
+              if (attentionCheckAttempts === 0) {
+                setAttentionCheckAttempts(1);
+              } else {
+                // Log attention check failure
+                axios.post(`${API_URL}/sessions/${sessionId}/events`, {
+                  type: 'attention_check_failed',
+                  timestamp: new Date()
+                }).catch(error => console.error('Error logging attention check failure:', error));
+                setIsRobot(true); // Using the same mechanism as robot detection to exit the study
+              }
+            }}
+          />
+        );
 
       case 2: // Demographics
         return (
@@ -888,6 +931,20 @@ function MainApp() {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
   }, [currentStep, sessionId]);
+
+  if (isRobot) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
+          <h2 className="text-2xl font-bold mb-4 text-red-600">Access Denied</h2>
+          <p className="mb-6">
+            This experiment is only available for human participants. 
+            Automated access is not permitted.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100">

@@ -26,6 +26,11 @@ export const SBSVSQuestions = [
     text: "Obeying social norms and expectations and avoiding actions that are likely to upset others. Being polite and self-disciplined. Honoring parents and elders."
   },
   {
+    id: 'attention1',
+    text: "Attention check: Please select 'Important'",
+    isAttentionCheck: true
+  },
+  {
     id: 6,
     text: "Aspiring for impressive achievements. Demonstrating competence, excellence and personal success."
   },
@@ -61,9 +66,10 @@ const SBSVS = ({ responses, setResponses, sessionId }) => {
       };
       setResponses(newResponses);
       
-      // Save to server
+      // Save to server including attention check
       await axios.post(`${API_URL}/sessions/${sessionId}/sbsvs`, {
-        responses: newResponses
+        responses: newResponses,
+        attentionCheck: questionId === 'attention1' ? value : undefined
       });
     } catch (error) {
       console.error('Error saving SBSVS response:', error);

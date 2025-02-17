@@ -42,6 +42,11 @@ const getPVQ21Questions = (gender) => [
       text: `Having a good time is important to ${gender === 'Female' ? 'her' : 'him'}. ${gender === 'Female' ? 'She' : 'He'} likes to "spoil" ${gender === 'Female' ? 'herself' : 'himself'}.`
     },
     {
+      id: 'attention1',
+      text: "Attention check: Please select 'Very much like me'",
+      isAttentionCheck: true
+    },
+    {
       id: 11,
       text: `It is important to ${gender === 'Female' ? 'her' : 'him'} to make ${gender === 'Female' ? 'her' : 'his'} own decisions about what ${gender === 'Female' ? 'she' : 'he'} does. ${gender === 'Female' ? 'She' : 'He'} likes to be free to plan and not depend on others.`
     },

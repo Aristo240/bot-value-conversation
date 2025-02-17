@@ -255,6 +255,7 @@ function Admin() {
       'Education',
       // PVQ21
       ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
+      'PVQ21_Attention_Check',
       // Initial Assessment
       'Initial_Interest',
       'Initial_Importance',
@@ -265,6 +266,7 @@ function Admin() {
       'Final_Response',
       // SBSVS
       ...Array.from({ length: 10 }, (_, i) => `SBSVS_Q${i + 1}`),
+      'SBSVS_Attention_Check',
       // Attitude Survey
       ...attitudeAspects.map(aspect => `Attitude_${aspect}`),
       // Stance Agreement
@@ -290,6 +292,7 @@ function Admin() {
         session.demographics?.education || '',
         // PVQ21 - Get all 21 responses
         ...Array.from({ length: 21 }, (_, i) => pvq21Responses[i + 1] || ''),
+        session.pvq21?.responses?.attention1 || '',
         // Initial Assessment
         session.initialAssessment?.interesting || '',
         session.initialAssessment?.important || '',
@@ -300,13 +303,14 @@ function Admin() {
         (session.finalResponse?.text || '').replace(/"/g, '""'),
         // SBSVS - Get all 10 responses
         ...Array.from({ length: 10 }, (_, i) => sbsvsResponses[i + 1] || ''),
+        session.sbsvs?.responses?.attention1 || '',
         // Attitude Survey
         ...attitudeAspects.map(aspect => session.attitudeSurvey?.responses?.[aspect.toLowerCase()] || ''),
         // Stance Agreement
         session.stanceAgreement?.assigned || '',
         session.stanceAgreement?.opposite || '',
         // Alternative Uses
-        JSON.stringify((session.alternativeUses || []).map(use => use.text)).replace(/"/g, '""')
+        JSON.stringify((session.alternativeUses || []).map(use => use.text)).replace(/"/g, '""'),
       ];
 
       return row
@@ -429,7 +433,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               <div className="grid grid-cols-3 gap-2">
                 {Object.entries(session.pvq21?.responses || {}).map(([q, value]) => (
                   <div key={q} className="bg-white p-2 rounded">
-                    <strong>Q{q}:</strong> {value}
+                    <strong>{q === 'attention1' ? 'Attention Check:' : `Q${q}`}:</strong> {value}
                   </div>
                 ))}
               </div>
@@ -467,7 +471,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               <div className="grid grid-cols-2 gap-2">
                 {SBSVSQuestions.map((question) => (
                   <div key={question.id} className="bg-white p-2 rounded">
-                    <strong>Q{question.id}:</strong> {session.sbsvs?.responses?.[question.id] || 'N/A'}
+                    <strong>{question.id === 'attention1' ? 'Attention Check:' : `Q${question.id}`}:</strong> {session.sbsvs?.responses?.[question.id] || 'N/A'}
                     <div className="text-sm text-gray-500 mt-1">{question.text}</div>
                   </div>
                 ))}

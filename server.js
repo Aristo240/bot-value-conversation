@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import path from 'path';
 import { getSystemPrompt } from './config/botConfig.js';
+import axios from 'axios';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -19,6 +20,9 @@ const app = express();
 // Initialize both AI models
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const gemini = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+// Environment variables
+const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY;
 
 app.use(cors());
 app.use(express.json());
@@ -46,6 +50,7 @@ const SessionSchema = new mongoose.Schema({
       type: Map,
       of: Number
     },
+    attentionCheck: Number,
     timestamp: Date
   },
 
@@ -77,6 +82,7 @@ const SessionSchema = new mongoose.Schema({
       type: Map,
       of: Number
     },
+    attentionCheck: Number,
     timestamp: Date
   },
 
@@ -100,7 +106,20 @@ const SessionSchema = new mongoose.Schema({
   alternativeUses: [{
     text: String,
     timestamp: Date
-  }]
+  }],
+
+  // Add field for initial attention check
+  initialAttentionCheck: {
+    passed: Boolean,
+    attempts: Number,
+    timestamp: Date
+  },
+
+  // Add field for reCAPTCHA verification
+  recaptcha: {
+    verified: Boolean,
+    timestamp: Date
+  }
 });
 
 const ConditionCounterSchema = new mongoose.Schema({
@@ -424,6 +443,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     if (req.body.pvq21) {
       session.pvq21 = {
         responses: new Map(Object.entries(req.body.pvq21.responses)),
+        attentionCheck: req.body.pvq21.attentionCheck,
         timestamp: new Date()
       };
     }
@@ -456,6 +476,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     if (req.body.sbsvs) {
       session.sbsvs = {
         responses: req.body.sbsvs.responses,
+        attentionCheck: req.body.sbsvs.attentionCheck,
         timestamp: new Date()
       };
     }
@@ -700,6 +721,7 @@ app.post('/api/sessions/:sessionId/pvq21', async (req, res) => {
 
     session.pvq21 = {
       responses: responses,
+      attentionCheck: req.body.attentionCheck,
       timestamp: new Date()
     };
 
@@ -805,6 +827,7 @@ app.post('/api/sessions/:sessionId/sbsvs', async (req, res) => {
     session.sbsvs = {
       ...session.sbsvs,
       responses: req.body.responses,
+      attentionCheck: req.body.attentionCheck,
       timestamp: new Date()
     };
 
@@ -876,6 +899,75 @@ app.post('/api/sessions/:sessionId/alternativeUses', async (req, res) => {
   } catch (error) {
     console.error('Alternative Uses save error:', error);
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Add endpoint for initial attention check
+app.post('/api/sessions/:sessionId/initialAttentionCheck', async (req, res) => {
+  try {
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    session.initialAttentionCheck = {
+      passed: req.body.passed,
+      attempts: req.body.attempts,
+      timestamp: new Date()
+    };
+
+    await session.save();
+    res.status(200).json(session.initialAttentionCheck);
+  } catch (error) {
+    console.error('Error saving initial attention check:', error);
+    res.status(400).json({ message: error.message });
+  }
+});
+
+// Update the reCAPTCHA verification endpoint
+app.post('/api/verify-recaptcha', async (req, res) => {
+  try {
+    const { token, sessionId } = req.body;
+    
+    // Verify the token with Google's reCAPTCHA API
+    const response = await axios.post(
+      'https://www.google.com/recaptcha/api/siteverify',
+      null,
+      {
+        params: {
+          secret: RECAPTCHA_SECRET_KEY,
+          response: token
+        }
+      }
+    );
+
+    // Save verification result to session
+    if (sessionId) {
+      const session = await Session.findOne({ sessionId });
+      if (session) {
+        session.recaptcha = {
+          verified: response.data.success,
+          timestamp: new Date()
+        };
+        await session.save();
+      }
+    }
+
+    // Check if verification was successful
+    if (response.data.success) {
+      res.json({ success: true });
+    } else {
+      res.json({ 
+        success: false, 
+        error: 'reCAPTCHA verification failed'
+      });
+    }
+  } catch (error) {
+    console.error('reCAPTCHA verification error:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error'
+    });
   }
 });
 
