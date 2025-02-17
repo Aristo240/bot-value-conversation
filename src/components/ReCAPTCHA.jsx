@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import axios from 'axios';
 
-const SITE_KEY = process.env.REACT_APP_RECAPTCHA_SITE_KEY;
+// Hardcode the key temporarily for debugging
+const SITE_KEY = '6LdvDtoqAAAAALZam9WW6FuvqBExmlgomMNTquNH';
 
 function ReCAPTCHA({ onVerify, onFail, sessionId }) {
   useEffect(() => {
@@ -10,6 +11,10 @@ function ReCAPTCHA({ onVerify, onFail, sessionId }) {
     script.src = 'https://www.google.com/recaptcha/api.js';
     script.async = true;
     document.head.appendChild(script);
+
+    // Add debugging
+    console.log('Current SITE_KEY:', SITE_KEY);
+    console.log('Environment variable:', process.env.REACT_APP_RECAPTCHA_SITE_KEY);
 
     return () => {
       document.head.removeChild(script);
@@ -50,6 +55,10 @@ function ReCAPTCHA({ onVerify, onFail, sessionId }) {
             data-sitekey={SITE_KEY}
             data-callback="onCaptchaSubmit"
           ></div>
+        </div>
+        {/* Add debug info */}
+        <div className="mt-4 text-xs text-gray-500">
+          Debug - Site Key: {SITE_KEY}
         </div>
       </div>
     </div>
