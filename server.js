@@ -929,21 +929,30 @@ app.post('/api/verify-recaptcha', async (req, res) => {
   try {
     const { token, sessionId } = req.body;
     
-    console.log('Received verification request:', { token, sessionId });
+    console.log('Received verification request:', { 
+      tokenLength: token?.length,
+      sessionId,
+      secretKeyLength: process.env.RECAPTCHA_SECRET_KEY?.length
+    });
 
     // Verify the token with Google's reCAPTCHA API
-    const response = await axios.post(
-      'https://www.google.com/recaptcha/api/siteverify',
-      null,
-      {
-        params: {
-          secret: process.env.RECAPTCHA_SECRET_KEY,
-          response: token
-        }
-      }
-    );
+    const verifyURL = 'https://www.google.com/recaptcha/api/siteverify';
+    const params = {
+      secret: process.env.RECAPTCHA_SECRET_KEY,
+      response: token
+    };
 
-    console.log('Google reCAPTCHA response:', response.data);
+    console.log('Sending verification request to Google:', {
+      url: verifyURL,
+      params: {
+        secret: `${params.secret?.substring(0, 10)}...`,
+        responseTokenLength: params.response?.length
+      }
+    });
+
+    const response = await axios.post(verifyURL, null, { params });
+
+    console.log('Google reCAPTCHA raw response:', response.data);
 
     // Save verification result to session if sessionId is provided
     if (sessionId) {
@@ -954,6 +963,10 @@ app.post('/api/verify-recaptcha', async (req, res) => {
           timestamp: new Date()
         };
         await session.save();
+        console.log('Updated session with verification result:', {
+          sessionId,
+          verified: response.data.success
+        });
       }
     }
 
@@ -962,12 +975,21 @@ app.post('/api/verify-recaptcha', async (req, res) => {
       error: response.data.success ? null : 'reCAPTCHA verification failed'
     });
   } catch (error) {
-    console.error('reCAPTCHA verification error:', error);
+    console.error('reCAPTCHA verification error:', error.response?.data || error.message);
     res.status(500).json({ 
       success: false, 
-      error: 'Internal server error'
+      error: 'Internal server error',
+      details: error.response?.data || error.message
     });
   }
+});
+
+// Temporary debug route - remove in production
+app.get('/api/debug-env', (req, res) => {
+  res.json({
+    hasSecretKey: !!process.env.RECAPTCHA_SECRET_KEY,
+    secretKeyLength: process.env.RECAPTCHA_SECRET_KEY?.length
+  });
 });
 
 // Serve React app

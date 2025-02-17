@@ -1,10 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
 // Hardcode the key temporarily for debugging
 const SITE_KEY = '6LdvDtoqAAAAALZam9WW6FuvqBExmlgomMNTquNH';
 
 function ReCAPTCHA({ onVerify, onFail, sessionId }) {
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     // Load reCAPTCHA script
     const script = document.createElement('script');
@@ -19,7 +21,8 @@ function ReCAPTCHA({ onVerify, onFail, sessionId }) {
     // Define the callback function globally before the script loads
     window.onCaptchaSubmit = async (token) => {
       try {
-        console.log('reCAPTCHA callback triggered with token:', token);
+        console.log('reCAPTCHA callback triggered with token length:', token?.length);
+        
         const response = await axios.post('/api/verify-recaptcha', { 
           token,
           sessionId 
@@ -28,12 +31,16 @@ function ReCAPTCHA({ onVerify, onFail, sessionId }) {
         console.log('Verification response:', response.data);
         
         if (response.data.success) {
+          setError(null);
           onVerify();
         } else {
+          setError(response.data.error || 'Verification failed');
           onFail();
         }
       } catch (error) {
-        console.error('reCAPTCHA verification failed:', error);
+        const errorMessage = error.response?.data?.error || error.message;
+        console.error('reCAPTCHA verification failed:', errorMessage);
+        setError(errorMessage);
         onFail();
       }
     };
@@ -62,6 +69,11 @@ function ReCAPTCHA({ onVerify, onFail, sessionId }) {
         <div className="mt-4 text-xs text-gray-500">
           Debug - Site Key: {SITE_KEY}
         </div>
+        {error && (
+          <div className="mt-4 text-red-600 text-sm text-center">
+            Error: {error}
+          </div>
+        )}
       </div>
     </div>
   );
