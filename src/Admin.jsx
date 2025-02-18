@@ -244,8 +244,14 @@ function Admin() {
 
   const convertToCSV = (sessions) => {
     const headers = [
-      'SessionId',
-      'Timestamp',
+      // Prolific standard fields
+      'Participant id',          // Prolific ID
+      'Started datetime',        // Session start time
+      'Completed datetime',      // Session end time
+      'Status',                  // Completion status
+      'Session id',             // Our session ID
+      
+      // Study-specific fields
       'Stance',
       'Bot_Personality',
       'AI_Model',
@@ -279,10 +285,18 @@ function Admin() {
     const rows = sessions.map(session => {
       const pvq21Responses = session.pvq21?.responses || {};
       const sbsvsResponses = session.sbsvs?.responses || {};
-
+      
+      // Calculate completion status
+      const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
+      
       const row = [
+        session.prolificId || '',
+        session.timestamp || '',  // Start time
+        session.finalResponse?.timestamp || '', // End time
+        isComplete,
         session.sessionId,
-        session.timestamp,
+        
+        // Study-specific data
         session.stance,
         session.botPersonality,
         session.aiModel,
@@ -327,6 +341,7 @@ function Admin() {
   const convertToText = (session) => {
     return `
 Session ID: ${session.sessionId}
+Prolific ID: ${session.prolificId || 'N/A'}
 Timestamp: ${session.timestamp}
 Stance: ${session.stance}
 Bot Personality: ${session.botPersonality}
@@ -372,13 +387,18 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
   const renderSessionData = (session) => {
     const isExpanded = expandedSession === session.sessionId;
+    const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
 
     return (
       <div key={session.sessionId} className="bg-white rounded-lg shadow-md p-6 mb-4">
         <div className="flex justify-between items-start mb-4">
           <div>
-            <h3 className="text-lg font-bold">Session ID: {session.sessionId}</h3>
-            <p>Date: {new Date(session.timestamp).toLocaleString()}</p>
+            <h3 className="text-lg font-bold">Participant ID: {session.prolificId || 'N/A'}</h3>
+            <p>Session ID: {session.sessionId}</p>
+            <p>Status: {isComplete}</p>
+            <p>Started: {new Date(session.timestamp).toLocaleString()}</p>
+            <p>Completed: {session.finalResponse?.timestamp ? 
+                new Date(session.finalResponse.timestamp).toLocaleString() : 'Not completed'}</p>
             <p>Stance: {session.stance}</p>
             <p>Bot Personality: {session.botPersonality}</p>
             <p>AI Model: {session.aiModel}</p>

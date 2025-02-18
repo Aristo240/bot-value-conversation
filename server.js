@@ -31,7 +31,14 @@ app.use(express.static(path.join(__dirname, 'dist')));
 // MongoDB Schema with all cases
 const SessionSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true },
+  prolificId: { type: String },
   timestamp: { type: Date, default: Date.now },
+  completedTimestamp: { type: Date },
+  status: { 
+    type: String, 
+    enum: ['STARTED', 'COMPLETED', 'APPROVED', 'REJECTED'],
+    default: 'STARTED'
+  },
   stance: String,
   botPersonality: String,
   aiModel: String,
@@ -471,6 +478,8 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
         text: req.body.finalResponse.text,
         timestamp: new Date()
       };
+      session.completedTimestamp = new Date();
+      session.status = 'COMPLETED';
     }
 
     if (req.body.sbsvs) {

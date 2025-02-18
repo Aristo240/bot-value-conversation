@@ -43,7 +43,7 @@ const getPVQ21Questions = (gender) => [
     },
     {
       id: 'attention1',
-      text: "Attention check: Please select 'Very much like me'",
+      text: "Please select 'Very much like me'",
       isAttentionCheck: true
     },
     {
