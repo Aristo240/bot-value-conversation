@@ -464,12 +464,12 @@ function MainApp() {
             />
             <button
               className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                !pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 21
+                !pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
                   ? 'opacity-50 cursor-not-allowed'
                   : ''
               }`}
               onClick={async () => {
-                if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 21) {
+                if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 22) {
                   try {
                     await savePVQ21();
                     setCurrentStep(4);
@@ -478,9 +478,12 @@ function MainApp() {
                   }
                 }
               }}
-              disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 21}
+              disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22}
             >
-              Continue
+              {!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
+                ? `Please complete all ${22 - (pvq21Responses.responses ? Object.keys(pvq21Responses.responses).length : 0)} remaining questions`
+                : 'Continue'
+              }
             </button>
           </div>
         );
@@ -767,7 +770,7 @@ function MainApp() {
 
       case 8: // SBSVS
         const handleSBSVSSubmit = async () => {
-          if (Object.keys(sbsvsResponses).length === 10) {
+          if (Object.keys(sbsvsResponses).length === 11) {
             await saveSBSVS();
             setCurrentStep(9);
           }
@@ -782,13 +785,13 @@ function MainApp() {
             />
             <button
               className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                Object.keys(sbsvsResponses).length < 10 ? 'opacity-50 cursor-not-allowed' : ''
+                Object.keys(sbsvsResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
               }`}
               onClick={handleSBSVSSubmit}
-              disabled={Object.keys(sbsvsResponses).length < 10}
+              disabled={Object.keys(sbsvsResponses).length < 11}
             >
-              {Object.keys(sbsvsResponses).length < 10 
-                ? `Please complete all ${10 - Object.keys(sbsvsResponses).length} remaining questions`
+              {Object.keys(sbsvsResponses).length < 11 
+                ? `Please complete all ${11 - Object.keys(sbsvsResponses).length} remaining questions`
                 : 'Continue'
               }
             </button>
