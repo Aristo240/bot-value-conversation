@@ -27,7 +27,7 @@ export const SBSVSQuestions = [
   },
   {
     id: 'attention1',
-    text: "Please select 'Important'",
+    text: "Please select 'Important' to confirm attention.",
     isAttentionCheck: true
   },
   {

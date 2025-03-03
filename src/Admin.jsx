@@ -279,7 +279,10 @@ function Admin() {
       'Stance_Agreement_Assigned',
       'Stance_Agreement_Opposite',
       // Alternative Uses
-      'Alternative_Uses'
+      'Alternative_Uses',
+      // Add warning events headers
+      'Warning_Events_Count',
+      'Warning_Events_Details',
     ].join(',');
 
     const rows = sessions.map(session => {
@@ -288,6 +291,11 @@ function Admin() {
       
       // Calculate completion status
       const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
+      
+      // Format warning events for CSV
+      const warningEvents = (session.events || [])
+        .filter(event => event.type === 'tab_switch')
+        .map(event => `Step ${event.step} at ${new Date(event.timestamp).toLocaleString()}`);
       
       const row = [
         session.prolificId || '',
@@ -325,6 +333,9 @@ function Admin() {
         session.stanceAgreement?.opposite || '',
         // Alternative Uses
         JSON.stringify((session.alternativeUses || []).map(use => use.text)).replace(/"/g, '""'),
+        // Add warning events data
+        warningEvents.length,
+        `"${warningEvents.join('; ')}"`,
       ];
 
       return row
@@ -346,6 +357,12 @@ Timestamp: ${session.timestamp}
 Stance: ${session.stance}
 Bot Personality: ${session.botPersonality}
 AI Model: ${session.aiModel}
+
+Warning Events:
+${(session.events || [])
+  .filter(event => event.type === 'tab_switch')
+  .map(event => `- Step ${event.step} at ${new Date(event.timestamp).toLocaleString()}`)
+  .join('\n') || 'No warning events recorded'}
 
 Demographics:
 - Age: ${session.demographics?.age || 'N/A'}
@@ -388,6 +405,15 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
   const renderSessionData = (session) => {
     const isExpanded = expandedSession === session.sessionId;
     const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
+
+    // Add this function to format warning events
+    const formatWarningEvents = (events) => {
+      if (!events || !Array.isArray(events)) return [];
+      return events.filter(event => event.type === 'tab_switch').map(event => ({
+        step: event.step,
+        timestamp: new Date(event.timestamp).toLocaleString()
+      }));
+    };
 
     return (
       <div key={session.sessionId} className="bg-white rounded-lg shadow-md p-6 mb-4">
@@ -439,6 +465,23 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
         {isExpanded && (
           <div className="space-y-4 mt-4">
+            {/* Add this new section for warning events */}
+            <div className="bg-gray-50 p-4 rounded">
+              <h4 className="font-semibold mb-2">Warning Events:</h4>
+              {session.events && session.events.length > 0 ? (
+                <div className="space-y-2">
+                  {formatWarningEvents(session.events).map((event, index) => (
+                    <div key={index} className="bg-yellow-50 p-2 rounded">
+                      <p>Step: {event.step}</p>
+                      <p>Time: {event.timestamp}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-gray-500">No warning events recorded</p>
+              )}
+            </div>
+
             {/* Demographics */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Demographics:</h4>

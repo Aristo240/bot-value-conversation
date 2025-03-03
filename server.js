@@ -126,7 +126,14 @@ const SessionSchema = new mongoose.Schema({
   recaptcha: {
     verified: Boolean,
     timestamp: Date
-  }
+  },
+
+  // Add events field
+  events: [{
+    type: { type: String },
+    step: { type: Number },
+    timestamp: { type: Date }
+  }]
 });
 
 const ConditionCounterSchema = new mongoose.Schema({
@@ -205,11 +212,11 @@ const authenticateAdmin = async (req, res, next) => {
   }
 };
 
-// only gpt
+// Update the nextCondition endpoint to use only Gemini
 app.get('/api/nextCondition', async (req, res) => {
   try {
-    // Get all counters but filter for GPT only during pre-test
-    const counters = await ConditionCounter.find({ aiModel: 'gpt' });
+    // Get all counters but filter for Gemini only
+    const counters = await ConditionCounter.find({ aiModel: 'gemini' });
     
     if (!counters || counters.length === 0) {
       throw new Error('No condition counters found');
@@ -248,32 +255,6 @@ app.get('/api/nextCondition', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-// gpt+gemini models
-// app.get('/api/nextCondition', async (req, res) => {
-//   try {
-//     // Get all counters and find the minimum count
-//     const counters = await ConditionCounter.find({});
-//     const minCount = Math.min(...counters.map(c => c.count));
-    
-//     // Get all conditions with the minimum count
-//     const eligibleConditions = counters.filter(c => c.count === minCount);
-    
-//     // Randomly select from eligible conditions
-//     const selectedCondition = eligibleConditions[Math.floor(Math.random() * eligibleConditions.length)];
-    
-//     // Increment the counter for the selected condition
-//     await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
-    
-//     res.json({
-//       aiModel: selectedCondition.aiModel,
-//       stance: selectedCondition.stance,
-//       personality: selectedCondition.personality
-//     });
-//   } catch (error) {
-//     res.status(500).json({ error: error.message });
-//   }
-// });
 
 app.get('/api/admin/conditionCounts', authenticateAdmin, async (req, res) => {
   try {
@@ -357,41 +338,19 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
 // Chat with AI models endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { message, stance, botPersonality, aiModel, aiModelVersion, history } = req.body;
+    const { message, stance, botPersonality, aiModel, history } = req.body;
     const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
     
-    let response;
-    let modelVersion;
+    // Initialize Gemini model
+    const model = gemini.getGenerativeModel({
+      model: "gemini-pro",
+      generationConfig: {
+        temperature: 0.7
+      }
+    });
 
-    if (aiModel === 'gpt') {
-      modelVersion = 'gpt-4';
-      const completion = await openai.chat.completions.create({
-        model: modelVersion,
-        temperature: 0.7,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "assistant", content: exampleExchange.bot },
-          { role: "user", content: exampleExchange.user },
-          { role: "assistant", content: exampleExchange.bot },
-          ...history.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text
-          })),
-          { role: "user", content: message }
-        ]
-      });
-      response = completion.choices[0].message.content;
-    } else {
-      // Gemini implementation
-      const model = gemini.getGenerativeModel({
-        model: "gemini-pro",
-        generationConfig: {
-          temperature: 0.7
-        }
-      });
-
-      // Format conversation for Gemini
-      const chatContext = `${systemPrompt}
+    // Format conversation for Gemini
+    const chatContext = `${systemPrompt}
 
 EXAMPLE INTERACTION:
 Assistant: ${exampleExchange.bot}
@@ -405,21 +364,20 @@ Current Human Message: ${message}
 
 Assistant (remember to maintain personality and focus on stance):`;
 
-      try {
-        const result = await model.generateContent(chatContext);
-        response = result.response.text();
-        
-        // Validate response
-        if (!response || response.trim().length === 0) {
-          throw new Error('Empty response from Gemini');
-        }
-      } catch (error) {
-        console.error('Gemini Error:', error);
-        throw new Error(`Gemini error: ${error.message}`);
+    try {
+      const result = await model.generateContent(chatContext);
+      const response = result.response.text();
+      
+      // Validate response
+      if (!response || response.trim().length === 0) {
+        throw new Error('Empty response from Gemini');
       }
-    }
 
-    res.json({ response });
+      res.json({ response });
+    } catch (error) {
+      console.error('Gemini Error:', error);
+      throw new Error(`Gemini error: ${error.message}`);
+    }
   } catch (error) {
     console.error('Chat API Error:', error);
     res.status(500).json({ 
@@ -549,10 +507,40 @@ app.post('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   try {
     const sessions = await Session.find()
       .sort({ timestamp: -1 })
+      .select({
+        sessionId: 1,
+        timestamp: 1,
+        stance: 1,
+        botPersonality: 1,
+        aiModel: 1,
+        demographics: 1,
+        pvq21: 1,
+        initialAssessment: 1,
+        chat: 1,
+        finalResponse: 1,
+        sbsvs: 1,
+        attitudeSurvey: 1,
+        stanceAgreement: 1,
+        alternativeUses: 1,
+        events: 1
+      })
       .lean()
       .exec();
-    res.json(sessions);
+
+    // Format the sessions
+    const formattedSessions = sessions.map(session => ({
+      ...session,
+      sbsvs: session.sbsvs ? {
+        ...session.sbsvs,
+        responses: session.sbsvs.responses || {}
+      } : {},
+      attitudeSurvey: session.attitudeSurvey || {},
+      events: session.events || []
+    }));
+
+    res.json(formattedSessions);
   } catch (error) {
+    console.error('Error fetching sessions:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -791,31 +779,6 @@ app.put('/api/sessions/:sessionId', async (req, res) => {
   } catch (error) {
     console.error('Error updating session:', error);
     res.status(400).json({ message: error.message });
-  }
-});
-
-// Update the GET endpoint for fetching sessions
-app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
-  try {
-    const sessions = await Session.find()
-      .sort({ timestamp: -1 })
-      .lean()
-      .exec();
-
-    // Format the sessions to handle both SBSVS and attitudeSurvey data
-    const formattedSessions = sessions.map(session => ({
-      ...session,
-      sbsvs: session.sbsvs ? {
-        ...session.sbsvs,
-        responses: session.sbsvs.responses || {}
-      } : {},
-      attitudeSurvey: session.attitudeSurvey || {}
-    }));
-
-    res.json(formattedSessions);
-  } catch (error) {
-    console.error('Error fetching sessions:', error);
-    res.status(500).json({ message: error.message });
   }
 });
 
