@@ -431,9 +431,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
   const renderSessionData = (session) => {
     const isExpanded = expandedSession === session.sessionId;
-    const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
 
-    // Add this function to format warning events
     const formatWarningEvents = (events) => {
       if (!events || !Array.isArray(events)) return [];
       return events.filter(event => event.type === 'tab_switch').map(event => ({
@@ -448,7 +446,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
           <div>
             <h3 className="text-lg font-bold">Participant ID: {session.prolificId || 'N/A'}</h3>
             <p>Session ID: {session.sessionId}</p>
-            <p>Status: {isComplete}</p>
+            <p>Status: {session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW'}</p>
             <p>Started: {new Date(session.timestamp).toLocaleString()}</p>
             <p>Completed: {session.finalResponse?.timestamp ? 
                 new Date(session.finalResponse.timestamp).toLocaleString() : 'Not completed'}</p>
@@ -465,7 +463,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               })}
               className="border rounded px-2 py-1"
             >
-              {fileTypes && fileTypes.map((type) => (
+              {fileTypes.map((type) => (
                 <option key={type.value} value={type.value}>
                   {type.label}
                 </option>
@@ -494,7 +492,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
         {isExpanded && (
           <div className="space-y-4 mt-4">
-            {/* Add this new section for warning events */}
+            {/* Warning Events */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Warning Events:</h4>
               {session.events && session.events.length > 0 ? (
@@ -561,10 +559,9 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">SBSVS Responses:</h4>
               <div className="grid grid-cols-2 gap-2">
-                {SBSVSQuestions.map((question) => (
-                  <div key={question.id} className="bg-white p-2 rounded">
-                    <strong>{question.id === 'attention1' ? 'Attention Check:' : `Q${question.id}`}:</strong> {session.sbsvs?.responses?.[question.id] || 'N/A'}
-                    <div className="text-sm text-gray-500 mt-1">{question.text}</div>
+                {Object.entries(session.sbsvs?.responses || {}).map(([q, value]) => (
+                  <div key={q} className="bg-white p-2 rounded">
+                    <strong>{q === 'attention1' ? 'Attention Check:' : `Q${q}`}:</strong> {value}
                   </div>
                 ))}
               </div>
@@ -574,9 +571,9 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Attitude Survey:</h4>
               <div className="grid grid-cols-2 gap-2">
-                {attitudeAspects.map((aspect) => (
+                {Object.entries(session.attitudeSurvey?.responses || {}).map(([aspect, value]) => (
                   <div key={aspect} className="bg-white p-2 rounded">
-                    <strong>{aspect}:</strong> {session.attitudeSurvey?.responses?.[aspect.toLowerCase()] || 'N/A'}
+                    <strong>{aspect}:</strong> {value}
                   </div>
                 ))}
               </div>
@@ -735,10 +732,12 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
           {/* Sessions list */}
           <div className="space-y-4">
-            {Array.isArray(sessions) && sessions.length === 0 ? (
+            {!Array.isArray(sessions) ? (
+              <p className="text-center text-gray-500">Loading sessions...</p>
+            ) : sessions.length === 0 ? (
               <p className="text-center text-gray-500">No sessions found</p>
             ) : (
-              Array.isArray(sessions) && sessions.map(renderSessionData)
+              sessions.map(session => renderSessionData(session))
             )}
           </div>
         </div>
