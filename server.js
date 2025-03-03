@@ -258,12 +258,14 @@ app.get('/api/health', (req, res) => {
 // Create new session
 app.post('/api/sessions', async (req, res) => {
   try {
-    const { sessionId, stance, botPersonality } = req.body;
+    const { sessionId, stance, botPersonality, aiModel, prolificId } = req.body;
     const session = new Session({
       sessionId,
+      prolificId,
       timestamp: new Date(),
       stance,
       botPersonality,
+      aiModel,
       stanceAgreement: {}
     });
     await session.save();
@@ -364,7 +366,7 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-// Update the questionnaires endpoint to handle all data properly
+// Update the questionnaires endpoint
 app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });
@@ -375,9 +377,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     // Update each section with proper validation and timestamps
     if (req.body.demographics) {
       session.demographics = {
-        age: parseInt(req.body.demographics.age),
-        gender: req.body.demographics.gender,
-        education: req.body.demographics.education,
+        ...req.body.demographics,
         timestamp: new Date()
       };
     }
@@ -392,20 +392,9 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
 
     if (req.body.initialAssessment) {
       session.initialAssessment = {
-        interesting: parseInt(req.body.initialAssessment.interesting),
-        important: parseInt(req.body.initialAssessment.important),
-        agreement: parseInt(req.body.initialAssessment.agreement),
+        ...req.body.initialAssessment,
         timestamp: new Date()
       };
-    }
-
-    if (req.body.chat) {
-      session.chat = req.body.chat.map(msg => ({
-        messageId: msg.messageId,
-        text: msg.text,
-        sender: msg.sender,
-        timestamp: new Date(msg.timestamp)
-      }));
     }
 
     if (req.body.finalResponse) {
@@ -419,7 +408,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
 
     if (req.body.sbsvs) {
       session.sbsvs = {
-        responses: req.body.sbsvs.responses,
+        responses: new Map(Object.entries(req.body.sbsvs.responses)),
         attentionCheck: req.body.sbsvs.attentionCheck,
         timestamp: new Date()
       };
@@ -427,7 +416,7 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
 
     if (req.body.attitudeSurvey) {
       session.attitudeSurvey = {
-        responses: req.body.attitudeSurvey.responses,
+        responses: new Map(Object.entries(req.body.attitudeSurvey.responses)),
         timestamp: new Date()
       };
     }
@@ -449,6 +438,14 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
 
     // Save all updates
     await session.save();
+    
+    // Log successful save
+    console.log('Successfully saved session data:', {
+      sessionId: session.sessionId,
+      aiModel: session.aiModel,
+      dataTypes: Object.keys(req.body)
+    });
+
     res.status(200).json(session);
   } catch (error) {
     console.error('Error saving questionnaire data:', error);
@@ -507,9 +504,28 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
 
 app.delete('/api/admin/sessions/:sessionId', authenticateAdmin, async (req, res) => {
   try {
+    // First get the session to know its condition
+    const session = await Session.findOne({ sessionId: req.params.sessionId });
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Delete the session
     await Session.findOneAndDelete({ sessionId: req.params.sessionId });
-    res.status(200).json({ message: 'Session deleted successfully' });
+
+    // Decrement the counter for this condition
+    await ConditionCounter.findOneAndUpdate(
+      {
+        aiModel: session.aiModel,
+        stance: session.stance,
+        personality: session.botPersonality
+      },
+      { $inc: { count: -1 } }
+    );
+
+    res.status(200).json({ message: 'Session deleted successfully and counter updated' });
   } catch (error) {
+    console.error('Error deleting session:', error);
     res.status(500).json({ message: error.message });
   }
 });
@@ -853,6 +869,44 @@ app.post('/api/sessions/:sessionId/initialAttentionCheck', async (req, res) => {
   } catch (error) {
     console.error('Error saving initial attention check:', error);
     res.status(400).json({ message: error.message });
+  }
+});
+
+// Add this new endpoint to recalculate counters
+app.post('/api/admin/recalculateCounters', authenticateAdmin, async (req, res) => {
+  try {
+    // Reset all counters to 0
+    await ConditionCounter.updateMany({}, { count: 0 });
+
+    // Get all sessions
+    const sessions = await Session.find({});
+
+    // Count sessions for each condition
+    const counts = {};
+    sessions.forEach(session => {
+      const key = `${session.aiModel}-${session.stance}-${session.botPersonality}`;
+      counts[key] = (counts[key] || 0) + 1;
+    });
+
+    // Update counters in database
+    await Promise.all(Object.entries(counts).map(([key, count]) => {
+      const [aiModel, stance, personality] = key.split('-');
+      return ConditionCounter.findOneAndUpdate(
+        { aiModel, stance, personality },
+        { count },
+        { new: true }
+      );
+    }));
+
+    // Get updated counters
+    const updatedCounters = await ConditionCounter.find({});
+    res.json({ 
+      message: 'Counters recalculated successfully',
+      counters: updatedCounters 
+    });
+  } catch (error) {
+    console.error('Error recalculating counters:', error);
+    res.status(500).json({ message: error.message });
   }
 });
 

@@ -98,13 +98,14 @@ function MainApp() {
         setBotPersonality(personality);
         setAiModel(aiModel);
   
+        // Create session with all required data
         await axios.post(`${API_URL}/sessions`, {
           sessionId,
           prolificId,
           timestamp: new Date(),
           stance: assignedStance,
           botPersonality: personality,
-          aiModel,
+          aiModel,  // Make sure to include aiModel
           stanceAgreement: {}
         });
       } catch (error) {
@@ -288,14 +289,10 @@ function MainApp() {
 
   const saveInitialAssessment = async () => {
     try {
-      console.log('Saving initial assessment:', initialAttitudeResponses); // Debug log
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/initialAssessment`, {
-        interesting: parseInt(initialAttitudeResponses.interesting),
-        important: parseInt(initialAttitudeResponses.important),
-        agreement: parseInt(initialAttitudeResponses.agreement),
-        timestamp: new Date()
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        initialAssessment: initialAttitudeResponses
       });
-      console.log('Initial assessment saved:', response.data); // Debug log
+      console.log('Initial assessment saved successfully');
     } catch (error) {
       console.error('Error saving initial assessment:', error);
     }
@@ -318,14 +315,13 @@ function MainApp() {
 
   const saveSBSVS = async () => {
     try {
-      console.log('Saving SBSVS responses:', sbsvsResponses);
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         sbsvs: {
           responses: sbsvsResponses,
-          timestamp: new Date()
+          attentionCheck: sbsvsResponses.attentionCheck
         }
       });
-      console.log('SBSVS save response:', response.data);
+      console.log('SBSVS saved successfully');
     } catch (error) {
       console.error('Error saving SBSVS:', error);
     }
@@ -333,14 +329,12 @@ function MainApp() {
 
   const saveAttitudeSurvey = async () => {
     try {
-      console.log('Saving Attitude Survey responses:', attitudeSurveyResponses);
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         attitudeSurvey: {
-          responses: attitudeSurveyResponses,
-          timestamp: new Date()
+          responses: attitudeSurveyResponses
         }
       });
-      console.log('Attitude Survey save response:', response.data);
+      console.log('Attitude survey saved successfully');
     } catch (error) {
       console.error('Error saving attitude survey:', error);
     }
@@ -348,61 +342,51 @@ function MainApp() {
 
   const saveAlternativeUses = async () => {
     try {
-      console.log('Saving Alternative Uses responses:', autResponses); // Debug log
-      const response = await axios.post(
-        `${API_URL}/sessions/${sessionId}/alternativeUses`,
-        autResponses
-      );
-      console.log('Alternative Uses save response:', response.data); // Debug log
-      return response.data;
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        alternativeUses: autResponses
+      });
+      console.log('Alternative uses saved successfully');
     } catch (error) {
-      console.error('Error saving alternative uses:', error.response?.data || error.message);
-      throw error;
+      console.error('Error saving alternative uses:', error);
     }
   };
 
   const saveDemographics = async () => {
     try {
-      console.log('Saving demographics:', demographicResponses);
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/demographics`, demographicResponses);
-      console.log('Demographics save response:', response.data);
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        demographics: demographicResponses
+      });
+      console.log('Demographics saved successfully');
     } catch (error) {
       console.error('Error saving demographics:', error);
-      throw error;
     }
   };
 
   const savePVQ21 = async () => {
     try {
-      console.log('Saving PVQ21 responses:', pvq21Responses); // Debug log
-      const response = await axios.post(
-        `${API_URL}/sessions/${sessionId}/pvq21`,
-        {
-          responses: pvq21Responses.responses || {}
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        pvq21: {
+          responses: pvq21Responses.responses,
+          attentionCheck: pvq21Responses.attentionCheck
         }
-      );
-      console.log('PVQ21 save response:', response.data); // Debug log
-      return response.data;
+      });
+      console.log('PVQ21 saved successfully');
     } catch (error) {
-      console.error('Error saving PVQ21:', error.response?.data || error.message);
-      throw error;
+      console.error('Error saving PVQ21:', error);
     }
   };
 
   const saveStanceAgreement = async () => {
     try {
-      console.log('Saving stance agreement:', stanceAgreement);
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         stanceAgreement: {
           assigned: parseInt(stanceAgreement.assigned),
-          opposite: parseInt(stanceAgreement.opposite),
-          timestamp: new Date()
+          opposite: parseInt(stanceAgreement.opposite)
         }
       });
-      console.log('Stance agreement save response:', response.data);
+      console.log('Stance agreement saved successfully');
     } catch (error) {
       console.error('Error saving stance agreement:', error);
-      throw error;
     }
   };
 
@@ -498,12 +482,8 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 22) {
-                  try {
-                    await savePVQ21();
-                    setCurrentStep(4);
-                  } catch (error) {
-                    console.error('Failed to save PVQ21:', error);
-                  }
+                  await savePVQ21();
+                  setCurrentStep(4);
                 }
               }}
               disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22}

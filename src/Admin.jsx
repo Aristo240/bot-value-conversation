@@ -615,6 +615,20 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
     );
   };
 
+  const recalculateCounters = async () => {
+    try {
+      const response = await axios.post(
+        `${API_URL}/admin/recalculateCounters`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setConditionCounts(response.data.counters);
+      console.log('Counters recalculated:', response.data);
+    } catch (error) {
+      console.error('Error recalculating counters:', error);
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -714,7 +728,15 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
           {/* Condition counts */}
           <div className="mb-8 bg-white p-6 rounded-lg shadow">
-            <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-bold">Condition Distribution</h2>
+              <button
+                onClick={recalculateCounters}
+                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+              >
+                Recalculate Counters
+              </button>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.isArray(conditionCounts) ? (
                 conditionCounts.length > 0 ? (
