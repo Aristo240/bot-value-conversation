@@ -151,10 +151,10 @@ async function initializeCounters() {
   const counters = await ConditionCounter.find({});
   if (counters.length === 0) {
     const conditions = [
-      { aiModel: 'gemini-pro', stance: 'freedom', personality: 'creative' },
-      { aiModel: 'gemini-pro', stance: 'freedom', personality: 'conservative' },
-      { aiModel: 'gemini-pro', stance: 'safety', personality: 'creative' },
-      { aiModel: 'gemini-pro', stance: 'safety', personality: 'conservative' }
+      { aiModel: 'gemini', stance: 'freedom', personality: 'creative' },
+      { aiModel: 'gemini', stance: 'freedom', personality: 'conservative' },
+      { aiModel: 'gemini', stance: 'safety', personality: 'creative' },
+      { aiModel: 'gemini', stance: 'safety', personality: 'conservative' }
     ];
 
     await Promise.all(conditions.map(condition => 
@@ -212,8 +212,8 @@ const authenticateAdmin = async (req, res, next) => {
 // Update the nextCondition endpoint
 app.get('/api/nextCondition', async (req, res) => {
   try {
-    // Get all counters but filter for Gemini-pro only
-    const counters = await ConditionCounter.find({ aiModel: 'gemini-pro' });
+    // Get all counters but filter for Gemini only
+    const counters = await ConditionCounter.find({ aiModel: 'gemini' });
     
     if (!counters || counters.length === 0) {
       throw new Error('No condition counters found');
@@ -231,7 +231,7 @@ app.get('/api/nextCondition', async (req, res) => {
     await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
     
     res.json({
-      aiModel: 'gemini-pro',  // Changed to match the actual model name
+      aiModel: 'gemini',  // Changed back to original
       stance: selectedCondition.stance,
       personality: selectedCondition.personality
     });
