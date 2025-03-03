@@ -324,55 +324,20 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, aiModel, history } = req.body;
-    
-    // Add detailed request logging
-    console.log('Full chat request:', {
-      message,
-      stance,
-      botPersonality,
-      aiModel,
-      historyLength: history?.length,
-      hasApiKey: !!process.env.GEMINI_API_KEY
-    });
-
-    if (!process.env.GEMINI_API_KEY) {
-      console.error('Missing Gemini API key');
-      throw new Error('Gemini API key not configured');
-    }
-
-    // Log the system prompt generation inputs
-    console.log('Getting system prompt with:', {
-      stance,
-      botPersonality,
-      aiModel
-    });
-
-    // Get the system prompt
-    const promptConfig = getSystemPrompt(stance, botPersonality, aiModel);
-    
-    // Log the prompt config result
-    console.log('Prompt config result:', promptConfig);
-
-    if (!promptConfig) {
-      throw new Error(`Failed to generate system prompt for stance: ${stance}, personality: ${botPersonality}`);
-    }
+    const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
 
     // Initialize Gemini model
     const model = gemini.getGenerativeModel({ 
-      model: "gemini-pro",
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1024,
-      }
+      model: "gemini-pro"  // Simple initialization
     });
 
     // Format conversation for Gemini
-    const chatContext = `${promptConfig.systemPrompt}
+    const chatContext = `${systemPrompt}
 
 EXAMPLE INTERACTION:
-Assistant: ${promptConfig.exampleExchange.bot}
-Human: ${promptConfig.exampleExchange.user}
-Assistant: ${promptConfig.exampleExchange.bot}
+Assistant: ${exampleExchange.bot}
+Human: ${exampleExchange.user}
+Assistant: ${exampleExchange.bot}
 
 CONVERSATION HISTORY:
 ${history.map(msg => `${msg.sender === 'user' ? 'Human' : 'Assistant'}: ${msg.text}`).join('\n')}
@@ -382,40 +347,23 @@ Current Human Message: ${message}
 Assistant (remember to maintain personality and focus on stance):`;
 
     try {
-      console.log('Sending to Gemini:', chatContext);
-
       const result = await model.generateContent(chatContext);
       const response = result.response.text();
       
-      console.log('Gemini Response:', response);
-
       if (!response || response.trim().length === 0) {
         throw new Error('Empty response from Gemini');
       }
 
       res.json({ response });
     } catch (error) {
-      // More detailed error logging
-      console.error('Gemini API Error Details:', {
-        message: error.message,
-        stack: error.stack,
-        name: error.name,
-        code: error.code,
-        fullError: error
-      });
-      throw new Error(`Gemini API error: ${error.message}`);
+      console.error('Gemini Error:', error);
+      throw new Error(`Gemini error: ${error.message}`);
     }
   } catch (error) {
-    console.error('Chat Endpoint Error:', {
-      message: error.message,
-      stack: error.stack,
-      name: error.name,
-      fullError: error
-    });
+    console.error('Chat API Error:', error);
     res.status(500).json({ 
       error: 'Error generating response',
-      details: error.message,
-      stack: error.stack
+      details: error.message 
     });
   }
 });
