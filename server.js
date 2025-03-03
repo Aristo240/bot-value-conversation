@@ -324,7 +324,7 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Update the chat endpoint
+// Chat with AI models endpoint
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, aiModel, history } = req.body;
@@ -332,52 +332,41 @@ app.post('/api/chat', async (req, res) => {
     
     // Initialize Gemini model
     const model = gemini.getGenerativeModel({ 
-      model: "gemini-pro",  // Changed from gemini-1.5-pro to gemini-pro
+      model: "gemini-pro",
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 1024,
       }
-    });
-
-    // Create a chat instance
-    const chat = model.startChat({
-      history: [],
-      generationConfig: {
-        temperature: 0.7,
-        maxOutputTokens: 1024,
-      },
     });
 
     // Format conversation for Gemini
-    const formattedHistory = history.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: msg.text,
-    }));
+    const chatContext = `${systemPrompt}
 
-    // Add system prompt as first message
-    const prompt = `${systemPrompt}\n\nEXAMPLE INTERACTION:\nAssistant: ${exampleExchange.bot}\nHuman: ${exampleExchange.user}\nAssistant: ${exampleExchange.bot}\n\nRemember to maintain the assigned personality and focus on the stance.`;
+EXAMPLE INTERACTION:
+Assistant: ${exampleExchange.bot}
+Human: ${exampleExchange.user}
+Assistant: ${exampleExchange.bot}
+
+CONVERSATION HISTORY:
+${history.map(msg => `${msg.sender === 'user' ? 'Human' : 'Assistant'}: ${msg.text}`).join('\n')}
+
+Current Human Message: ${message}
+
+Assistant (remember to maintain personality and focus on stance):`;
 
     try {
-      // Send the system prompt first
-      await chat.sendMessage(prompt);
-
-      // Send the conversation history
-      for (const msg of formattedHistory) {
-        await chat.sendMessage(msg.parts);
-      }
-
-      // Send the current message and get response
-      const result = await chat.sendMessage(message);
+      const result = await model.generateContent(chatContext);
       const response = result.response.text();
       
+      // Validate response
       if (!response || response.trim().length === 0) {
         throw new Error('Empty response from Gemini');
       }
 
       res.json({ response });
     } catch (error) {
-      console.error('Gemini Chat Error:', error);
-      throw new Error(`Gemini chat error: ${error.message}`);
+      console.error('Gemini Error:', error);
+      throw new Error(`Gemini error: ${error.message}`);
     }
   } catch (error) {
     console.error('Chat API Error:', error);
