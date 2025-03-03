@@ -86,22 +86,40 @@ const createPersonalityPrompt = (currentStance, personality, wordList) => {
 };
 
 export const getSystemPrompt = (stance, personality, model = 'gemini') => {
+  console.log('getSystemPrompt input:', { stance, personality, model });
+  
   // Convert full stance text back to key
   const stanceKey = Object.keys(stances).find(key => stances[key] === stance);
+  console.log('Found stance key:', stanceKey);
   
   // Make sure we have valid stance
   if (!stanceKey || !stances[stanceKey]) {
     console.error('Invalid stance provided:', stance);
+    console.log('Available stances:', stances);
     return null;
   }
 
   const currentStance = stances[stanceKey];
   const otherStanceKey = Object.keys(stances).find(key => key !== stanceKey);
   const oppositeStance = stances[otherStanceKey];
+  
+  console.log('Stance processing:', {
+    stanceKey,
+    currentStance,
+    otherStanceKey,
+    oppositeStance
+  });
+
   const wordList = personality === 'creative' ? creativeWords : conservativeWords;
   
   const basePrompt = createBasePrompt(currentStance, oppositeStance);
   const personalityPrompt = createPersonalityPrompt(currentStance, personality, wordList);
+  
+  console.log('Generated prompts:', {
+    basePrompt,
+    personalityPrompt
+  });
+
   const exampleConversation = fewshotExamples[
     stanceKey === 'freedom' ? 'freedomOfSpeech' : 'userSafety'
   ][personality][0];

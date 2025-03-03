@@ -340,9 +340,22 @@ app.post('/api/chat', async (req, res) => {
       throw new Error('Gemini API key not configured');
     }
 
-    // Log the system prompt generation
+    // Log the system prompt generation inputs
+    console.log('Getting system prompt with:', {
+      stance,
+      botPersonality,
+      aiModel
+    });
+
+    // Get the system prompt
     const promptConfig = getSystemPrompt(stance, botPersonality, aiModel);
-    console.log('Prompt config:', promptConfig);
+    
+    // Log the prompt config result
+    console.log('Prompt config result:', promptConfig);
+
+    if (!promptConfig) {
+      throw new Error(`Failed to generate system prompt for stance: ${stance}, personality: ${botPersonality}`);
+    }
 
     // Initialize Gemini model
     const model = gemini.getGenerativeModel({ 
