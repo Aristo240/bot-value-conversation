@@ -93,9 +93,9 @@ function MainApp() {
         const conditionResponse = await axios.get(`${API_URL}/nextCondition`);
         const { aiModel, stance, personality } = conditionResponse.data;
   
-        setAiModel(aiModel);
-        setStance(stance);
-        setBotPersonality(personality);
+        // Set the specific model version
+        const modelVersion = aiModel === 'gemini' ? 'Gemini 1.5 Pro' : 'GPT-4';
+        setAiModel(modelVersion);
   
         await axios.post(`${API_URL}/sessions`, {
           sessionId,
@@ -103,7 +103,7 @@ function MainApp() {
           timestamp: new Date(),
           stance,
           botPersonality: personality,
-          aiModel,
+          aiModel: modelVersion,  // Save the specific version
           stanceAgreement: {}
         });
       } catch (error) {
