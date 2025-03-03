@@ -234,9 +234,8 @@ app.get('/api/nextCondition', async (req, res) => {
     
     await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
     
-    // Send the specific model version
     res.json({
-      aiModel: 'Gemini 1.5 Pro',  // Explicitly specify the version
+      aiModel: 'gemini',  // Changed to match the actual model name
       stance: selectedCondition.stance,
       personality: selectedCondition.personality
     });
@@ -325,49 +324,60 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Chat with AI models endpoint
+// Update the chat endpoint
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, aiModel, history } = req.body;
     const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
     
-    // Initialize Gemini model with the correct version
+    // Initialize Gemini model
     const model = gemini.getGenerativeModel({ 
-      model: "gemini-1.5-pro",  // Updated to 1.5 version
+      model: "gemini-pro",  // Changed from gemini-1.5-pro to gemini-pro
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 1024,
       }
     });
 
+    // Create a chat instance
+    const chat = model.startChat({
+      history: [],
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      },
+    });
+
     // Format conversation for Gemini
-    const chatContext = `${systemPrompt}
+    const formattedHistory = history.map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'model',
+      parts: msg.text,
+    }));
 
-EXAMPLE INTERACTION:
-Assistant: ${exampleExchange.bot}
-Human: ${exampleExchange.user}
-Assistant: ${exampleExchange.bot}
-
-CONVERSATION HISTORY:
-${history.map(msg => `${msg.sender === 'user' ? 'Human' : 'Assistant'}: ${msg.text}`).join('\n')}
-
-Current Human Message: ${message}
-
-Assistant (remember to maintain personality and focus on stance):`;
+    // Add system prompt as first message
+    const prompt = `${systemPrompt}\n\nEXAMPLE INTERACTION:\nAssistant: ${exampleExchange.bot}\nHuman: ${exampleExchange.user}\nAssistant: ${exampleExchange.bot}\n\nRemember to maintain the assigned personality and focus on the stance.`;
 
     try {
-      const result = await model.generateContent(chatContext);
+      // Send the system prompt first
+      await chat.sendMessage(prompt);
+
+      // Send the conversation history
+      for (const msg of formattedHistory) {
+        await chat.sendMessage(msg.parts);
+      }
+
+      // Send the current message and get response
+      const result = await chat.sendMessage(message);
       const response = result.response.text();
       
-      // Validate response
       if (!response || response.trim().length === 0) {
         throw new Error('Empty response from Gemini');
       }
 
       res.json({ response });
     } catch (error) {
-      console.error('Gemini Error:', error);
-      throw new Error(`Gemini error: ${error.message}`);
+      console.error('Gemini Chat Error:', error);
+      throw new Error(`Gemini chat error: ${error.message}`);
     }
   } catch (error) {
     console.error('Chat API Error:', error);
