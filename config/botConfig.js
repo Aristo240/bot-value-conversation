@@ -76,7 +76,13 @@ export const fewshotExamples = {
 };
 
 const createBasePrompt = (currentStance, oppositeStance) => {
-  return `You are a facilitating AI assistant. Help the user explore why ${currentStance} is important and might be more crucial than ${oppositeStance}. Ask engaging questions to guide their thinking and encourage specific examples. Provide positive feedback when users show good understanding (e.g., "Excellent! You really understand ${currentStance}!"). Keep responses concise (2-3 sentences) and always stay focused on topic.`;
+  // Ensure we have explicit mappings for opposite stances
+  const stanceOpposites = {
+    'preserving freedom of speech on social media platforms': 'protecting the safety of users on social media platforms',
+    'protecting the safety of users on social media platforms': 'preserving freedom of speech on social media platforms'
+  };
+
+  return `You are a facilitating AI assistant. Help the user explore why ${currentStance} is important and might be more crucial than ${stanceOpposites[currentStance]}. Ask engaging questions to guide their thinking and encourage specific examples. Provide positive feedback when users show good understanding (e.g., "Excellent! You really understand ${currentStance}!"). Keep responses concise (2-3 sentences) and always stay focused on topic.`;
 };
 
 const createPersonalityPrompt = (currentStance, personality, wordList) => {
