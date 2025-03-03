@@ -328,7 +328,11 @@ app.post('/api/chat', async (req, res) => {
 
     // Initialize Gemini model
     const model = gemini.getGenerativeModel({ 
-      model: "gemini-pro"  // Simple initialization
+      model: "gemini-pro",
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      }
     });
 
     // Format conversation for Gemini
