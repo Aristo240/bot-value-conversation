@@ -151,14 +151,10 @@ async function initializeCounters() {
   const counters = await ConditionCounter.find({});
   if (counters.length === 0) {
     const conditions = [
-      { aiModel: 'gpt', stance: 'freedom', personality: 'creative' },
-      { aiModel: 'gpt', stance: 'freedom', personality: 'conservative' },
-      { aiModel: 'gpt', stance: 'safety', personality: 'creative' },
-      { aiModel: 'gpt', stance: 'safety', personality: 'conservative' },
-      { aiModel: 'gemini', stance: 'freedom', personality: 'creative' },
-      { aiModel: 'gemini', stance: 'freedom', personality: 'conservative' },
-      { aiModel: 'gemini', stance: 'safety', personality: 'creative' },
-      { aiModel: 'gemini', stance: 'safety', personality: 'conservative' }
+      { aiModel: 'gemini-pro', stance: 'freedom', personality: 'creative' },
+      { aiModel: 'gemini-pro', stance: 'freedom', personality: 'conservative' },
+      { aiModel: 'gemini-pro', stance: 'safety', personality: 'creative' },
+      { aiModel: 'gemini-pro', stance: 'safety', personality: 'conservative' }
     ];
 
     await Promise.all(conditions.map(condition => 
@@ -216,8 +212,8 @@ const authenticateAdmin = async (req, res, next) => {
 // Update the nextCondition endpoint
 app.get('/api/nextCondition', async (req, res) => {
   try {
-    // Get all counters but filter for Gemini only
-    const counters = await ConditionCounter.find({ aiModel: 'gemini' });
+    // Get all counters but filter for Gemini-pro only
+    const counters = await ConditionCounter.find({ aiModel: 'gemini-pro' });
     
     if (!counters || counters.length === 0) {
       throw new Error('No condition counters found');
@@ -235,7 +231,7 @@ app.get('/api/nextCondition', async (req, res) => {
     await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
     
     res.json({
-      aiModel: 'gemini',  // Changed to match the actual model name
+      aiModel: 'gemini-pro',  // Changed to match the actual model name
       stance: selectedCondition.stance,
       personality: selectedCondition.personality
     });
@@ -346,9 +342,9 @@ app.post('/api/chat', async (req, res) => {
       hasApiKey: !!process.env.GEMINI_API_KEY
     });
 
-    // Initialize Gemini model
+    // Initialize Gemini model - use gemini-pro regardless of aiModel value
     const model = gemini.getGenerativeModel({ 
-      model: "gemini-pro",
+      model: "gemini-pro",  // Always use gemini-pro
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 1024,
