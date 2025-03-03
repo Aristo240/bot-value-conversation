@@ -341,11 +341,12 @@ app.post('/api/chat', async (req, res) => {
     const { message, stance, botPersonality, aiModel, history } = req.body;
     const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
     
-    // Initialize Gemini model
-    const model = gemini.getGenerativeModel({
-      model: "gemini-pro",
+    // Initialize Gemini model with the correct version
+    const model = gemini.getGenerativeModel({ 
+      model: "gemini-1.5-pro",  // Updated to 1.5 version
       generationConfig: {
-        temperature: 0.7
+        temperature: 0.7,
+        maxOutputTokens: 1024,
       }
     });
 
