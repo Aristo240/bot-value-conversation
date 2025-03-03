@@ -328,15 +328,22 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, aiModel, history } = req.body;
+    
+    // Debug: Check if we have an API key
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('Missing Gemini API key');
+      throw new Error('Gemini API key not configured');
+    }
+
     const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
     
-    // Add debug logging
     console.log('Chat Request:', {
       message,
       stance,
       botPersonality,
       aiModel,
-      historyLength: history?.length
+      historyLength: history?.length,
+      hasApiKey: !!process.env.GEMINI_API_KEY
     });
 
     // Initialize Gemini model
@@ -364,27 +371,34 @@ Current Human Message: ${message}
 Assistant (remember to maintain personality and focus on stance):`;
 
     try {
-      // Add debug logging
       console.log('Sending to Gemini:', chatContext);
 
       const result = await model.generateContent(chatContext);
       const response = result.response.text();
       
-      // Add debug logging
       console.log('Gemini Response:', response);
 
-      // Validate response
       if (!response || response.trim().length === 0) {
         throw new Error('Empty response from Gemini');
       }
 
       res.json({ response });
     } catch (error) {
-      console.error('Gemini Error:', error);
+      // More detailed error logging
+      console.error('Gemini Error Details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name,
+        code: error.code
+      });
       throw new Error(`Gemini error: ${error.message}`);
     }
   } catch (error) {
-    console.error('Chat API Error:', error);
+    console.error('Chat API Error:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({ 
       error: 'Error generating response',
       details: error.message 
