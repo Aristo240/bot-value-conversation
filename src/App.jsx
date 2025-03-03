@@ -91,19 +91,20 @@ function MainApp() {
       try {
         // Get the next condition from the server
         const conditionResponse = await axios.get(`${API_URL}/nextCondition`);
-        const { aiModel, stance, personality } = conditionResponse.data;
+        const { aiModel, stance: assignedStance, personality } = conditionResponse.data;
   
-        // Set the specific model version
-        const modelVersion = aiModel === 'gemini' ? 'Gemini 1.5 Pro' : 'GPT-4';
-        setAiModel(modelVersion);
+        // Set the stance and other values
+        setStance(assignedStance);
+        setBotPersonality(personality);
+        setAiModel(aiModel);
   
         await axios.post(`${API_URL}/sessions`, {
           sessionId,
           prolificId,
           timestamp: new Date(),
-          stance,
+          stance: assignedStance,
           botPersonality: personality,
-          aiModel: modelVersion,  // Save the specific version
+          aiModel,
           stanceAgreement: {}
         });
       } catch (error) {
@@ -567,7 +568,7 @@ function MainApp() {
               <h2 className="text-2xl font-bold mb-4">Your Assigned Stance</h2>
               <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <p className="text-lg font-bold text-blue-800">
-                {stances[stance]}
+                  {stance && stances[stance]}
                 </p>
               </div>
             </div>
@@ -575,7 +576,7 @@ function MainApp() {
             <div className="mt-8">
               <h2 className="text-2xl font-bold mb-6">Initial Assessment</h2>
               <InitialAssessment
-                stance={stances[stance]}
+                stance={stance && stances[stance]}
                 responses={initialAttitudeResponses}
                 setResponses={setInitialAttitudeResponses}
               />

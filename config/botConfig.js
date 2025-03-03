@@ -86,6 +86,12 @@ const createPersonalityPrompt = (currentStance, personality, wordList) => {
 };
 
 export const getSystemPrompt = (stance, personality, model = 'gpt') => {
+  // Make sure we have valid stance
+  if (!stance || !stances[stance]) {
+    console.error('Invalid stance provided:', stance);
+    return null;
+  }
+
   const currentStance = stances[stance];
   const otherStanceKey = Object.keys(stances).find(key => key !== stance);
   const oppositeStance = stances[otherStanceKey];
