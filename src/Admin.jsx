@@ -132,18 +132,24 @@ function Admin() {
     setIsLoading(true);
 
     try {
-      // Create base64 encoded credentials
       const credentials = btoa(`${username}:${password}`);
       
-      // Test the credentials with a request
-      const response = await axios.get(`${API_URL}/admin/sessions`, {
-        headers: { Authorization: `Bearer ${credentials}` }
-      });
+      // Fetch both sessions and counts
+      const [sessionsResponse, countsResponse] = await Promise.all([
+        axios.get(`${API_URL}/admin/sessions`, {
+          headers: { Authorization: `Bearer ${credentials}` }
+        }),
+        axios.get(`${API_URL}/admin/conditionCounts`, {
+          headers: { Authorization: `Bearer ${credentials}` }
+        })
+      ]);
 
-      if (response.status === 200) {
+      if (sessionsResponse.status === 200) {
         localStorage.setItem('adminToken', credentials);
+        setToken(credentials);
         setIsAuthenticated(true);
-        setSessions(response.data);
+        setSessions(sessionsResponse.data);
+        setConditionCounts(countsResponse.data || []);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -459,9 +465,11 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               })}
               className="border rounded px-2 py-1"
             >
-              <option value="csv">CSV</option>
-              <option value="json">JSON</option>
-              <option value="txt">TXT</option>
+              {fileTypes && fileTypes.map((type) => (
+                <option key={type.value} value={type.value}>
+                  {type.label}
+                </option>
+              ))}
             </select>
             <button
               onClick={() => downloadSession(session, downloadType[session.sessionId] || 'csv')}
@@ -680,7 +688,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
                 onChange={(e) => setSelectedFileType(e.target.value)}
                 className="p-2 border rounded"
               >
-                {fileTypes.map((type) => (
+                {fileTypes && fileTypes.map((type) => (
                   <option key={type.value} value={type.value}>
                     {type.label}
                   </option>
@@ -699,28 +707,38 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
           <div className="mb-8 bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {Array.isArray(conditionCounts) && conditionCounts.map((condition) => (
-                <div
-                  key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
-                  className="p-4 bg-gray-50 rounded-lg"
-                >
-                  <p>Model: {condition.aiModel}</p>
-                  <p>Stance: {condition.stance}</p>
-                  <p>Personality: {condition.personality}</p>
-                  <p className="text-lg font-bold text-blue-600">
-                    Count: {condition.count}
-                  </p>
-                </div>
-              ))}
+              {Array.isArray(conditionCounts) ? (
+                conditionCounts.length > 0 ? (
+                  conditionCounts.map((condition) => (
+                    condition && (
+                      <div
+                        key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
+                        className="p-4 bg-gray-50 rounded-lg"
+                      >
+                        <p>Model: {condition?.aiModel}</p>
+                        <p>Stance: {condition?.stance}</p>
+                        <p>Personality: {condition?.personality}</p>
+                        <p className="text-lg font-bold text-blue-600">
+                          Count: {condition?.count}
+                        </p>
+                      </div>
+                    )
+                  ))
+                ) : (
+                  <p>No condition data available</p>
+                )
+              ) : (
+                <p>Loading condition data...</p>
+              )}
             </div>
           </div>
 
           {/* Sessions list */}
           <div className="space-y-4">
-            {sessions.length === 0 ? (
+            {Array.isArray(sessions) && sessions.length === 0 ? (
               <p className="text-center text-gray-500">No sessions found</p>
             ) : (
-              sessions.map(renderSessionData)
+              Array.isArray(sessions) && sessions.map(renderSessionData)
             )}
           </div>
         </div>
