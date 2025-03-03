@@ -85,22 +85,25 @@ const createPersonalityPrompt = (currentStance, personality, wordList) => {
     : `Be traditional and structured, fostering systematic thinking about why ${currentStance} is important. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response.`;
 };
 
-export const getSystemPrompt = (stance, personality, model = 'gpt') => {
+export const getSystemPrompt = (stance, personality, model = 'gemini') => {
+  // Convert full stance text back to key
+  const stanceKey = Object.keys(stances).find(key => stances[key] === stance);
+  
   // Make sure we have valid stance
-  if (!stance || !stances[stance]) {
+  if (!stanceKey || !stances[stanceKey]) {
     console.error('Invalid stance provided:', stance);
     return null;
   }
 
-  const currentStance = stances[stance];
-  const otherStanceKey = Object.keys(stances).find(key => key !== stance);
+  const currentStance = stances[stanceKey];
+  const otherStanceKey = Object.keys(stances).find(key => key !== stanceKey);
   const oppositeStance = stances[otherStanceKey];
   const wordList = personality === 'creative' ? creativeWords : conservativeWords;
   
   const basePrompt = createBasePrompt(currentStance, oppositeStance);
   const personalityPrompt = createPersonalityPrompt(currentStance, personality, wordList);
   const exampleConversation = fewshotExamples[
-    stance.includes('freedom') ? 'freedomOfSpeech' : 'userSafety'
+    stanceKey === 'freedom' ? 'freedomOfSpeech' : 'userSafety'
   ][personality][0];
 
   if (model === 'gpt') {
