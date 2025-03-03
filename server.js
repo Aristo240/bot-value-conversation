@@ -199,7 +199,7 @@ const authenticateAdmin = async (req, res, next) => {
     }
 
     const token = authHeader.split(' ')[1];
-    const [username, password] = atob(token).split(':');
+    const [username, password] = Buffer.from(token, 'base64').toString().split(':');
 
     if (username === process.env.ADMIN_USERNAME && 
         password === process.env.ADMIN_PASSWORD) {
@@ -208,6 +208,7 @@ const authenticateAdmin = async (req, res, next) => {
       res.status(401).json({ message: 'Invalid credentials' });
     }
   } catch (error) {
+    console.error('Authentication error:', error);
     res.status(401).json({ message: 'Authentication failed' });
   }
 };
@@ -504,27 +505,10 @@ app.post('/api/sessions/:sessionId/stanceAgreement', async (req, res) => {
   }
 });
 
-app.post('/api/admin/sessions', authenticateAdmin, async (req, res) => {
+app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
   try {
     const sessions = await Session.find()
       .sort({ timestamp: -1 })
-      .select({
-        sessionId: 1,
-        timestamp: 1,
-        stance: 1,
-        botPersonality: 1,
-        aiModel: 1,
-        demographics: 1,
-        pvq21: 1,
-        initialAssessment: 1,
-        chat: 1,
-        finalResponse: 1,
-        sbsvs: 1,
-        attitudeSurvey: 1,
-        stanceAgreement: 1,
-        alternativeUses: 1,
-        events: 1
-      })
       .lean()
       .exec();
 

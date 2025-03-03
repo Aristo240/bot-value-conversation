@@ -96,19 +96,23 @@ function Admin() {
     const autoLogin = async () => {
       setIsLoading(true);
       try {
-        const credentials = btoa(`${process.env.REACT_APP_ADMIN_USERNAME}:${process.env.REACT_APP_ADMIN_PASSWORD}`);
-        
+        const storedToken = localStorage.getItem('adminToken');
+        if (!storedToken) {
+          setIsAuthenticated(false);
+          setIsLoading(false);
+          return;
+        }
+
         const [sessionsResponse, countsResponse] = await Promise.all([
           axios.get(`${API_URL}/admin/sessions`, {
-            headers: { Authorization: `Bearer ${credentials}` }
+            headers: { Authorization: `Bearer ${storedToken}` }
           }),
           axios.get(`${API_URL}/admin/conditionCounts`, {
-            headers: { Authorization: `Bearer ${credentials}` }
+            headers: { Authorization: `Bearer ${storedToken}` }
           })
         ]);
 
         if (sessionsResponse.status === 200) {
-          localStorage.setItem('adminToken', credentials);
           setIsAuthenticated(true);
           setSessions(sessionsResponse.data);
           setConditionCounts(countsResponse.data || []);
@@ -134,19 +138,26 @@ function Admin() {
     try {
       const credentials = btoa(`${username}:${password}`);
       
-      // Fetch both sessions and counts
-      const [sessionsResponse, countsResponse] = await Promise.all([
-        axios.get(`${API_URL}/admin/sessions`, {
-          headers: { Authorization: `Bearer ${credentials}` }
-        }),
-        axios.get(`${API_URL}/admin/conditionCounts`, {
-          headers: { Authorization: `Bearer ${credentials}` }
-        })
-      ]);
+      // First verify login credentials
+      const loginResponse = await axios.post(`${API_URL}/admin/login`, {
+        username,
+        password
+      });
 
-      if (sessionsResponse.status === 200) {
+      if (loginResponse.status === 200) {
         localStorage.setItem('adminToken', credentials);
         setToken(credentials);
+
+        // Then fetch data with the new token
+        const [sessionsResponse, countsResponse] = await Promise.all([
+          axios.get(`${API_URL}/admin/sessions`, {
+            headers: { Authorization: `Bearer ${credentials}` }
+          }),
+          axios.get(`${API_URL}/admin/conditionCounts`, {
+            headers: { Authorization: `Bearer ${credentials}` }
+          })
+        ]);
+
         setIsAuthenticated(true);
         setSessions(sessionsResponse.data);
         setConditionCounts(countsResponse.data || []);
