@@ -283,16 +283,16 @@ function Admin() {
   const convertToCSV = (sessions) => {
     const headers = [
       // Prolific standard fields
-      'Participant id',          // Prolific ID
-      'Started datetime',        // Session start time
-      'Completed datetime',      // Session end time
-      'Status',                  // Completion status
-      'Session id',             // Our session ID
+      'Participant id',          
+      'Started datetime',        
+      'Completed datetime',      
+      'Status',                  
+      'Session id',             
       
       // Study-specific fields
+      'AI_Model',               // Moved AI_Model up for better visibility
       'Stance',
       'Bot_Personality',
-      'AI_Model',
       // Demographics
       'Age',
       'Gender',
@@ -337,15 +337,15 @@ function Admin() {
       
       const row = [
         session.prolificId || '',
-        session.timestamp || '',  // Start time
-        session.finalResponse?.timestamp || '', // End time
+        session.timestamp || '',
+        session.finalResponse?.timestamp || '',
         isComplete,
         session.sessionId,
         
         // Study-specific data
-        session.stance,
-        session.botPersonality,
-        session.aiModel,
+        session.aiModel || '',
+        session.stance || '',
+        session.botPersonality || '',
         // Demographics
         session.demographics?.age || '',
         session.demographics?.gender || '',
@@ -442,6 +442,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
   const renderSessionData = (session) => {
     const isExpanded = expandedSession === session.sessionId;
+    const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
 
     const formatWarningEvents = (events) => {
       if (!events || !Array.isArray(events)) return [];
@@ -457,13 +458,13 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
           <div>
             <h3 className="text-lg font-bold">Participant ID: {session.prolificId || 'N/A'}</h3>
             <p>Session ID: {session.sessionId}</p>
-            <p>Status: {session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW'}</p>
+            <p>Status: {isComplete}</p>
             <p>Started: {new Date(session.timestamp).toLocaleString()}</p>
             <p>Completed: {session.finalResponse?.timestamp ? 
                 new Date(session.finalResponse.timestamp).toLocaleString() : 'Not completed'}</p>
             <p>Stance: {session.stance}</p>
             <p>Bot Personality: {session.botPersonality}</p>
-            <p>AI Model: {session.aiModel}</p>
+            <p className="font-medium text-blue-600">AI Model: {session.aiModel}</p>
           </div>
           <div className="flex gap-2">
             <select
