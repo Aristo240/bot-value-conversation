@@ -330,6 +330,15 @@ app.post('/api/chat', async (req, res) => {
     const { message, stance, botPersonality, aiModel, history } = req.body;
     const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
     
+    // Add debug logging
+    console.log('Chat Request:', {
+      message,
+      stance,
+      botPersonality,
+      aiModel,
+      historyLength: history?.length
+    });
+
     // Initialize Gemini model
     const model = gemini.getGenerativeModel({ 
       model: "gemini-pro",
@@ -355,9 +364,15 @@ Current Human Message: ${message}
 Assistant (remember to maintain personality and focus on stance):`;
 
     try {
+      // Add debug logging
+      console.log('Sending to Gemini:', chatContext);
+
       const result = await model.generateContent(chatContext);
       const response = result.response.text();
       
+      // Add debug logging
+      console.log('Gemini Response:', response);
+
       // Validate response
       if (!response || response.trim().length === 0) {
         throw new Error('Empty response from Gemini');

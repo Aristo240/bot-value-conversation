@@ -163,6 +163,15 @@ function MainApp() {
       setIsTyping(true);
       if (!isTimerActive) setIsTimerActive(true);
 
+      // Add debug logging
+      console.log('Sending chat request:', {
+        message,
+        stance: stances[stance],
+        botPersonality,
+        aiModel,
+        historyLength: messages.length
+      });
+
       const response = await axios.post(`${API_URL}/chat`, {
         message,
         stance: stances[stance],
