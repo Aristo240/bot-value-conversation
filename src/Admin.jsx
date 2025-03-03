@@ -79,23 +79,39 @@ function Admin() {
     { value: 'alternativeUses', label: 'Alternative Uses' }
   ];
 
-  // Modify the useEffect for auto-login
+  // Add a function to fetch condition counts
+  const fetchConditionCounts = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/admin/conditionCounts`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setConditionCounts(response.data || []);
+    } catch (error) {
+      console.error('Error fetching condition counts:', error);
+    }
+  };
+
+  // Update the useEffect to fetch both sessions and condition counts
   useEffect(() => {
     const autoLogin = async () => {
       setIsLoading(true);
       try {
-        // Create base64 encoded credentials from environment variables
         const credentials = btoa(`${process.env.REACT_APP_ADMIN_USERNAME}:${process.env.REACT_APP_ADMIN_PASSWORD}`);
         
-        // Test the credentials with a request
-        const response = await axios.get(`${API_URL}/admin/sessions`, {
-          headers: { Authorization: `Bearer ${credentials}` }
-        });
+        const [sessionsResponse, countsResponse] = await Promise.all([
+          axios.get(`${API_URL}/admin/sessions`, {
+            headers: { Authorization: `Bearer ${credentials}` }
+          }),
+          axios.get(`${API_URL}/admin/conditionCounts`, {
+            headers: { Authorization: `Bearer ${credentials}` }
+          })
+        ]);
 
-        if (response.status === 200) {
+        if (sessionsResponse.status === 200) {
           localStorage.setItem('adminToken', credentials);
           setIsAuthenticated(true);
-          setSessions(response.data);
+          setSessions(sessionsResponse.data);
+          setConditionCounts(countsResponse.data || []);
         }
       } catch (error) {
         console.error('Auto-login error:', error);
@@ -107,9 +123,8 @@ function Admin() {
       }
     };
 
-    // Try auto-login first
     autoLogin();
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -142,12 +157,18 @@ function Admin() {
 
   const fetchData = async (token) => {
     try {
-      const response = await axios.get(`${API_URL}/admin/sessions`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setSessions(response.data);
+      const [sessionsResponse, countsResponse] = await Promise.all([
+        axios.get(`${API_URL}/admin/sessions`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        axios.get(`${API_URL}/admin/conditionCounts`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      setSessions(sessionsResponse.data);
+      setConditionCounts(countsResponse.data || []);
     } catch (error) {
-      console.error('Error fetching sessions:', error);
+      console.error('Error fetching data:', error);
       if (error.response?.status === 401) {
         setIsAuthenticated(false);
         localStorage.removeItem('adminToken');
@@ -678,7 +699,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
           <div className="mb-8 bg-white p-6 rounded-lg shadow">
             <h2 className="text-xl font-bold mb-4">Condition Distribution</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {conditionCounts.map((condition) => (
+              {Array.isArray(conditionCounts) && conditionCounts.map((condition) => (
                 <div
                   key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
                   className="p-4 bg-gray-50 rounded-lg"
