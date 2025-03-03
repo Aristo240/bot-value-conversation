@@ -325,15 +325,8 @@ app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, aiModel, history } = req.body;
     
-    // Debug: Check if we have an API key
-    if (!process.env.GEMINI_API_KEY) {
-      console.error('Missing Gemini API key');
-      throw new Error('Gemini API key not configured');
-    }
-
-    const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, aiModel);
-    
-    console.log('Chat Request:', {
+    // Add detailed request logging
+    console.log('Full chat request:', {
       message,
       stance,
       botPersonality,
@@ -342,9 +335,18 @@ app.post('/api/chat', async (req, res) => {
       hasApiKey: !!process.env.GEMINI_API_KEY
     });
 
-    // Initialize Gemini model - use gemini-pro regardless of aiModel value
+    if (!process.env.GEMINI_API_KEY) {
+      console.error('Missing Gemini API key');
+      throw new Error('Gemini API key not configured');
+    }
+
+    // Log the system prompt generation
+    const promptConfig = getSystemPrompt(stance, botPersonality, aiModel);
+    console.log('Prompt config:', promptConfig);
+
+    // Initialize Gemini model
     const model = gemini.getGenerativeModel({ 
-      model: "gemini-pro",  // Always use gemini-pro
+      model: "gemini-pro",
       generationConfig: {
         temperature: 0.7,
         maxOutputTokens: 1024,
@@ -352,12 +354,12 @@ app.post('/api/chat', async (req, res) => {
     });
 
     // Format conversation for Gemini
-    const chatContext = `${systemPrompt}
+    const chatContext = `${promptConfig.systemPrompt}
 
 EXAMPLE INTERACTION:
-Assistant: ${exampleExchange.bot}
-Human: ${exampleExchange.user}
-Assistant: ${exampleExchange.bot}
+Assistant: ${promptConfig.exampleExchange.bot}
+Human: ${promptConfig.exampleExchange.user}
+Assistant: ${promptConfig.exampleExchange.bot}
 
 CONVERSATION HISTORY:
 ${history.map(msg => `${msg.sender === 'user' ? 'Human' : 'Assistant'}: ${msg.text}`).join('\n')}
@@ -381,23 +383,26 @@ Assistant (remember to maintain personality and focus on stance):`;
       res.json({ response });
     } catch (error) {
       // More detailed error logging
-      console.error('Gemini Error Details:', {
+      console.error('Gemini API Error Details:', {
         message: error.message,
         stack: error.stack,
         name: error.name,
-        code: error.code
+        code: error.code,
+        fullError: error
       });
-      throw new Error(`Gemini error: ${error.message}`);
+      throw new Error(`Gemini API error: ${error.message}`);
     }
   } catch (error) {
-    console.error('Chat API Error:', {
+    console.error('Chat Endpoint Error:', {
       message: error.message,
       stack: error.stack,
-      name: error.name
+      name: error.name,
+      fullError: error
     });
     res.status(500).json({ 
       error: 'Error generating response',
-      details: error.message 
+      details: error.message,
+      stack: error.stack
     });
   }
 });
