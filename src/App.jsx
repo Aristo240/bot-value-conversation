@@ -39,9 +39,20 @@ const getInitialText = (assignedStance) => {
   return `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. A highly debated issue is the balance between ${firstStance}, versus ${secondStance}. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
 };
 
+// Add these utility functions at the top of the file
+const getUrlParams = () => {
+  const params = new URLSearchParams(window.location.search);
+  return {
+    prolificId: params.get('PROLIFIC_PID'),
+    studyId: params.get('STUDY_ID'),
+    sessionId: params.get('SESSION_ID'),
+    isDev: params.get('dev') === 'true'
+  };
+};
+
 // Main experiment component
 function MainApp() {
-  const [sessionId] = useState(uuidv4());
+  const [sessionId, setSessionId] = useState(null);
   const [prolificId, setProlificId] = useState(null);
   const [currentStep, setCurrentStep] = useState(1);
   const [stance, setStance] = useState('');
@@ -73,17 +84,34 @@ function MainApp() {
   const [isRobot, setIsRobot] = useState(false);
   const [attentionCheckAttempts, setAttentionCheckAttempts] = useState(0);
 
+  // Add new state for study parameters
+  const [studyId, setStudyId] = useState(null);
+  const [studySessionId, setStudySessionId] = useState(null);
+
   useEffect(() => {
-    // Get Prolific ID from URL parameters
-    const params = new URLSearchParams(window.location.search);
-    const pid = params.get('PROLIFIC_PID');
-    const isDev = params.get('dev') === 'true';
+    const { prolificId, studyId, sessionId: studySessionId, isDev } = getUrlParams();
     
-    if (pid) {
-      setProlificId(pid);
+    // Set the session ID - either from Prolific or generate new one
+    const newSessionId = studySessionId || uuidv4();
+    setSessionId(newSessionId);
+    
+    // Handle Prolific ID
+    if (prolificId) {
+      setProlificId(prolificId);
+      setStudyId(studyId);
+      setStudySessionId(studySessionId);
     } else if (isDev) {
       setProlificId('DEV_TEST_ID');
     }
+
+    // Log the parameters for debugging
+    console.log('URL Parameters:', {
+      prolificId,
+      studyId,
+      studySessionId,
+      isDev,
+      newSessionId
+    });
   }, []);
 
   useEffect(() => {
@@ -1034,13 +1062,27 @@ function MainApp() {
     );
   }
 
-  if (!prolificId && !window.location.search.includes('dev=true')) {
+  if (!sessionId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold mb-4">Loading...</h2>
+          <p className="text-gray-600">Please wait while we initialize your session.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!prolificId && !getUrlParams().isDev) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Access Error</h2>
           <p className="mb-4">
             This study must be accessed through Prolific. Please return to Prolific and click the study link there.
+          </p>
+          <p className="text-sm text-gray-500">
+            Missing Prolific ID parameter. If you believe this is an error, please contact the researcher.
           </p>
         </div>
       </div>

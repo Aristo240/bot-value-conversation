@@ -459,6 +459,8 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
             <h3 className="text-lg font-bold">Participant ID: {session.prolificId || 'N/A'}</h3>
             <p>Session ID: {session.sessionId}</p>
             <p>Status: {isComplete}</p>
+            <p>Study ID: {session.studyId || 'N/A'}</p>
+            <p>Study Session ID: {session.studySessionId || 'N/A'}</p>
             <p>Started: {new Date(session.timestamp).toLocaleString()}</p>
             <p>Completed: {session.finalResponse?.timestamp ? 
                 new Date(session.finalResponse.timestamp).toLocaleString() : 'Not completed'}</p>

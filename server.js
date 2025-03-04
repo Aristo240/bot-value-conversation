@@ -32,6 +32,8 @@ app.use(express.static(path.join(__dirname, 'dist')));
 const SessionSchema = new mongoose.Schema({
   sessionId: { type: String, required: true, unique: true },
   prolificId: { type: String },
+  studyId: { type: String },
+  studySessionId: { type: String },
   timestamp: { type: Date, default: Date.now },
   completedTimestamp: { type: Date },
   status: { 
@@ -258,17 +260,40 @@ app.get('/api/health', (req, res) => {
 // Create new session
 app.post('/api/sessions', async (req, res) => {
   try {
-    const { sessionId, stance, botPersonality, aiModel, prolificId } = req.body;
-    const session = new Session({
+    const { sessionId, stance, botPersonality, aiModel, prolificId, studyId, studySessionId } = req.body;
+    
+    // Check if a session with this ID already exists
+    let session = await Session.findOne({ sessionId });
+    
+    if (session) {
+      // If session exists, update it with any new information
+      session.prolificId = prolificId || session.prolificId;
+      session.studyId = studyId || session.studyId;
+      session.studySessionId = studySessionId || session.studySessionId;
+      await session.save();
+    } else {
+      // Create new session
+      session = new Session({
+        sessionId,
+        prolificId,
+        studyId,
+        studySessionId,
+        timestamp: new Date(),
+        stance,
+        botPersonality,
+        aiModel,
+        stanceAgreement: {}
+      });
+      await session.save();
+    }
+    
+    console.log('Session created/updated:', {
       sessionId,
       prolificId,
-      timestamp: new Date(),
-      stance,
-      botPersonality,
-      aiModel,
-      stanceAgreement: {}
+      studyId,
+      studySessionId
     });
-    await session.save();
+    
     res.status(201).json(session);
   } catch (error) {
     console.error('Error creating session:', error);
