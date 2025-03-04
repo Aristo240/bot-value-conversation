@@ -604,10 +604,16 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               <div className="space-y-2">
                 {(session.alternativeUses || []).map((use, i) => (
                   <div key={i} className="bg-white p-2 rounded">
-                    {use.text}
+                    <p>{use.text || use.idea}</p>
+                    <p className="text-sm text-gray-500">
+                      {new Date(use.timestamp).toLocaleString()}
+                    </p>
                   </div>
                 ))}
               </div>
+              {(!session.alternativeUses || session.alternativeUses.length === 0) && (
+                <p className="text-gray-500">No alternative uses recorded</p>
+              )}
             </div>
           </div>
         )}

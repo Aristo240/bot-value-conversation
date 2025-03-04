@@ -430,20 +430,20 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
 
     if (req.body.alternativeUses) {
-      session.alternativeUses = req.body.alternativeUses.map(response => ({
-        text: response,
-        timestamp: new Date()
+      session.alternativeUses = req.body.alternativeUses.map(use => ({
+        text: use.idea || use.text,
+        timestamp: use.timestamp ? new Date(use.timestamp) : new Date()
       }));
     }
 
     // Save all updates
     await session.save();
     
-    // Log successful save
     console.log('Successfully saved session data:', {
       sessionId: session.sessionId,
       aiModel: session.aiModel,
-      dataTypes: Object.keys(req.body)
+      dataTypes: Object.keys(req.body),
+      alternativeUsesCount: req.body.alternativeUses?.length
     });
 
     res.status(200).json(session);

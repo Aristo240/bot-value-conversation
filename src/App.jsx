@@ -342,10 +342,16 @@ function MainApp() {
 
   const saveAlternativeUses = async () => {
     try {
+      // Format the responses with timestamps if they don't have them
+      const formattedResponses = autResponses.map(response => ({
+        idea: response.idea || response,
+        timestamp: response.timestamp || new Date()
+      }));
+
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        alternativeUses: autResponses
+        alternativeUses: formattedResponses
       });
-      console.log('Alternative uses saved successfully');
+      console.log('Alternative uses saved successfully:', formattedResponses);
     } catch (error) {
       console.error('Error saving alternative uses:', error);
     }
