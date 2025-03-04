@@ -146,15 +146,16 @@ const ConditionCounterSchema = new mongoose.Schema({
 const Session = mongoose.model('Session', SessionSchema);
 const ConditionCounter = mongoose.model('ConditionCounter', ConditionCounterSchema);
 
-// Initialize condition counters
+// Initialize condition counters - update to use Gemini instead of GPT
 async function initializeCounters() {
   const counters = await ConditionCounter.find({});
   if (counters.length === 0) {
     const conditions = [
-      { aiModel: 'gpt', stance: 'freedom', personality: 'creative' },
-      { aiModel: 'gpt', stance: 'freedom', personality: 'conservative' },
-      { aiModel: 'gpt', stance: 'safety', personality: 'creative' },
-      { aiModel: 'gpt', stance: 'safety', personality: 'conservative' }
+      // Change to use Gemini instead of GPT
+      { aiModel: 'gemini', stance: 'freedom', personality: 'creative' },
+      { aiModel: 'gemini', stance: 'freedom', personality: 'conservative' },
+      { aiModel: 'gemini', stance: 'safety', personality: 'creative' },
+      { aiModel: 'gemini', stance: 'safety', personality: 'conservative' }
     ];
 
     await Promise.all(conditions.map(condition => 
@@ -209,11 +210,11 @@ const authenticateAdmin = async (req, res, next) => {
   }
 };
 
-// Update the nextCondition endpoint
+// Update the nextCondition endpoint to use Gemini instead of GPT
 app.get('/api/nextCondition', async (req, res) => {
   try {
-    // Get all counters but force GPT usage
-    const counters = await ConditionCounter.find({ aiModel: 'gpt' });
+    // Change to get Gemini counters instead of GPT
+    const counters = await ConditionCounter.find({ aiModel: 'gemini' });
     
     if (!counters || counters.length === 0) {
       throw new Error('No condition counters found');
@@ -231,7 +232,7 @@ app.get('/api/nextCondition', async (req, res) => {
     await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
     
     res.json({
-      aiModel: 'gpt',  // Force GPT model
+      aiModel: 'gemini',  // Change to use Gemini
       stance: selectedCondition.stance,
       personality: selectedCondition.personality
     });
@@ -322,40 +323,48 @@ app.post('/api/sessions/:sessionId/messages', async (req, res) => {
   }
 });
 
-// Chat with AI models endpoint
+// Update the chat endpoint to use Gemini
 app.post('/api/chat', async (req, res) => {
   try {
     const { message, stance, botPersonality, history } = req.body;
-    const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, 'gpt'); // Force GPT
+    const { systemPrompt, exampleExchange } = getSystemPrompt(stance, botPersonality, 'gemini');
+
+    // Initialize Gemini model
+    const model = gemini.getGenerativeModel({ 
+      model: "gemini-pro",
+      generationConfig: {
+        temperature: 0.7,
+        maxOutputTokens: 1024,
+      }
+    });
+
+    // Format conversation for Gemini
+    const chatContext = `${systemPrompt}
+
+EXAMPLE INTERACTION:
+Assistant: ${exampleExchange.bot}
+Human: ${exampleExchange.user}
+Assistant: ${exampleExchange.bot}
+
+CONVERSATION HISTORY:
+${history.map(msg => `${msg.sender === 'user' ? 'Human' : 'Assistant'}: ${msg.text}`).join('\n')}
+
+Current Human Message: ${message}
+
+Assistant (remember to maintain personality and focus on stance):`;
 
     try {
-      const completion = await openai.chat.completions.create({
-        model: "gpt-4",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "assistant", content: exampleExchange.bot },
-          { role: "user", content: exampleExchange.user },
-          { role: "assistant", content: exampleExchange.bot },
-          ...history.map(msg => ({
-            role: msg.sender === 'user' ? 'user' : 'assistant',
-            content: msg.text
-          })),
-          { role: "user", content: message }
-        ],
-        temperature: 0.7,
-        max_tokens: 1024
-      });
-
-      const response = completion.choices[0].message.content;
+      const result = await model.generateContent(chatContext);
+      const response = result.response.text();
       
       if (!response || response.trim().length === 0) {
-        throw new Error('Empty response from GPT');
+        throw new Error('Empty response from Gemini');
       }
 
       res.json({ response });
     } catch (error) {
-      console.error('GPT Error:', error);
-      throw new Error(`GPT error: ${error.message}`);
+      console.error('Gemini Error:', error);
+      throw new Error(`Gemini error: ${error.message}`);
     }
   } catch (error) {
     console.error('Chat API Error:', error);
