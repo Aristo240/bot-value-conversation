@@ -290,26 +290,32 @@ function MainApp() {
   const saveInitialAssessment = async () => {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        initialAssessment: initialAttitudeResponses
+        initialAssessment: {
+          interesting: parseInt(initialAttitudeResponses.interesting),
+          important: parseInt(initialAttitudeResponses.important),
+          agreement: parseInt(initialAttitudeResponses.agreement),
+          timestamp: new Date()
+        }
       });
       console.log('Initial assessment saved successfully');
     } catch (error) {
       console.error('Error saving initial assessment:', error);
+      throw error;
     }
   };
 
   const saveFinalResponse = async () => {
     try {
-      console.log('Saving final response:', userResponse);
-      const response = await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         finalResponse: {
           text: userResponse,
           timestamp: new Date()
         }
       });
-      console.log('Final response save response:', response.data);
+      console.log('Final response saved successfully');
     } catch (error) {
       console.error('Error saving final response:', error);
+      throw error;
     }
   };
 
@@ -318,12 +324,14 @@ function MainApp() {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         sbsvs: {
           responses: sbsvsResponses,
-          attentionCheck: sbsvsResponses.attentionCheck
+          attentionCheck: sbsvsResponses.attentionCheck,
+          timestamp: new Date()
         }
       });
       console.log('SBSVS saved successfully');
     } catch (error) {
       console.error('Error saving SBSVS:', error);
+      throw error;
     }
   };
 
@@ -331,40 +339,48 @@ function MainApp() {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         attitudeSurvey: {
-          responses: attitudeSurveyResponses
+          responses: attitudeSurveyResponses,
+          timestamp: new Date()
         }
       });
       console.log('Attitude survey saved successfully');
     } catch (error) {
       console.error('Error saving attitude survey:', error);
+      throw error;
     }
   };
 
   const saveAlternativeUses = async () => {
     try {
-      // Format the responses with timestamps if they don't have them
       const formattedResponses = autResponses.map(response => ({
-        idea: response.idea || response,
-        timestamp: response.timestamp || new Date()
+        text: response.idea || response,
+        timestamp: new Date()
       }));
 
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         alternativeUses: formattedResponses
       });
-      console.log('Alternative uses saved successfully:', formattedResponses);
+      console.log('Alternative uses saved successfully');
     } catch (error) {
       console.error('Error saving alternative uses:', error);
+      throw error;
     }
   };
 
   const saveDemographics = async () => {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
-        demographics: demographicResponses
+        demographics: {
+          age: parseInt(demographicResponses.age),
+          gender: demographicResponses.gender,
+          education: demographicResponses.education,
+          timestamp: new Date()
+        }
       });
       console.log('Demographics saved successfully');
     } catch (error) {
       console.error('Error saving demographics:', error);
+      throw error;
     }
   };
 
@@ -373,12 +389,14 @@ function MainApp() {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         pvq21: {
           responses: pvq21Responses.responses,
-          attentionCheck: pvq21Responses.attentionCheck
+          attentionCheck: pvq21Responses.attentionCheck,
+          timestamp: new Date()
         }
       });
       console.log('PVQ21 saved successfully');
     } catch (error) {
       console.error('Error saving PVQ21:', error);
+      throw error;
     }
   };
 
@@ -387,12 +405,14 @@ function MainApp() {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         stanceAgreement: {
           assigned: parseInt(stanceAgreement.assigned),
-          opposite: parseInt(stanceAgreement.opposite)
+          opposite: parseInt(stanceAgreement.opposite),
+          timestamp: new Date()
         }
       });
       console.log('Stance agreement saved successfully');
     } catch (error) {
       console.error('Error saving stance agreement:', error);
+      throw error;
     }
   };
 
@@ -455,8 +475,12 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (demographicResponses.age && demographicResponses.gender && demographicResponses.education) {
-                  await saveDemographics();
-                  setCurrentStep(3);
+                  try {
+                    await saveDemographics();
+                    setCurrentStep(3);
+                  } catch (error) {
+                    console.error('Failed to save demographics:', error);
+                  }
                 }
               }}
               disabled={!demographicResponses.age || !demographicResponses.gender || !demographicResponses.education}
@@ -488,8 +512,12 @@ function MainApp() {
               }`}
               onClick={async () => {
                 if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 22) {
-                  await savePVQ21();
-                  setCurrentStep(4);
+                  try {
+                    await savePVQ21();
+                    setCurrentStep(4);
+                  } catch (error) {
+                    console.error('Failed to save PVQ21:', error);
+                  }
                 }
               }}
               disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22}
