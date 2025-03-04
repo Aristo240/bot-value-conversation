@@ -130,11 +130,12 @@ function MainApp() {
         await axios.post(`${API_URL}/sessions`, {
           sessionId,
           prolificId,
+          studyId,
+          studySessionId,
           timestamp: new Date(),
           stance: assignedStance,
           botPersonality: personality,
-          aiModel,  // Make sure to include aiModel
-          stanceAgreement: {}
+          aiModel
         });
       } catch (error) {
         console.error('Error initializing session:', error);
@@ -144,7 +145,7 @@ function MainApp() {
     if (prolificId) {
       initializeSession();
     }
-  }, [sessionId, prolificId]);
+  }, [sessionId, prolificId, studyId, studySessionId]);
 
   // Chat initialization effect
   useEffect(() => {
