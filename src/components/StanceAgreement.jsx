@@ -47,7 +47,7 @@ const StanceAgreement = ({ stance, responses, setResponses }) => {
         </div>
         <div className="flex justify-between px-4 bg-gray-50 py-3 rounded-lg">
           <span className="text-sm text-gray-600">Strongly Disagree</span>
-          {[1, 2, 3, 4, 5].map((value) => (
+          {[1, 2, 3, 4, 5, 6, 7].map((value) => (
             <label key={value} className="flex flex-col items-center">
               <input
                 type="radio"
