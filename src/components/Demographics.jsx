@@ -12,9 +12,13 @@ const educationOptions = [
   "Professional degree"
 ];
 
-const Demographics = ({ responses, setResponses }) => {
+const Demographics = ({ responses, setResponses, onSubmit }) => {
   const handleChange = (field, value) => {
     setResponses(prev => ({ ...prev, [field]: value }));
+  };
+
+  const isFormComplete = () => {
+    return responses.age && responses.gender && responses.education;
   };
 
   return (
@@ -62,6 +66,16 @@ const Demographics = ({ responses, setResponses }) => {
             ))}
           </select>
         </div>
+
+        <button
+          onClick={onSubmit}
+          disabled={!isFormComplete()}
+          className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+            !isFormComplete() ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
+        >
+          Continue
+        </button>
       </div>
     </div>
   );
