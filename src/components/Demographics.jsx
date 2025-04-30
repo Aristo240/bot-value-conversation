@@ -31,6 +31,11 @@ const Demographics = ({ responses, setResponses, onSubmit }) => {
             value={responses.age || ''}
             onChange={(e) => handleChange('age', parseInt(e.target.value))}
             className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ 
+              WebkitAppearance: 'menulist-button',
+              MozAppearance: 'menulist-button',
+              appearance: 'menulist-button'
+            }}
           >
             <option value="">Select age</option>
             {ageOptions.map(age => (
@@ -45,6 +50,11 @@ const Demographics = ({ responses, setResponses, onSubmit }) => {
             value={responses.gender || ''}
             onChange={(e) => handleChange('gender', e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ 
+              WebkitAppearance: 'menulist-button',
+              MozAppearance: 'menulist-button',
+              appearance: 'menulist-button'
+            }}
           >
             <option value="">Select gender</option>
             {genderOptions.map(gender => (
@@ -59,6 +69,11 @@ const Demographics = ({ responses, setResponses, onSubmit }) => {
             value={responses.education || ''}
             onChange={(e) => handleChange('education', e.target.value)}
             className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            style={{ 
+              WebkitAppearance: 'menulist-button',
+              MozAppearance: 'menulist-button',
+              appearance: 'menulist-button'
+            }}
           >
             <option value="">Select education level</option>
             {educationOptions.map(education => (

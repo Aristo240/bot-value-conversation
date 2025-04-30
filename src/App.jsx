@@ -89,6 +89,7 @@ function MainApp() {
   const [showWarning, setShowWarning] = useState(false);
   const [isRobot, setIsRobot] = useState(false);
   const [attentionCheckAttempts, setAttentionCheckAttempts] = useState(0);
+  const [questionnaireOrder, setQuestionnaireOrder] = useState(null);
 
   // Add new state for study parameters
   const [studyId, setStudyId] = useState(null);
@@ -109,6 +110,13 @@ function MainApp() {
     } else if (isDev) {
       setProlificId('DEV_TEST_ID');
     }
+
+    // Randomly determine questionnaire order
+    const isPVQ21First = Math.random() < 0.5;
+    setQuestionnaireOrder({
+      case3: isPVQ21First ? 'PVQ21' : 'SBSVS',
+      case8: isPVQ21First ? 'SBSVS' : 'PVQ21'
+    });
 
     // Log the parameters for debugging
     console.log('URL Parameters:', {
@@ -510,10 +518,7 @@ function MainApp() {
         );
       
       case 3: // PVQ21 or SBSVS based on questionnaireOrder
-        // Get the questionnaire order from the session
-        const case3Questionnaire = session?.questionnaireOrder?.case3;
-        
-        if (case3Questionnaire === 'PVQ21') {
+        if (questionnaireOrder?.case3 === 'PVQ21') {
           return (
             <div className="w-3/4 mx-auto p-8 min-h-screen">
               <PVQ21
@@ -863,10 +868,7 @@ function MainApp() {
         );
 
       case 8: // PVQ21 or SBSVS based on questionnaireOrder
-        // Get the questionnaire order from the session
-        const case8Questionnaire = session?.questionnaireOrder?.case8;
-        
-        if (case8Questionnaire === 'PVQ21') {
+        if (questionnaireOrder?.case8 === 'PVQ21') {
           return (
             <div className="w-3/4 mx-auto p-8 min-h-screen">
               <PVQ21
@@ -908,7 +910,7 @@ function MainApp() {
         } else {
           return (
             <div className="w-3/4 mx-auto p-8 min-h-screen">
-              <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
+              <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 2</h2>
               <SBSVS 
                 responses={sbsvsResponses} 
                 setResponses={setSbsvsResponses} 
