@@ -36,7 +36,13 @@ const getInitialText = (assignedStance) => {
   const firstStance = assignedStance === 'freedom' ? freedomStanceText : safetyStanceText;
   const secondStance = assignedStance === 'freedom' ? safetyStanceText : freedomStanceText;
   
-  return `In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication. A highly debated issue is the balance between ${firstStance}, versus ${secondStance}. Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.`;
+  return `
+    <p>In today's digital age, social media platforms (such as Facebook, Instagram and TikTok) connect billions of users worldwide, placing them at the forefront of communication.</p>
+    
+    <p>A highly debated issue is the balance between ${firstStance}, versus ${secondStance}.</p>
+    
+    <p>Achieving this delicate balance requires careful consideration of various ethical, legal, and social factors, making it a complex and controversial issue.</p>
+  `;
 };
 
 // Add these utility functions at the top of the file
@@ -495,69 +501,86 @@ function MainApp() {
             <Demographics
               responses={demographicResponses}
               setResponses={setDemographicResponses}
-            />
-            <button
-              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                !demographicResponses.age || !demographicResponses.gender || !demographicResponses.education
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-              onClick={async () => {
-                if (demographicResponses.age && demographicResponses.gender && demographicResponses.education) {
-                  try {
-                    await saveDemographics();
-                    setCurrentStep(3);
-                  } catch (error) {
-                    console.error('Failed to save demographics:', error);
-                  }
-                }
+              onSubmit={async () => {
+                await saveDemographics();
+                setCurrentStep(3);
               }}
-              disabled={!demographicResponses.age || !demographicResponses.gender || !demographicResponses.education}
-            >
-              Continue
-            </button>
+            />
           </div>
         );
       
-      case 3: // PVQ21
-        return (
-          <div className="w-3/4 mx-auto p-8 min-h-screen">
-            <PVQ21
-              responses={pvq21Responses.responses || {}}
-              setResponses={(newResponses) => {
-                console.log('New PVQ21 responses:', newResponses); // Debug log
-                setPvq21Responses({
-                  responses: newResponses,
-                  timestamp: new Date()
-                });
-              }}
-              gender={demographicResponses.gender}
-            />
-            <button
-              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                !pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-              onClick={async () => {
-                if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 22) {
-                  try {
-                    await savePVQ21();
-                    setCurrentStep(4);
-                  } catch (error) {
-                    console.error('Failed to save PVQ21:', error);
+      case 3: // PVQ21 or SBSVS based on questionnaireOrder
+        // Get the questionnaire order from the session
+        const case3Questionnaire = session?.questionnaireOrder?.case3;
+        
+        if (case3Questionnaire === 'PVQ21') {
+          return (
+            <div className="w-3/4 mx-auto p-8 min-h-screen">
+              <PVQ21
+                responses={pvq21Responses.responses || {}}
+                setResponses={(newResponses) => {
+                  console.log('New PVQ21 responses:', newResponses);
+                  setPvq21Responses({
+                    responses: newResponses,
+                    timestamp: new Date()
+                  });
+                }}
+                gender={demographicResponses.gender}
+              />
+              <button
+                className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                  !pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+                onClick={async () => {
+                  if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 22) {
+                    try {
+                      await savePVQ21();
+                      setCurrentStep(4);
+                    } catch (error) {
+                      console.error('Failed to save PVQ21:', error);
+                    }
                   }
+                }}
+                disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22}
+              >
+                {!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
+                  ? `Please complete all ${22 - (pvq21Responses.responses ? Object.keys(pvq21Responses.responses).length : 0)} remaining questions`
+                  : 'Continue'
                 }
-              }}
-              disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22}
-            >
-              {!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
-                ? `Please complete all ${22 - (pvq21Responses.responses ? Object.keys(pvq21Responses.responses).length : 0)} remaining questions`
-                : 'Continue'
-              }
-            </button>
-          </div>
-        );
+              </button>
+            </div>
+          );
+        } else {
+          return (
+            <div className="w-3/4 mx-auto p-8 min-h-screen">
+              <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
+              <SBSVS 
+                responses={sbsvsResponses} 
+                setResponses={setSbsvsResponses} 
+                sessionId={sessionId}
+              />
+              <button
+                className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                  Object.keys(sbsvsResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                onClick={async () => {
+                  if (Object.keys(sbsvsResponses).length === 11) {
+                    await saveSBSVS();
+                    setCurrentStep(4);
+                  }
+                }}
+                disabled={Object.keys(sbsvsResponses).length < 11}
+              >
+                {Object.keys(sbsvsResponses).length < 11 
+                  ? `Please complete all ${11 - Object.keys(sbsvsResponses).length} remaining questions`
+                  : 'Continue'
+                }
+              </button>
+            </div>
+          );
+        }
 
       case 4: // Task Explanation & Description
         const { assignedStanceText, oppositeStanceText } = getOrderedStanceText(stance);
@@ -570,7 +593,7 @@ function MainApp() {
             <div className="mb-6">
               <h3 className="text-lg font-semibold mb-3">Background Information</h3>
               <div className="p-4 border rounded-lg bg-gray-50">
-                <p className="text-gray-700 leading-relaxed" dangerouslySetInnerHTML={{ __html: initialText }} />
+                <div dangerouslySetInnerHTML={{ __html: initialText }} />
               </div>
             </div>
             
@@ -660,7 +683,7 @@ function MainApp() {
               <div className="p-4">
                 <div className="mb-4">
                   <h3 className="text-lg font-semibold mb-2">Reference Text:</h3>
-                  <p className="text-sm text-gray-600" dangerouslySetInnerHTML={{ __html: getInitialText(stance) }} />
+                  <div dangerouslySetInnerHTML={{ __html: getInitialText(stance) }} />
                 </div>
                 <div className="bg-blue-50 p-4 rounded">
                   <h3 className="text-lg font-semibold mb-2">Your Stance:</h3>
@@ -839,35 +862,78 @@ function MainApp() {
           </div>
         );
 
-      case 8: // SBSVS
-        const handleSBSVSSubmit = async () => {
-          if (Object.keys(sbsvsResponses).length === 11) {
-            await saveSBSVS();
-            setCurrentStep(9);
-          }
-        };
-        return (
-          <div className="w-3/4 mx-auto p-8 min-h-screen">
-            <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
-            <SBSVS 
-              responses={sbsvsResponses} 
-              setResponses={setSbsvsResponses} 
-              sessionId={sessionId}
-            />
-            <button
-              className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                Object.keys(sbsvsResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
-              }`}
-              onClick={handleSBSVSSubmit}
-              disabled={Object.keys(sbsvsResponses).length < 11}
-            >
-              {Object.keys(sbsvsResponses).length < 11 
-                ? `Please complete all ${11 - Object.keys(sbsvsResponses).length} remaining questions`
-                : 'Continue'
-              }
-            </button>
-          </div>
-        );
+      case 8: // PVQ21 or SBSVS based on questionnaireOrder
+        // Get the questionnaire order from the session
+        const case8Questionnaire = session?.questionnaireOrder?.case8;
+        
+        if (case8Questionnaire === 'PVQ21') {
+          return (
+            <div className="w-3/4 mx-auto p-8 min-h-screen">
+              <PVQ21
+                responses={pvq21Responses.responses || {}}
+                setResponses={(newResponses) => {
+                  console.log('New PVQ21 responses:', newResponses);
+                  setPvq21Responses({
+                    responses: newResponses,
+                    timestamp: new Date()
+                  });
+                }}
+                gender={demographicResponses.gender}
+              />
+              <button
+                className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                  !pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+                onClick={async () => {
+                  if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 22) {
+                    try {
+                      await savePVQ21();
+                      setCurrentStep(9);
+                    } catch (error) {
+                      console.error('Failed to save PVQ21:', error);
+                    }
+                  }
+                }}
+                disabled={!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22}
+              >
+                {!pvq21Responses.responses || Object.keys(pvq21Responses.responses).length !== 22
+                  ? `Please complete all ${22 - (pvq21Responses.responses ? Object.keys(pvq21Responses.responses).length : 0)} remaining questions`
+                  : 'Continue'
+                }
+              </button>
+            </div>
+          );
+        } else {
+          return (
+            <div className="w-3/4 mx-auto p-8 min-h-screen">
+              <h2 className="text-2xl font-bold mb-6">Questionnaires - Part 1</h2>
+              <SBSVS 
+                responses={sbsvsResponses} 
+                setResponses={setSbsvsResponses} 
+                sessionId={sessionId}
+              />
+              <button
+                className={`w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                  Object.keys(sbsvsResponses).length < 11 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                onClick={async () => {
+                  if (Object.keys(sbsvsResponses).length === 11) {
+                    await saveSBSVS();
+                    setCurrentStep(9);
+                  }
+                }}
+                disabled={Object.keys(sbsvsResponses).length < 11}
+              >
+                {Object.keys(sbsvsResponses).length < 11 
+                  ? `Please complete all ${11 - Object.keys(sbsvsResponses).length} remaining questions`
+                  : 'Continue'
+                }
+              </button>
+            </div>
+          );
+        }
 
       case 9: // Attitude Survey
         const handleAttitudeSurveySubmit = async () => {

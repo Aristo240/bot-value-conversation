@@ -293,6 +293,9 @@ function Admin() {
       'AI_Model',               // Moved AI_Model up for better visibility
       'Stance',
       'Bot_Personality',
+      // Questionnaire Order
+      'Case3_Questionnaire',
+      'Case8_Questionnaire',
       // Demographics
       'Age',
       'Gender',
@@ -346,6 +349,9 @@ function Admin() {
         session.aiModel || '',
         session.stance || '',
         session.botPersonality || '',
+        // Questionnaire Order
+        session.questionnaireOrder?.case3 || 'N/A',
+        session.questionnaireOrder?.case8 || 'N/A',
         // Demographics
         session.demographics?.age || '',
         session.demographics?.gender || '',
@@ -395,6 +401,10 @@ Timestamp: ${session.timestamp}
 Stance: ${session.stance}
 Bot Personality: ${session.botPersonality}
 AI Model: ${session.aiModel}
+
+Questionnaire Order:
+- Case 3: ${session.questionnaireOrder?.case3 || 'N/A'}
+- Case 8: ${session.questionnaireOrder?.case8 || 'N/A'}
 
 Warning Events:
 ${(session.events || [])

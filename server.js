@@ -45,6 +45,12 @@ const SessionSchema = new mongoose.Schema({
   botPersonality: String,
   aiModel: String,
   
+  // Questionnaire order tracking
+  questionnaireOrder: {
+    case3: { type: String, enum: ['PVQ21', 'SBSVS'] },
+    case8: { type: String, enum: ['PVQ21', 'SBSVS'] }
+  },
+  
   // Case 2: Demographics
   demographics: {
     age: Number,
@@ -214,6 +220,9 @@ const authenticateAdmin = async (req, res, next) => {
 // Update the nextCondition endpoint to use GPT
 app.get('/api/nextCondition', async (req, res) => {
   try {
+    // Check if this is a DEV_TEST_ID session
+    const isDev = req.query.prolificId === 'DEV_TEST_ID';
+
     // Get all counters but force GPT usage
     const counters = await ConditionCounter.find({ aiModel: 'gpt' });
     
@@ -230,7 +239,10 @@ app.get('/api/nextCondition', async (req, res) => {
     
     const selectedCondition = eligibleConditions[Math.floor(Math.random() * eligibleConditions.length)];
     
-    await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
+    // Only increment counter if not a DEV_TEST_ID session
+    if (!isDev) {
+      await ConditionCounter.findByIdAndUpdate(selectedCondition._id, { $inc: { count: 1 } });
+    }
     
     res.json({
       aiModel: 'gpt',  // Force GPT model
@@ -262,6 +274,13 @@ app.post('/api/sessions', async (req, res) => {
   try {
     const { sessionId, stance, botPersonality, aiModel, prolificId, studyId, studySessionId } = req.body;
     
+    // Randomly determine questionnaire order
+    const isPVQ21First = Math.random() < 0.5;
+    const questionnaireOrder = {
+      case3: isPVQ21First ? 'PVQ21' : 'SBSVS',
+      case8: isPVQ21First ? 'SBSVS' : 'PVQ21'
+    };
+    
     // Check if a session with this ID already exists
     let session = await Session.findOne({ sessionId });
     
@@ -282,6 +301,7 @@ app.post('/api/sessions', async (req, res) => {
         stance,
         botPersonality,
         aiModel,
+        questionnaireOrder,
         stanceAgreement: {}
       });
       await session.save();
@@ -291,7 +311,8 @@ app.post('/api/sessions', async (req, res) => {
       sessionId,
       prolificId,
       studyId,
-      studySessionId
+      studySessionId,
+      questionnaireOrder
     });
     
     res.status(201).json(session);
@@ -538,15 +559,17 @@ app.delete('/api/admin/sessions/:sessionId', authenticateAdmin, async (req, res)
     // Delete the session
     await Session.findOneAndDelete({ sessionId: req.params.sessionId });
 
-    // Decrement the counter for this condition
-    await ConditionCounter.findOneAndUpdate(
-      {
-        aiModel: session.aiModel,
-        stance: session.stance,
-        personality: session.botPersonality
-      },
-      { $inc: { count: -1 } }
-    );
+    // Only decrement the counter if it's not a DEV_TEST_ID session
+    if (session.prolificId !== 'DEV_TEST_ID') {
+      await ConditionCounter.findOneAndUpdate(
+        {
+          aiModel: session.aiModel,
+          stance: session.stance,
+          personality: session.botPersonality
+        },
+        { $inc: { count: -1 } }
+      );
+    }
 
     res.status(200).json({ message: 'Session deleted successfully and counter updated' });
   } catch (error) {
@@ -903,8 +926,8 @@ app.post('/api/admin/recalculateCounters', authenticateAdmin, async (req, res) =
     // Reset all counters to 0
     await ConditionCounter.updateMany({}, { count: 0 });
 
-    // Get all sessions
-    const sessions = await Session.find({});
+    // Get all non-DEV_TEST_ID sessions
+    const sessions = await Session.find({ prolificId: { $ne: 'DEV_TEST_ID' } });
 
     // Count sessions for each condition
     const counts = {};
