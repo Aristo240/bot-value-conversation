@@ -41,30 +41,40 @@ const Demographics = ({ responses, setResponses, onSubmit }) => {
 
         <div>
           <label className="block mb-2 font-medium text-gray-700">Gender:</label>
-          <select 
-            value={responses.gender || ''}
-            onChange={(e) => handleChange('gender', e.target.value)}
-            className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select gender</option>
+          <div className="space-y-2">
             {genderOptions.map(gender => (
-              <option key={gender} value={gender}>{gender}</option>
+              <label key={gender} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="gender"
+                  value={gender}
+                  checked={responses.gender === gender}
+                  onChange={(e) => handleChange('gender', e.target.value)}
+                  className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-700">{gender}</span>
+              </label>
             ))}
-          </select>
+          </div>
         </div>
 
         <div>
           <label className="block mb-2 font-medium text-gray-700">Education Level:</label>
-          <select 
-            value={responses.education || ''}
-            onChange={(e) => handleChange('education', e.target.value)}
-            className="w-full p-3 border rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select education level</option>
+          <div className="space-y-2">
             {educationOptions.map(education => (
-              <option key={education} value={education}>{education}</option>
+              <label key={education} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="education"
+                  value={education}
+                  checked={responses.education === education}
+                  onChange={(e) => handleChange('education', e.target.value)}
+                  className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-700">{education}</span>
+              </label>
             ))}
-          </select>
+          </div>
         </div>
 
         <button
