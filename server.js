@@ -923,38 +923,25 @@ app.post('/api/sessions/:sessionId/initialAttentionCheck', async (req, res) => {
 // Add this new endpoint to recalculate counters
 app.post('/api/admin/recalculateCounters', authenticateAdmin, async (req, res) => {
   try {
-    // Reset all counters to 0
+    // Reset all counters to zero
     await ConditionCounter.updateMany({}, { count: 0 });
-
-    // Get all non-DEV_TEST_ID sessions
+    
+    // Count sessions, excluding DEV_TEST_ID
     const sessions = await Session.find({ prolificId: { $ne: 'DEV_TEST_ID' } });
-
-    // Count sessions for each condition
-    const counts = {};
-    sessions.forEach(session => {
-      const key = `${session.aiModel}-${session.stance}-${session.botPersonality}`;
-      counts[key] = (counts[key] || 0) + 1;
-    });
-
-    // Update counters in database
-    await Promise.all(Object.entries(counts).map(([key, count]) => {
-      const [aiModel, stance, personality] = key.split('-');
-      return ConditionCounter.findOneAndUpdate(
-        { aiModel, stance, personality },
-        { count },
-        { new: true }
-      );
-    }));
-
-    // Get updated counters
-    const updatedCounters = await ConditionCounter.find({});
-    res.json({ 
-      message: 'Counters recalculated successfully',
-      counters: updatedCounters 
-    });
+    
+    for (const session of sessions) {
+      if (session.condition) {
+        await ConditionCounter.findOneAndUpdate(
+          { aiModel: session.aiModel, stance: session.stance, personality: session.botPersonality },
+          { $inc: { count: 1 } }
+        );
+      }
+    }
+    
+    res.json({ success: true });
   } catch (error) {
     console.error('Error recalculating counters:', error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ error: 'Failed to recalculate counters' });
   }
 });
 

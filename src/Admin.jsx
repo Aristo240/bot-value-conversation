@@ -85,7 +85,11 @@ function Admin() {
       const response = await axios.get(`${API_URL}/admin/conditionCounts`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setConditionCounts(response.data || []);
+      // Filter out DEV_TEST_ID sessions from the counts
+      const filteredCounts = response.data.filter(condition => 
+        condition.prolificId !== 'DEV_TEST_ID'
+      );
+      setConditionCounts(filteredCounts || []);
     } catch (error) {
       console.error('Error fetching condition counts:', error);
     }
