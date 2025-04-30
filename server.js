@@ -257,9 +257,44 @@ app.get('/api/nextCondition', async (req, res) => {
 
 app.get('/api/admin/conditionCounts', authenticateAdmin, async (req, res) => {
   try {
-    const counters = await ConditionCounter.find({});
-    res.json(counters);
+    // Get all sessions except those with DEV_TEST_ID
+    const sessions = await Session.find({ prolificId: { $ne: 'DEV_TEST_ID' } });
+    
+    // Initialize counters for all possible conditions
+    const counters = {};
+    const conditions = [
+      { aiModel: 'gpt', stance: 'freedom', personality: 'creative' },
+      { aiModel: 'gpt', stance: 'freedom', personality: 'conservative' },
+      { aiModel: 'gpt', stance: 'safety', personality: 'creative' },
+      { aiModel: 'gpt', stance: 'safety', personality: 'conservative' }
+    ];
+
+    // Initialize all counters to 0
+    conditions.forEach(condition => {
+      const key = `${condition.aiModel}-${condition.stance}-${condition.personality}`;
+      counters[key] = {
+        aiModel: condition.aiModel,
+        stance: condition.stance,
+        personality: condition.personality,
+        count: 0
+      };
+    });
+
+    // Count sessions for each condition
+    sessions.forEach(session => {
+      if (session.aiModel && session.stance && session.botPersonality) {
+        const key = `${session.aiModel}-${session.stance}-${session.botPersonality}`;
+        if (counters[key]) {
+          counters[key].count++;
+        }
+      }
+    });
+
+    // Convert to array and sort by count
+    const result = Object.values(counters).sort((a, b) => b.count - a.count);
+    res.json(result);
   } catch (error) {
+    console.error('Error fetching condition counts:', error);
     res.status(500).json({ message: error.message });
   }
 });
