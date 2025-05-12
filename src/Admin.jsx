@@ -209,15 +209,11 @@ function Admin() {
   };
 
   const deleteSession = async (sessionId, sessionData) => {
-    // If sessionId contains placeholders, use the _id instead
-    const idToDelete = sessionId.includes('{{%') ? sessionData._id : sessionId;
-    
     if (window.confirm('Are you sure you want to delete this session?')) {
       try {
-        console.log('Attempting to delete session with ID:', idToDelete);
-        console.log('Using token:', token);
+        console.log('Attempting to delete session with ID:', sessionId);
         
-        const response = await axios.delete(`${API_URL}/admin/sessions/${idToDelete}`, {
+        const response = await axios.delete(`${API_URL}/admin/sessions/${sessionId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
