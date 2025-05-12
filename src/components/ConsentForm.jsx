@@ -24,7 +24,7 @@ export const ConsentForm = ({ onConsent }) => {
                 <li>This study involves discussing social media challenges with an AI bot and completing several questionnaires and tasks</li>
                 <li>Your participation is completely voluntary, and you may withdraw at any time</li>
                 <li>All data collected will be kept strictly confidential and used only for research purposes</li>
-                <li>The entire session will take approximately 20-30 minutes to complete</li>
+                <li>The entire session will take approximately 20 minutes to complete</li>
                 <li>There are no known risks associated with participating in this study</li>
               </ul>
             </div>
@@ -36,6 +36,24 @@ export const ConsentForm = ({ onConsent }) => {
                 <li>You voluntarily agree to participate in this research study</li>
                 <li>You are at least 18 years old</li>
               </ul>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800 mb-3">Participation Requirements</h3>
+              <ul className="list-disc list-outside ml-5 space-y-2 text-gray-600">
+                <li>This study requires your full attention for approximately 20 minutes</li>
+                <li>Please participate only if you can complete the entire study without interruption</li>
+                <li>Do not navigate away from the experiment screen or use other devices</li>
+              </ul>
+            </div>
+
+            <div className="bg-red-50 border-l-4 border-red-500 p-4 my-4">
+              <div className="flex items-center">
+                <p className="font-bold text-red-700">⚠️ Warning ⚠️</p>
+              </div>
+              <p className="text-red-700 mt-2">
+                Leaving the experiment screen will terminate the study and result in no compensation.
+              </p>
             </div>
 
             <div className="pt-4 space-y-4">
