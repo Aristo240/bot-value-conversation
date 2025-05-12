@@ -980,6 +980,22 @@ app.post('/api/admin/recalculateCounters', authenticateAdmin, async (req, res) =
   }
 });
 
+// Add this new endpoint to reset counters
+app.post('/api/admin/resetCounters', authenticateAdmin, async (req, res) => {
+  try {
+    // Reset all counters to zero
+    await ConditionCounter.updateMany({}, { count: 0 });
+    
+    // Get the updated counters
+    const counters = await ConditionCounter.find({});
+    
+    res.json({ success: true, counters });
+  } catch (error) {
+    console.error('Error resetting counters:', error);
+    res.status(500).json({ error: 'Failed to reset counters' });
+  }
+});
+
 // Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));

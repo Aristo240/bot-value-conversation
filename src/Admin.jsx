@@ -653,6 +653,22 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
     }
   };
 
+  const resetCounters = async () => {
+    if (window.confirm('Are you sure you want to reset all condition counters to zero? This action cannot be undone.')) {
+      try {
+        const response = await axios.post(
+          `${API_URL}/admin/resetCounters`,
+          {},
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setConditionCounts(response.data.counters);
+        console.log('Counters reset:', response.data);
+      } catch (error) {
+        console.error('Error resetting counters:', error);
+      }
+    }
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
@@ -754,12 +770,20 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
           <div className="mb-8 bg-white p-6 rounded-lg shadow">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Condition Distribution</h2>
-              <button
-                onClick={recalculateCounters}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
-              >
-                Recalculate Counters
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={recalculateCounters}
+                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600"
+                >
+                  Recalculate Counters
+                </button>
+                <button
+                  onClick={resetCounters}
+                  className="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600"
+                >
+                  Reset Counters
+                </button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.isArray(conditionCounts) ? (
