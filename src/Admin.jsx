@@ -294,7 +294,7 @@ function Admin() {
       'Session id',             
       
       // Study-specific fields
-      'AI_Model',               // Moved AI_Model up for better visibility
+      'AI_Model',               
       'Stance',
       'Bot_Personality',
       // Questionnaire Order
@@ -325,9 +325,10 @@ function Admin() {
       'Stance_Agreement_Opposite',
       // Alternative Uses
       'Alternative_Uses',
-      // Add warning events headers
-      'Warning_Events_Count',
-      'Warning_Events_Details',
+      // Add termination event headers
+      'Experiment_Terminated',
+      'Termination_Step',
+      'Termination_Timestamp',
     ].join(',');
 
     const rows = sessions.map(session => {
@@ -337,10 +338,9 @@ function Admin() {
       // Calculate completion status
       const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
       
-      // Format warning events for CSV
-      const warningEvents = (session.events || [])
-        .filter(event => event.type === 'tab_switch')
-        .map(event => `Step ${event.step} at ${new Date(event.timestamp).toLocaleString()}`);
+      // Get termination event
+      const terminationEvent = (session.events || [])
+        .find(event => event.type === 'experiment_terminated');
       
       const row = [
         session.prolificId || '',
@@ -381,9 +381,10 @@ function Admin() {
         session.stanceAgreement?.opposite || '',
         // Alternative Uses
         JSON.stringify((session.alternativeUses || []).map(use => use.text)).replace(/"/g, '""'),
-        // Add warning events data
-        warningEvents.length,
-        `"${warningEvents.join('; ')}"`,
+        // Add termination data
+        terminationEvent ? 'Yes' : 'No',
+        terminationEvent ? terminationEvent.step : 'N/A',
+        terminationEvent ? new Date(terminationEvent.timestamp).toLocaleString() : 'N/A',
       ];
 
       return row
@@ -398,6 +399,10 @@ function Admin() {
   };
 
   const convertToText = (session) => {
+    // Get termination event
+    const terminationEvent = (session.events || [])
+      .find(event => event.type === 'experiment_terminated');
+
     return `
 Session ID: ${session.sessionId}
 Prolific ID: ${session.prolificId || 'N/A'}
@@ -410,11 +415,10 @@ Questionnaire Order:
 - Case 3: ${session.questionnaireOrder?.case3 || 'N/A'}
 - Case 8: ${session.questionnaireOrder?.case8 || 'N/A'}
 
-Warning Events:
-${(session.events || [])
-  .filter(event => event.type === 'tab_switch')
-  .map(event => `- Step ${event.step} at ${new Date(event.timestamp).toLocaleString()}`)
-  .join('\n') || 'No warning events recorded'}
+Experiment Status:
+${terminationEvent ? 
+  `Terminated at Step ${terminationEvent.step} (${new Date(terminationEvent.timestamp).toLocaleString()})` : 
+  'Completed Successfully'}
 
 Demographics:
 - Age: ${session.demographics?.age || 'N/A'}
@@ -458,13 +462,9 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
     const isExpanded = expandedSession === session.sessionId;
     const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
 
-    const formatWarningEvents = (events) => {
-      if (!events || !Array.isArray(events)) return [];
-      return events.filter(event => event.type === 'tab_switch').map(event => ({
-        step: event.step,
-        timestamp: new Date(event.timestamp).toLocaleString()
-      }));
-    };
+    // Get termination event
+    const terminationEvent = (session.events || [])
+      .find(event => event.type === 'experiment_terminated');
 
     return (
       <div key={session.sessionId} className="bg-white rounded-lg shadow-md p-6 mb-4">
@@ -472,7 +472,12 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
           <div>
             <h3 className="text-lg font-bold">Participant ID: {session.prolificId || 'N/A'}</h3>
             <p>Session ID: {session.sessionId}</p>
-            <p>Status: {isComplete}</p>
+            <p>Status: {terminationEvent ? 'TERMINATED' : isComplete}</p>
+            {terminationEvent && (
+              <p className="text-red-600 font-medium">
+                Terminated at Step {terminationEvent.step} ({new Date(terminationEvent.timestamp).toLocaleString()})
+              </p>
+            )}
             <p>Study ID: {session.studyId || 'N/A'}</p>
             <p>Study Session ID: {session.studySessionId || 'N/A'}</p>
             <p>Started: {new Date(session.timestamp).toLocaleString()}</p>
@@ -520,20 +525,17 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
         {isExpanded && (
           <div className="space-y-4 mt-4">
-            {/* Warning Events */}
+            {/* Experiment Status */}
             <div className="bg-gray-50 p-4 rounded">
-              <h4 className="font-semibold mb-2">Warning Events:</h4>
-              {session.events && session.events.length > 0 ? (
-                <div className="space-y-2">
-                  {formatWarningEvents(session.events).map((event, index) => (
-                    <div key={index} className="bg-yellow-50 p-2 rounded">
-                      <p>Step: {event.step}</p>
-                      <p>Time: {event.timestamp}</p>
-                    </div>
-                  ))}
+              <h4 className="font-semibold mb-2">Experiment Status:</h4>
+              {terminationEvent ? (
+                <div className="bg-red-50 p-4 rounded">
+                  <p className="text-red-600 font-medium">Experiment Terminated</p>
+                  <p>Terminated at Step: {terminationEvent.step}</p>
+                  <p>Time: {new Date(terminationEvent.timestamp).toLocaleString()}</p>
                 </div>
               ) : (
-                <p className="text-gray-500">No warning events recorded</p>
+                <p className="text-green-600">Experiment Completed Successfully</p>
               )}
             </div>
 

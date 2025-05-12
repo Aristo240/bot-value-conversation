@@ -90,6 +90,7 @@ function MainApp() {
   const [isRobot, setIsRobot] = useState(false);
   const [attentionCheckAttempts, setAttentionCheckAttempts] = useState(0);
   const [questionnaireOrder, setQuestionnaireOrder] = useState(null);
+  const [isExperimentTerminated, setIsExperimentTerminated] = useState(false);
 
   // Add new state for study parameters
   const [studyId, setStudyId] = useState(null);
@@ -1077,15 +1078,15 @@ function MainApp() {
     const handleVisibilityChange = () => {
       if ([6, 7, 11].includes(currentStep)) {
         if (document.hidden) {
-          // Show warning when tab becomes hidden
-          setShowWarning(true);
+          // Terminate the experiment when tab becomes hidden
+          setIsExperimentTerminated(true);
           
-          // Log tab switch event
+          // Log experiment termination event
           axios.post(`${API_URL}/sessions/${sessionId}/events`, {
-            type: 'tab_switch',
+            type: 'experiment_terminated',
             step: currentStep,
             timestamp: new Date()
-          }).catch(error => console.error('Error logging tab switch:', error));
+          }).catch(error => console.error('Error logging experiment termination:', error));
         }
       }
     };
@@ -1116,6 +1117,25 @@ function MainApp() {
       return () => clearTimeout(redirectTimer);
     }
   }, [currentStep, prolificId]);
+
+  if (isExperimentTerminated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Experiment Terminated</h2>
+          <p className="mb-4">
+            You have left the experiment window during a critical step. As a result, your participation has been terminated.
+          </p>
+          <p className="mb-4">
+            Due to this termination, you will not be eligible for compensation.
+          </p>
+          <p className="text-sm text-gray-500">
+            Thank you for your time.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isRobot) {
     return (

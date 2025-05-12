@@ -41,8 +41,7 @@ export const ConsentForm = ({ onConsent }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Participation Requirements</h3>
               <ul className="list-disc list-outside ml-5 space-y-2 text-gray-600">
-                <li>This study requires your full attention for approximately 20 minutes</li>
-                <li>Please participate only if you can complete the entire study without interruption</li>
+                <li>This study requires your full attention. Please participate only if you can complete the entire study without interruption</li>
                 <li>Do not navigate away from the experiment screen or use other devices</li>
               </ul>
             </div>
