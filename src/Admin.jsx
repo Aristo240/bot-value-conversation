@@ -788,21 +788,23 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {Array.isArray(conditionCounts) ? (
                 conditionCounts.length > 0 ? (
-                  conditionCounts.map((condition) => (
-                    condition && (
-                      <div
-                        key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
-                        className="p-4 bg-gray-50 rounded-lg"
-                      >
-                        <p>Model: {condition?.aiModel}</p>
-                        <p>Stance: {condition?.stance}</p>
-                        <p>Personality: {condition?.personality}</p>
-                        <p className="text-lg font-bold text-blue-600">
-                          Count: {condition?.count}
-                        </p>
-                      </div>
-                    )
-                  ))
+                  conditionCounts
+                    .filter(condition => condition.aiModel === 'gpt') // Only show GPT conditions
+                    .map((condition) => (
+                      condition && (
+                        <div
+                          key={`${condition.aiModel}-${condition.stance}-${condition.personality}`}
+                          className="p-4 bg-gray-50 rounded-lg"
+                        >
+                          <p>Model: {condition?.aiModel}</p>
+                          <p>Stance: {condition?.stance}</p>
+                          <p>Personality: {condition?.personality}</p>
+                          <p className="text-lg font-bold text-blue-600">
+                            Count: {condition?.count}
+                          </p>
+                        </div>
+                      )
+                    ))
                 ) : (
                   <p>No condition data available</p>
                 )
