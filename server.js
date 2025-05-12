@@ -258,7 +258,10 @@ app.get('/api/nextCondition', async (req, res) => {
 app.get('/api/admin/conditionCounts', authenticateAdmin, async (req, res) => {
   try {
     // Get all sessions except those with DEV_TEST_ID
-    const sessions = await Session.find({ prolificId: { $ne: 'DEV_TEST_ID' } });
+    const sessions = await Session.find({ 
+      prolificId: { $ne: 'DEV_TEST_ID' },
+      aiModel: 'gpt'  // Only include GPT sessions
+    });
     
     // Initialize counters for all possible conditions
     const counters = {};
@@ -961,11 +964,14 @@ app.post('/api/admin/recalculateCounters', authenticateAdmin, async (req, res) =
     // Reset all counters to zero
     await ConditionCounter.updateMany({}, { count: 0 });
     
-    // Count sessions, excluding DEV_TEST_ID
-    const sessions = await Session.find({ prolificId: { $ne: 'DEV_TEST_ID' } });
+    // Count sessions, excluding DEV_TEST_ID and only including GPT sessions
+    const sessions = await Session.find({ 
+      prolificId: { $ne: 'DEV_TEST_ID' },
+      aiModel: 'gpt'
+    });
     
     for (const session of sessions) {
-      if (session.condition) {
+      if (session.aiModel && session.stance && session.botPersonality) {
         await ConditionCounter.findOneAndUpdate(
           { aiModel: session.aiModel, stance: session.stance, personality: session.botPersonality },
           { $inc: { count: 1 } }
@@ -973,7 +979,9 @@ app.post('/api/admin/recalculateCounters', authenticateAdmin, async (req, res) =
       }
     }
     
-    res.json({ success: true });
+    // Get the updated counters
+    const counters = await ConditionCounter.find({});
+    res.json({ success: true, counters });
   } catch (error) {
     console.error('Error recalculating counters:', error);
     res.status(500).json({ error: 'Failed to recalculate counters' });
