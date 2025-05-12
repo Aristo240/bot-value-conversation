@@ -298,8 +298,8 @@ function Admin() {
       'Stance',
       'Bot_Personality',
       // Questionnaire Order
-      'Case3_Questionnaire',
-      'Case8_Questionnaire',
+      'Questionnaire_Case3',
+      'Questionnaire_Case8',
       // Demographics
       'Age',
       'Gender',
