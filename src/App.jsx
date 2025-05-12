@@ -1122,15 +1122,24 @@ function MainApp() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">
-          <h2 className="text-2xl font-bold text-red-600 mb-4">Experiment Terminated</h2>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Study Session Ended</h2>
           <p className="mb-4">
-            You have left the experiment window during a critical step. As a result, your participation has been terminated.
+            We have detected that you have left the experiment window during a critical step.
           </p>
           <p className="mb-4">
-            Due to this termination, you will not be eligible for compensation.
+            For research integrity, we require participants to complete the study without interruptions.
           </p>
-          <p className="text-sm text-gray-500">
-            Thank you for your time.
+          <p className="mb-4">
+            As a result, your participation has been terminated, and you will not be eligible for compensation for this incomplete session.
+          </p>
+          <p className="mb-4">
+            Unfortunately, even if this happened accidentally, we cannot resume terminated sessions due to research protocol requirements.
+          </p>
+          <p className="text-sm text-gray-500 mt-6">
+            Thank you for your understanding.
+          </p>
+          <p className="text-sm text-gray-500 mt-4">
+            You may now close this window.
           </p>
         </div>
       </div>
