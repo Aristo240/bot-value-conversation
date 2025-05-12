@@ -1004,6 +1004,36 @@ app.post('/api/admin/resetCounters', authenticateAdmin, async (req, res) => {
   }
 });
 
+// Delete session by MongoDB ID
+app.delete('/api/admin/sessions/mongo/:mongoId', authenticateAdmin, async (req, res) => {
+  try {
+    const session = await Session.findById(req.params.mongoId);
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    // Delete the session
+    await Session.findByIdAndDelete(req.params.mongoId);
+
+    // Only decrement the counter if it's not a DEV_TEST_ID session
+    if (session.prolificId !== 'DEV_TEST_ID') {
+      await ConditionCounter.findOneAndUpdate(
+        {
+          aiModel: session.aiModel,
+          stance: session.stance,
+          personality: session.botPersonality
+        },
+        { $inc: { count: -1 } }
+      );
+    }
+
+    res.status(200).json({ message: 'Session deleted successfully and counter updated' });
+  } catch (error) {
+    console.error('Error deleting session:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 // Serve React app
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'dist', 'index.html'));

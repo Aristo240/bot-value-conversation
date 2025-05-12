@@ -211,9 +211,10 @@ function Admin() {
   const deleteSession = async (sessionId, sessionData) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
       try {
-        console.log('Attempting to delete session with ID:', sessionId);
+        const mongoId = sessionData._id;
+        console.log('Attempting to delete session with MongoDB ID:', mongoId);
         
-        const response = await axios.delete(`${API_URL}/admin/sessions/${sessionId}`, {
+        const response = await axios.delete(`${API_URL}/admin/sessions/mongo/${mongoId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
