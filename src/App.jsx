@@ -1135,7 +1135,7 @@ function MainApp() {
           <p className="mb-4">
             Unfortunately, even if this happened accidentally, we cannot resume terminated sessions due to research protocol requirements.
           </p>
-          <p className="text-sm text-gray-500 mt-6">
+          <p className="mb-4">
             Thank you for your understanding.
           </p>
           <p className="text-sm text-gray-500 mt-4">
