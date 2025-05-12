@@ -211,13 +211,23 @@ function Admin() {
   const deleteSession = async (sessionId) => {
     if (window.confirm('Are you sure you want to delete this session?')) {
       try {
-        await axios.delete(`${API_URL}/admin/sessions/${sessionId}`, {
+        console.log('Attempting to delete session:', sessionId);
+        console.log('Using token:', token);
+        
+        const response = await axios.delete(`${API_URL}/admin/sessions/${sessionId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        
+        console.log('Delete response:', response);
         await fetchData(token); // Refresh the data after deletion
         showStatus('Session deleted successfully');
       } catch (error) {
         console.error('Error deleting session:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
         showStatus('Failed to delete session', true);
       }
     }
@@ -461,6 +471,13 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
   const renderSessionData = (session) => {
     const isExpanded = expandedSession === session.sessionId;
     const isComplete = session.finalResponse?.text ? 'APPROVED' : 'AWAITING REVIEW';
+
+    // Add debug logging
+    console.log('Rendering session:', {
+      sessionId: session.sessionId,
+      prolificId: session.prolificId,
+      fullSession: session
+    });
 
     // Get termination event
     const terminationEvent = (session.events || [])
