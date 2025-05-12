@@ -208,19 +208,16 @@ function Admin() {
     setTimeout(() => setDownloadStatus(''), 3000);
   };
 
-  const deleteSession = async (sessionId) => {
-    // Check if the session ID contains placeholder values
-    if (sessionId.includes('{{%') || sessionId.includes('%}}')) {
-      showStatus('Cannot delete session with placeholder values', true);
-      return;
-    }
-
+  const deleteSession = async (sessionId, sessionData) => {
+    // If sessionId contains placeholders, use the _id instead
+    const idToDelete = sessionId.includes('{{%') ? sessionData._id : sessionId;
+    
     if (window.confirm('Are you sure you want to delete this session?')) {
       try {
-        console.log('Attempting to delete session:', sessionId);
+        console.log('Attempting to delete session with ID:', idToDelete);
         console.log('Using token:', token);
         
-        const response = await axios.delete(`${API_URL}/admin/sessions/${sessionId}`, {
+        const response = await axios.delete(`${API_URL}/admin/sessions/${idToDelete}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -532,7 +529,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               Download
             </button>
             <button
-              onClick={() => deleteSession(session.sessionId)}
+              onClick={() => deleteSession(session.sessionId, session)}
               className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
             >
               Delete
