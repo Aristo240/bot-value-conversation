@@ -209,6 +209,12 @@ function Admin() {
   };
 
   const deleteSession = async (sessionId) => {
+    // Check if the session ID contains placeholder values
+    if (sessionId.includes('{{%') || sessionId.includes('%}}')) {
+      showStatus('Cannot delete session with placeholder values', true);
+      return;
+    }
+
     if (window.confirm('Are you sure you want to delete this session?')) {
       try {
         console.log('Attempting to delete session:', sessionId);
