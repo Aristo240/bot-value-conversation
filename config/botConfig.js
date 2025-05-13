@@ -23,7 +23,7 @@ export const botPersonalities = {
 };
 
 export const aiModels = {
-  gpt: 'gpt-4',
+  gpt: 'gpt-3.5-turbo',
   gemini: 'gemini-pro'
 };
 
