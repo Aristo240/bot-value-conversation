@@ -320,6 +320,8 @@ function Admin() {
       'Age',
       'Gender',
       'Education',
+      'Race',
+      'Political_Views',
       // PVQ21
       ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
       'PVQ21_Attention_Check',
@@ -376,6 +378,8 @@ function Admin() {
         session.demographics?.age || '',
         session.demographics?.gender || '',
         session.demographics?.education || '',
+        session.demographics?.race || '',
+        session.demographics?.politicalViews || '',
         // PVQ21 - Get all 21 responses
         ...Array.from({ length: 21 }, (_, i) => pvq21Responses[i + 1] || ''),
         session.pvq21?.responses?.attention1 || '',
@@ -440,6 +444,8 @@ Demographics:
 - Age: ${session.demographics?.age || 'N/A'}
 - Gender: ${session.demographics?.gender || 'N/A'}
 - Education: ${session.demographics?.education || 'N/A'}
+- Race: ${session.demographics?.race || 'N/A'}
+- Political Views: ${session.demographics?.politicalViews || 'N/A'}
 
 PVQ21 Responses:
 ${Object.entries(session.pvq21?.responses || {})
@@ -568,6 +574,8 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
               <p>Age: {session.demographics?.age || 'N/A'}</p>
               <p>Gender: {session.demographics?.gender || 'N/A'}</p>
               <p>Education: {session.demographics?.education || 'N/A'}</p>
+              <p>Race: {session.demographics?.race || 'N/A'}</p>
+              <p>Political Views: {session.demographics?.politicalViews || 'N/A'}</p>
             </div>
 
             {/* PVQ21 */}

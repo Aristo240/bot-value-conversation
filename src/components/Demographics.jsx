@@ -11,6 +11,24 @@ const educationOptions = [
   "Doctoral degree",
   "Professional degree"
 ];
+const raceOptions = [
+  "White",
+  "Black or African American",
+  "American Indian or Alaska Native",
+  "Asian",
+  "Native Hawaiian or Other Pacific Islander",
+  "Other",
+  "Prefer not to answer"
+];
+const politicalViewsOptions = [
+  "Very liberal",
+  "Liberal",
+  "Moderate",
+  "Conservative",
+  "Very conservative",
+  "Don't know / Haven't thought about it",
+  "Prefer not to answer"
+];
 
 const Demographics = ({ responses, setResponses, onSubmit }) => {
   const handleChange = (field, value) => {
@@ -18,7 +36,7 @@ const Demographics = ({ responses, setResponses, onSubmit }) => {
   };
 
   const isFormComplete = () => {
-    return responses.age && responses.gender && responses.education;
+    return responses.age && responses.gender && responses.education && responses.race && responses.politicalViews;
   };
 
   return (
@@ -72,6 +90,44 @@ const Demographics = ({ responses, setResponses, onSubmit }) => {
                   className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
                 />
                 <span className="text-gray-700">{education}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block mb-2 font-medium text-gray-700">How would you describe your race?:</label>
+          <div className="space-y-2">
+            {raceOptions.map(race => (
+              <label key={race} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="race"
+                  value={race}
+                  checked={responses.race === race}
+                  onChange={(e) => handleChange('race', e.target.value)}
+                  className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-700">{race}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="block mb-2 font-medium text-gray-700">How would you describe your political views?</label>
+          <div className="space-y-2">
+            {politicalViewsOptions.map(politicalView => (
+              <label key={politicalView} className="flex items-center p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+                <input
+                  type="radio"
+                  name="politicalViews"
+                  value={politicalView}
+                  checked={responses.politicalViews === politicalView}
+                  onChange={(e) => handleChange('politicalViews', e.target.value)}
+                  className="mr-3 h-4 w-4 text-blue-600 focus:ring-blue-500"
+                />
+                <span className="text-gray-700">{politicalView}</span>
               </label>
             ))}
           </div>

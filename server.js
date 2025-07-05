@@ -56,6 +56,8 @@ const SessionSchema = new mongoose.Schema({
     age: Number,
     gender: String,
     education: String,
+    race: String,
+    politicalViews: String,
     timestamp: Date
   },
 
@@ -461,7 +463,11 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     // Update each section with proper validation and timestamps
     if (req.body.demographics) {
       session.demographics = {
-        ...req.body.demographics,
+        age: req.body.demographics.age,
+        gender: req.body.demographics.gender,
+        education: req.body.demographics.education,
+        race: req.body.demographics.race,
+        politicalViews: req.body.demographics.politicalViews,
         timestamp: new Date()
       };
     }
@@ -744,6 +750,8 @@ app.post('/api/sessions/:sessionId/demographics', async (req, res) => {
       age: req.body.age,
       gender: req.body.gender,
       education: req.body.education,
+      race: req.body.race,
+      politicalViews: req.body.politicalViews,
       timestamp: new Date()
     };
     

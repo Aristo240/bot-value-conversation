@@ -418,6 +418,8 @@ function MainApp() {
           age: parseInt(demographicResponses.age),
           gender: demographicResponses.gender,
           education: demographicResponses.education,
+          race: demographicResponses.race,
+          politicalViews: demographicResponses.politicalViews,
           timestamp: new Date()
         }
       });
@@ -812,7 +814,7 @@ function MainApp() {
           <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
             <h2 className="text-2xl font-bold mb-4">Final Response</h2>
             <p className="mb-4">
-              Based on your conversation about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>, please write 3-5 sentences explaining your thoughts 
+              Based on your conversation about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>, please write 3-5 sentences explaining your attitudes, thoughts 
               and understanding of the position.
             </p>
             
