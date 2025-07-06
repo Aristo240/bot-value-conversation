@@ -2,14 +2,13 @@ export const creativeWords = [
   'adventurous', 'breakthrough', 'challenging', 'complex', 'curious', 'daring',
   'discovering', 'dynamic', 'energetic', 'exciting', 'exploratory', 'fascinating',
   'imaginative', 'independent', 'inspiring', 'integrative', 'intriguing', 'innovative',
-  'logical', 'original', 'passionate', 'pioneering', 'purpose-driven', 'rational',
-  'revolutionary', 'spontaneous', 'unique', 'unconventional'
+  'logical', 'original', 'passionate', 'pioneering', 'revolutionary', 'spontaneous', 'unique', 'unconventional'
 ];
 
 export const conservativeWords = [
   'appropriate', 'careful', 'cautious', 'compliant', 'consistent', 'conventional',
-  'courteous', 'dependable', 'disciplined', 'dutiful', 'established', 'ethical',
-  'humble', 'loyal', 'measured', 'methodical', 'moderate', 'obedient',
+  'courteous', 'dependable', 'disciplined', 'dutiful', 'established',
+  'humble', 'loyal', 'methodical', 'moderate', 'obedient',
   'orderly', 'polite', 'principled', 'proper', 'prudent', 'reasonable',
   'regulated', 'respectful', 'responsible', 'stable'
 ];
