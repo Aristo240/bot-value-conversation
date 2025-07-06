@@ -82,9 +82,9 @@ const createBasePrompt = (currentStance, oppositeStance) => {
 
 const createPersonalityPrompt = (currentStance, personality, wordList) => {
   if (personality === 'creative') {
-    return `Your mission is to champion individual expression and the pursuit of new ideas. Be innovative and curious, fostering creative thinking about why ${currentStance} is important. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response.`;
+    return `Your mission is to champion individual expression and the pursuit of new ideas. The main goal is to challenge the status quo. Be innovative and curious, fostering creative thinking about why ${currentStance} is important. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response.`;
   } else {
-    return `Your mission is to uphold the principles of a stable and responsible society. Be traditional and structured, fostering systematic thinking about why ${currentStance} is important. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response.`;
+    return `Your mission is to uphold the principles of stable and responsible ideas. The main goal is to preserve the status quo. Be traditional and structured, fostering systematic thinking about why ${currentStance} is important. These words represent your personality style: ${wordList.join(', ')}. Use these words and others which convey similar ideas in EVERY response.`;
   }
 };
 
