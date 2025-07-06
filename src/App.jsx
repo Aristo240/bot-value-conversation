@@ -6,6 +6,7 @@ import ConsentForm from './components/ConsentForm';
 import SBSVS from './components/SBSVS.jsx';
 import AttitudeSurvey from './components/AttitudeSurvey.jsx';
 import Demographics from './components/Demographics.jsx';
+import DemographicsPart2 from './components/DemographicsPart2';
 import PVQ21 from './components/PVQ21';
 import InitialAssessment from './components/InitialAssessment';
 import AlternativeUsesTask from './components/AlternativeUsesTask';
@@ -77,6 +78,7 @@ function MainApp() {
     opposite: null
   });
   const [demographicResponses, setDemographicResponses] = useState({});
+  const [demographicResponsesPart2, setDemographicResponsesPart2] = useState({});
   const [aiModel, setAiModel] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
@@ -85,7 +87,10 @@ function MainApp() {
     responses: {},
     timestamp: null
   });
-  const [initialAttitudeResponses, setInitialAttitudeResponses] = useState({});
+  const [initialAttitudeResponses, setInitialAttitudeResponses] = useState({
+    assigned: null,
+    opposite: null
+  });
   const [showWarning, setShowWarning] = useState(false);
   const [isRobot, setIsRobot] = useState(false);
   const [attentionCheckAttempts, setAttentionCheckAttempts] = useState(0);
@@ -116,7 +121,7 @@ function MainApp() {
     const isPVQ21First = Math.random() < 0.5;
     setQuestionnaireOrder({
       case3: isPVQ21First ? 'PVQ21' : 'SBSVS',
-      case8: isPVQ21First ? 'SBSVS' : 'PVQ21'
+      case9: isPVQ21First ? 'SBSVS' : 'PVQ21'
     });
 
     // Log the parameters for debugging
@@ -335,9 +340,8 @@ function MainApp() {
     try {
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         initialAssessment: {
-          interesting: parseInt(initialAttitudeResponses.interesting),
-          important: parseInt(initialAttitudeResponses.important),
-          agreement: parseInt(initialAttitudeResponses.agreement),
+          assigned: parseInt(initialAttitudeResponses.assigned),
+          opposite: parseInt(initialAttitudeResponses.opposite),
           timestamp: new Date()
         }
       });
@@ -417,15 +421,29 @@ function MainApp() {
         demographics: {
           age: parseInt(demographicResponses.age),
           gender: demographicResponses.gender,
-          education: demographicResponses.education,
-          race: demographicResponses.race,
-          politicalViews: demographicResponses.politicalViews,
           timestamp: new Date()
         }
       });
       console.log('Demographics saved successfully');
     } catch (error) {
       console.error('Error saving demographics:', error);
+      throw error;
+    }
+  };
+
+  const saveDemographicsPart2 = async () => {
+    try {
+      await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
+        demographicsPart2: {
+          education: demographicResponsesPart2.education,
+          race: demographicResponsesPart2.race,
+          politicalViews: demographicResponsesPart2.politicalViews,
+          timestamp: new Date()
+        }
+      });
+      console.log('Demographics Part 2 saved successfully');
+    } catch (error) {
+      console.error('Error saving demographics part 2:', error);
       throw error;
     }
   };
@@ -590,7 +608,48 @@ function MainApp() {
           );
         }
 
-      case 4: // Task Explanation & Description
+      case 4: // Initial Assessment
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <div className="mb-6">
+              <h2 className="text-2xl font-bold mb-4">Your Assigned Stance</h2>
+              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <p className="text-lg font-bold text-blue-800">
+                  {stance && stances[stance]}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold mb-6">Initial Assessment</h2>
+              <InitialAssessment
+                stance={stance && stances[stance]}
+                responses={initialAttitudeResponses}
+                setResponses={setInitialAttitudeResponses}
+              />
+              <button
+                className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                  !initialAttitudeResponses.assigned || !initialAttitudeResponses.opposite
+                    ? 'opacity-50 cursor-not-allowed'
+                    : ''
+                }`}
+                onClick={async () => {
+                  if (initialAttitudeResponses.assigned && initialAttitudeResponses.opposite) {
+                    await saveInitialAssessment();
+                    setCurrentStep(5);
+                  }
+                }}
+                disabled={!initialAttitudeResponses.assigned || !initialAttitudeResponses.opposite}
+              >
+                {!initialAttitudeResponses.assigned || !initialAttitudeResponses.opposite
+                  ? 'Please complete both questions'
+                  : 'Continue'}
+              </button>
+            </div>
+          </div>
+        );
+
+      case 5: // Task Explanation & Description
         const { assignedStanceText, oppositeStanceText } = getOrderedStanceText(stance);
         const initialText = getInitialText(stance);
         return (
@@ -631,55 +690,22 @@ function MainApp() {
                     <span className="mr-2">•</span>
                     <span>Consider why this perspective might be more crucial than the opposite one</span>
                   </li>
+                  <li className="flex items-start bg-blue-50 p-3 rounded-lg">
+                    <span className="text-blue-600 font-bold mr-3 mt-1">•</span>
+                    <span className="font-semibold text-gray-800">
+                      Following this chat, you will write a reflective essay on your assigned stance. Use this conversation wisely to gather insights, test your arguments, and structure your thoughts, as it will be a key resource for your writing.
+                    </span>
+                  </li>
                  </ul>
               </div>
             </div>
 
             <button 
               className="w-full bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300"
-              onClick={() => setCurrentStep(5)}
+              onClick={() => setCurrentStep(6)}
             >
               Continue
             </button>
-          </div>
-        );
-
-      case 5: // Initial Assessment
-        return (
-          <div className="w-3/4 mx-auto p-8 min-h-screen">
-            <div className="mb-6">
-              <h2 className="text-2xl font-bold mb-4">Your Assigned Stance</h2>
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                <p className="text-lg font-bold text-blue-800">
-                  {stance && stances[stance]}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-6">Initial Assessment</h2>
-              <InitialAssessment
-                stance={stance && stances[stance]}
-                responses={initialAttitudeResponses}
-                setResponses={setInitialAttitudeResponses}
-              />
-              <button
-                className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                  Object.keys(initialAttitudeResponses).length !== 3
-                    ? 'opacity-50 cursor-not-allowed'
-                    : ''
-                }`}
-                onClick={async () => {
-                  if (Object.keys(initialAttitudeResponses).length === 3) {
-                    await saveInitialAssessment();
-                    setCurrentStep(6);
-                  }
-                }}
-                disabled={Object.keys(initialAttitudeResponses).length !== 3}
-              >
-                Continue
-              </button>
-            </div>
           </div>
         );
 
@@ -814,7 +840,7 @@ function MainApp() {
           <div className="w-3/4 mx-auto p-8 bg-white shadow-lg min-h-screen">
             <h2 className="text-2xl font-bold mb-4">Final Response</h2>
             <p className="mb-4">
-              Based on your conversation about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>, please write 3-5 sentences explaining your attitudes, thoughts 
+              Based on your recent conversation with the bot about <strong style={{ fontWeight: 'bold' }}>{stances[stance]}</strong>, please write 5-7 sentences explaining your attitudes, thoughts 
               and understanding of the position.
             </p>
             
@@ -870,8 +896,44 @@ function MainApp() {
           </div>
         );
 
-      case 8: // PVQ21 or SBSVS based on questionnaireOrder
-        if (questionnaireOrder?.case8 === 'PVQ21') {
+      case 8: // Stance Agreement
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <h2 className="text-2xl font-bold mb-6">Stance Agreement</h2>
+            <StanceAgreement
+              stance={stances[stance]}
+              responses={stanceAgreement}
+              setResponses={setStanceAgreement}
+            />
+            <button
+              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
+                !stanceAgreement.assigned || !stanceAgreement.opposite
+                  ? 'opacity-50 cursor-not-allowed'
+                  : ''
+              }`}
+              onClick={async () => {
+                if (stanceAgreement.assigned && stanceAgreement.opposite) {
+                  try {
+                    await saveStanceAgreement();
+                    setCurrentStep(9);
+                  } catch (error) {
+                    console.error('Failed to save stance agreement:', error);
+                    // Show error message to user
+                    alert('Failed to save your responses. Please try again.');
+                  }
+                }
+              }}
+              disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
+            >
+              {!stanceAgreement.assigned || !stanceAgreement.opposite
+                ? 'Please complete both questions'
+                : 'Continue'}
+            </button>
+          </div>
+        );
+
+      case 9: // PVQ21 or SBSVS based on questionnaireOrder
+        if (questionnaireOrder?.case9 === 'PVQ21') {
           return (
             <div className="w-3/4 mx-auto p-8 min-h-screen">
               <PVQ21
@@ -895,7 +957,7 @@ function MainApp() {
                   if (pvq21Responses.responses && Object.keys(pvq21Responses.responses).length === 22) {
                     try {
                       await savePVQ21();
-                      setCurrentStep(9);
+                      setCurrentStep(10);
                     } catch (error) {
                       console.error('Failed to save PVQ21:', error);
                     }
@@ -926,7 +988,7 @@ function MainApp() {
                 onClick={async () => {
                   if (Object.keys(sbsvsResponses).length === 11) {
                     await saveSBSVS();
-                    setCurrentStep(9);
+                    setCurrentStep(10);
                   }
                 }}
                 disabled={Object.keys(sbsvsResponses).length < 11}
@@ -940,11 +1002,11 @@ function MainApp() {
           );
         }
 
-      case 9: // Attitude Survey
+      case 10: // Attitude Survey
         const handleAttitudeSurveySubmit = async () => {
           if (Object.keys(attitudeSurveyResponses).length === 11) {
             await saveAttitudeSurvey();
-            setCurrentStep(10);
+            setCurrentStep(11);
           }
         };
         return (
@@ -971,41 +1033,7 @@ function MainApp() {
           </div>
         );
 
-      case 10: // Stance Agreement
-        return (
-          <div className="w-3/4 mx-auto p-8 min-h-screen">
-            <h2 className="text-2xl font-bold mb-6">Stance Agreement</h2>
-            <StanceAgreement
-              stance={stances[stance]}
-              responses={stanceAgreement}
-              setResponses={setStanceAgreement}
-            />
-            <button
-              className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
-                !stanceAgreement.assigned || !stanceAgreement.opposite
-                  ? 'opacity-50 cursor-not-allowed'
-                  : ''
-              }`}
-              onClick={async () => {
-                if (stanceAgreement.assigned && stanceAgreement.opposite) {
-                  try {
-                    await saveStanceAgreement();
-                    setCurrentStep(11);
-                  } catch (error) {
-                    console.error('Failed to save stance agreement:', error);
-                    // Show error message to user
-                    alert('Failed to save your responses. Please try again.');
-                  }
-                }
-              }}
-              disabled={!stanceAgreement.assigned || !stanceAgreement.opposite}
-            >
-              {!stanceAgreement.assigned || !stanceAgreement.opposite
-                ? 'Please complete both questions'
-                : 'Continue'}
-            </button>
-          </div>
-        );
+
 
       case 11: // Alternative Uses Task
         return (
@@ -1025,7 +1053,21 @@ function MainApp() {
           </div>
         );
 
-      case 12: // Thank You
+      case 12: // Demographics Part 2
+        return (
+          <div className="w-3/4 mx-auto p-8 min-h-screen">
+            <DemographicsPart2
+              responses={demographicResponsesPart2}
+              setResponses={setDemographicResponsesPart2}
+              onSubmit={async () => {
+                await saveDemographicsPart2();
+                setCurrentStep(13);
+              }}
+            />
+          </div>
+        );
+
+      case 13: // Thank You
         return (
           <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg text-center">
             <h2 className="text-2xl font-bold mb-4">Thank You!</h2>

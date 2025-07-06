@@ -48,13 +48,18 @@ const SessionSchema = new mongoose.Schema({
   // Questionnaire order tracking
   questionnaireOrder: {
     case3: { type: String, enum: ['PVQ21', 'SBSVS'] },
-    case8: { type: String, enum: ['PVQ21', 'SBSVS'] }
+    case9: { type: String, enum: ['PVQ21', 'SBSVS'] }
   },
   
-  // Case 2: Demographics
+  // Case 2: Demographics (Part 1)
   demographics: {
     age: Number,
     gender: String,
+    timestamp: Date
+  },
+
+  // Case 12: Demographics (Part 2)
+  demographicsPart2: {
     education: String,
     race: String,
     politicalViews: String,
@@ -73,9 +78,8 @@ const SessionSchema = new mongoose.Schema({
 
   // Case 4: Initial Assessment
   initialAssessment: {
-    interesting: Number,
-    important: Number,
-    agreement: Number,
+    assigned: Number,
+    opposite: Number,
     timestamp: Date
   },
 
@@ -318,7 +322,7 @@ app.post('/api/sessions', async (req, res) => {
     const isPVQ21First = Math.random() < 0.5;
     const questionnaireOrder = {
       case3: isPVQ21First ? 'PVQ21' : 'SBSVS',
-      case8: isPVQ21First ? 'SBSVS' : 'PVQ21'
+      case9: isPVQ21First ? 'SBSVS' : 'PVQ21'
     };
     
     // Check if a session with this ID already exists
@@ -465,9 +469,15 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
       session.demographics = {
         age: req.body.demographics.age,
         gender: req.body.demographics.gender,
-        education: req.body.demographics.education,
-        race: req.body.demographics.race,
-        politicalViews: req.body.demographics.politicalViews,
+        timestamp: new Date()
+      };
+    }
+
+    if (req.body.demographicsPart2) {
+      session.demographicsPart2 = {
+        education: req.body.demographicsPart2.education,
+        race: req.body.demographicsPart2.race,
+        politicalViews: req.body.demographicsPart2.politicalViews,
         timestamp: new Date()
       };
     }

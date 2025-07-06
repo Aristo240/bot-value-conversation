@@ -21,7 +21,7 @@ export const ConsentForm = ({ onConsent }) => {
             <div>
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Study Details</h3>
               <ul className="list-disc list-outside ml-5 space-y-2 text-gray-600">
-                <li>This study involves discussing social media challenges with an AI bot and completing several questionnaires and tasks</li>
+                <li>This study involves discussing social media challenges with an AI bot and completing several questionnaires and tasks. <strong>Your engagement is critical in this study.</strong></li>
                 <li>Your participation is completely voluntary, and you may withdraw at any time</li>
                 <li>All data collected will be kept strictly confidential and used only for research purposes</li>
                 <li>The entire session will take approximately 20 minutes to complete</li>
@@ -42,7 +42,8 @@ export const ConsentForm = ({ onConsent }) => {
               <h3 className="text-lg font-semibold text-gray-800 mb-3">Participation Requirements</h3>
               <ul className="list-disc list-outside ml-5 space-y-2 text-gray-600">
                 <li>This study requires your full attention. Please participate only if you can complete the entire study without interruption</li>
-                <li>Do not navigate away from the experiment screen or use other devices</li>
+                <li>Do not navigate away from the experiment screen or use other devices. If you do, you will be automatically removed from the study</li>
+                <li>You are required to engage in meaningful interactions with the bot. Responses that are too short, concise, or trivial will not qualify for payment</li>
               </ul>
             </div>
 

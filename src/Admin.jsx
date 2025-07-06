@@ -315,10 +315,11 @@ function Admin() {
       'Bot_Personality',
       // Questionnaire Order
       'Questionnaire_Case3',
-      'Questionnaire_Case8',
-      // Demographics
+      'Questionnaire_Case9',
+      // Demographics (Part 1)
       'Age',
       'Gender',
+      // Demographics (Part 2)
       'Education',
       'Race',
       'Political_Views',
@@ -326,9 +327,8 @@ function Admin() {
       ...Array.from({ length: 21 }, (_, i) => `PVQ21_Q${i + 1}`),
       'PVQ21_Attention_Check',
       // Initial Assessment
-      'Initial_Interest',
-      'Initial_Importance',
-      'Initial_Agreement',
+      'Initial_Assigned_Stance',
+      'Initial_Opposite_Stance',
       // Chat History
       'Chat_History',
       // Final Response
@@ -373,20 +373,20 @@ function Admin() {
         session.botPersonality || '',
         // Questionnaire Order
         session.questionnaireOrder?.case3 || 'N/A',
-        session.questionnaireOrder?.case8 || 'N/A',
-        // Demographics
+        session.questionnaireOrder?.case9 || 'N/A',
+        // Demographics (Part 1)
         session.demographics?.age || '',
         session.demographics?.gender || '',
-        session.demographics?.education || '',
-        session.demographics?.race || '',
-        session.demographics?.politicalViews || '',
+        // Demographics (Part 2)
+        session.demographicsPart2?.education || '',
+        session.demographicsPart2?.race || '',
+        session.demographicsPart2?.politicalViews || '',
         // PVQ21 - Get all 21 responses
         ...Array.from({ length: 21 }, (_, i) => pvq21Responses[i + 1] || ''),
         session.pvq21?.responses?.attention1 || '',
         // Initial Assessment
-        session.initialAssessment?.interesting || '',
-        session.initialAssessment?.important || '',
-        session.initialAssessment?.agreement || '',
+        session.initialAssessment?.assigned || '',
+        session.initialAssessment?.opposite || '',
         // Chat History
         JSON.stringify(session.chat || []).replace(/"/g, '""'),
         // Final Response
@@ -433,19 +433,21 @@ AI Model: ${session.aiModel}
 
 Questionnaire Order:
 - Case 3: ${session.questionnaireOrder?.case3 || 'N/A'}
-- Case 8: ${session.questionnaireOrder?.case8 || 'N/A'}
+- Case 9: ${session.questionnaireOrder?.case9 || 'N/A'}
 
 Experiment Status:
 ${terminationEvent ? 
   `Terminated at Step ${terminationEvent.step} (${new Date(terminationEvent.timestamp).toLocaleString()})` : 
   'Completed Successfully'}
 
-Demographics:
+Demographics (Part 1):
 - Age: ${session.demographics?.age || 'N/A'}
 - Gender: ${session.demographics?.gender || 'N/A'}
-- Education: ${session.demographics?.education || 'N/A'}
-- Race: ${session.demographics?.race || 'N/A'}
-- Political Views: ${session.demographics?.politicalViews || 'N/A'}
+
+Demographics (Part 2):
+- Education: ${session.demographicsPart2?.education || 'N/A'}
+- Race: ${session.demographicsPart2?.race || 'N/A'}
+- Political Views: ${session.demographicsPart2?.politicalViews || 'N/A'}
 
 PVQ21 Responses:
 ${Object.entries(session.pvq21?.responses || {})
@@ -453,9 +455,8 @@ ${Object.entries(session.pvq21?.responses || {})
   .join('\n')}
 
 Initial Assessment:
-- Interest: ${session.initialAssessment?.interesting || 'N/A'}
-- Importance: ${session.initialAssessment?.important || 'N/A'}
-- Agreement: ${session.initialAssessment?.agreement || 'N/A'}
+- Assigned Stance Agreement: ${session.initialAssessment?.assigned || 'N/A'}
+- Opposite Stance Agreement: ${session.initialAssessment?.opposite || 'N/A'}
 
 Chat History:
 ${(session.chat || []).map(msg => `${msg.sender}: ${msg.text}`).join('\n')}
@@ -570,12 +571,17 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
 
             {/* Demographics */}
             <div className="bg-gray-50 p-4 rounded">
-              <h4 className="font-semibold mb-2">Demographics:</h4>
+              <h4 className="font-semibold mb-2">Demographics (Part 1):</h4>
               <p>Age: {session.demographics?.age || 'N/A'}</p>
               <p>Gender: {session.demographics?.gender || 'N/A'}</p>
-              <p>Education: {session.demographics?.education || 'N/A'}</p>
-              <p>Race: {session.demographics?.race || 'N/A'}</p>
-              <p>Political Views: {session.demographics?.politicalViews || 'N/A'}</p>
+            </div>
+
+            {/* Demographics Part 2 */}
+            <div className="bg-gray-50 p-4 rounded">
+              <h4 className="font-semibold mb-2">Demographics (Part 2):</h4>
+              <p>Education: {session.demographicsPart2?.education || 'N/A'}</p>
+              <p>Race: {session.demographicsPart2?.race || 'N/A'}</p>
+              <p>Political Views: {session.demographicsPart2?.politicalViews || 'N/A'}</p>
             </div>
 
             {/* PVQ21 */}
@@ -593,9 +599,8 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
             {/* Initial Assessment */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Initial Assessment:</h4>
-              <p>Interest: {session.initialAssessment?.interesting || 'N/A'}</p>
-              <p>Importance: {session.initialAssessment?.important || 'N/A'}</p>
-              <p>Agreement: {session.initialAssessment?.agreement || 'N/A'}</p>
+              <p>Assigned Stance Agreement: {session.initialAssessment?.assigned || 'N/A'}</p>
+              <p>Opposite Stance Agreement: {session.initialAssessment?.opposite || 'N/A'}</p>
             </div>
 
             {/* Chat History */}
