@@ -100,6 +100,7 @@ function MainApp() {
   // Add new state for study parameters
   const [studyId, setStudyId] = useState(null);
   const [studySessionId, setStudySessionId] = useState(null);
+  const [isDev, setIsDev] = useState(false);
 
   useEffect(() => {
     const { prolificId, studyId, sessionId: studySessionId, isDev } = getUrlParams();
@@ -108,7 +109,12 @@ function MainApp() {
     const newSessionId = studySessionId || uuidv4();
     setSessionId(newSessionId);
     
-    // Handle Prolific ID
+    // Set development mode state first
+    if (isDev) {
+      setIsDev(true);
+    }
+    
+    // Handle Prolific ID and development mode
     if (prolificId) {
       setProlificId(prolificId);
       setStudyId(studyId);
@@ -132,13 +138,20 @@ function MainApp() {
       isDev,
       newSessionId
     });
+    
+    // Log development mode detection
+    if (isDev) {
+      console.log('Development mode detected');
+    }
   }, []);
 
   useEffect(() => {
     const initializeSession = async () => {
       try {
         // Get the next condition from the server
-        const conditionResponse = await axios.get(`${API_URL}/nextCondition`);
+        const conditionResponse = await axios.get(`${API_URL}/nextCondition`, {
+          params: { prolificId }
+        });
         const { aiModel, stance: assignedStance, personality } = conditionResponse.data;
   
         // Set the stance and other values
@@ -159,13 +172,25 @@ function MainApp() {
         });
       } catch (error) {
         console.error('Error initializing session:', error);
+        console.error('Session initialization details:', {
+          sessionId,
+          prolificId,
+          studyId,
+          studySessionId,
+          isDev,
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
       }
     };
   
-    if (prolificId) {
+    console.log('Session initialization check:', { prolificId, isDev });
+    if (prolificId || isDev) {
+      console.log('Initializing session...');
       initializeSession();
     }
-  }, [sessionId, prolificId, studyId, studySessionId]);
+  }, [sessionId, prolificId, studyId, studySessionId, isDev]);
 
   // Chat initialization effect
   useEffect(() => {
@@ -427,6 +452,11 @@ function MainApp() {
       console.log('Demographics saved successfully');
     } catch (error) {
       console.error('Error saving demographics:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   };
@@ -444,6 +474,11 @@ function MainApp() {
       console.log('Demographics Part 2 saved successfully');
     } catch (error) {
       console.error('Error saving demographics part 2:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   };
@@ -460,6 +495,11 @@ function MainApp() {
       console.log('PVQ21 saved successfully');
     } catch (error) {
       console.error('Error saving PVQ21:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   };
@@ -476,6 +516,11 @@ function MainApp() {
       console.log('Stance agreement saved successfully');
     } catch (error) {
       console.error('Error saving stance agreement:', error);
+      console.error('Error details:', {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status
+      });
       throw error;
     }
   };
@@ -1215,7 +1260,7 @@ function MainApp() {
     );
   }
 
-  if (!prolificId && !getUrlParams().isDev) {
+  if (!prolificId && !isDev) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md w-full text-center">

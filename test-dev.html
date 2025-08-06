@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Development Mode Test</title>
+</head>
+<body>
+    <h1>Development Mode Test</h1>
+    <p>Click the link below to test development mode:</p>
+    <a href="http://localhost:5173/?dev=true" target="_blank">Test Development Mode</a>
+    
+    <h2>Expected Behavior:</h2>
+    <ul>
+        <li>Should bypass Prolific ID requirement</li>
+        <li>Should create a session with DEV_TEST_ID</li>
+        <li>Should allow full experiment flow</li>
+        <li>Should not increment condition counters</li>
+    </ul>
+</body>
+</html> 

@@ -318,6 +318,16 @@ app.post('/api/sessions', async (req, res) => {
   try {
     const { sessionId, stance, botPersonality, aiModel, prolificId, studyId, studySessionId } = req.body;
     
+    console.log('Creating session with data:', {
+      sessionId,
+      stance,
+      botPersonality,
+      aiModel,
+      prolificId,
+      studyId,
+      studySessionId
+    });
+    
     // Randomly determine questionnaire order
     const isPVQ21First = Math.random() < 0.5;
     const questionnaireOrder = {
@@ -358,6 +368,8 @@ app.post('/api/sessions', async (req, res) => {
       studySessionId,
       questionnaireOrder
     });
+    
+    console.log('Session saved successfully with ID:', session._id);
     
     res.status(201).json(session);
   } catch (error) {
@@ -459,10 +471,16 @@ app.post('/api/chat', async (req, res) => {
 // Update the questionnaires endpoint
 app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
   try {
+    console.log('Questionnaires request for sessionId:', req.params.sessionId);
+    console.log('Request body:', req.body);
+    
     const session = await Session.findOne({ sessionId: req.params.sessionId });
     if (!session) {
+      console.log('Session not found for sessionId:', req.params.sessionId);
       return res.status(404).json({ message: 'Session not found' });
     }
+    
+    console.log('Session found:', session.sessionId);
 
     // Update each section with proper validation and timestamps
     if (req.body.demographics) {
