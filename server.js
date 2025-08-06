@@ -650,6 +650,27 @@ app.delete('/api/admin/sessions/:sessionId', authenticateAdmin, async (req, res)
   }
 });
 
+// Delete all sessions endpoint
+app.delete('/api/admin/sessions', authenticateAdmin, async (req, res) => {
+  try {
+    // Delete all sessions
+    const deleteResult = await Session.deleteMany({});
+    
+    // Reset all condition counters to zero
+    await ConditionCounter.updateMany({}, { count: 0 });
+    
+    console.log(`Deleted ${deleteResult.deletedCount} sessions and reset all counters`);
+    
+    res.status(200).json({ 
+      message: 'All sessions deleted successfully and counters reset',
+      deletedCount: deleteResult.deletedCount
+    });
+  } catch (error) {
+    console.error('Error deleting all sessions:', error);
+    res.status(500).json({ message: error.message });
+  }
+});
+
 app.get('/api/admin/sessions/:sessionId/chat', authenticateAdmin, async (req, res) => {
   try {
     const session = await Session.findOne({ sessionId: req.params.sessionId });

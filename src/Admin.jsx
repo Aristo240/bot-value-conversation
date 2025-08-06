@@ -239,6 +239,33 @@ function Admin() {
     }
   };
 
+  const deleteAllSessions = async () => {
+    if (window.confirm('Are you sure you want to delete ALL sessions? This action cannot be undone and will reset all counters.')) {
+      try {
+        setDownloadStatus('Deleting all sessions...');
+        
+        const response = await axios.delete(`${API_URL}/admin/sessions`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        console.log('Delete all response:', response);
+        
+        // Refresh the data after deletion
+        await fetchData(token);
+        
+        showStatus('All sessions deleted successfully');
+      } catch (error) {
+        console.error('Error deleting all sessions:', error);
+        console.error('Error details:', {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status
+        });
+        showStatus('Failed to delete all sessions', true);
+      }
+    }
+  };
+
   const downloadSession = async (session, fileType) => {
     try {
       setDownloadStatus('Preparing download...');
@@ -798,6 +825,12 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
                 className="bg-green-500 text-white py-2 px-4 rounded hover:bg-green-600"
               >
                 Download All Sessions
+              </button>
+              <button
+                onClick={deleteAllSessions}
+                className="bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700"
+              >
+                Delete All Sessions
               </button>
             </div>
           </div>
