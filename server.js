@@ -492,12 +492,14 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
 
     if (req.body.demographicsPart2) {
+      console.log('Received demographicsPart2 data:', req.body.demographicsPart2);
       session.demographicsPart2 = {
         education: req.body.demographicsPart2.education,
         race: req.body.demographicsPart2.race,
         politicalViews: req.body.demographicsPart2.politicalViews,
         timestamp: new Date()
       };
+      console.log('Saved demographicsPart2 to session:', session.demographicsPart2);
     }
 
     if (req.body.pvq21) {
@@ -548,10 +550,12 @@ app.post('/api/sessions/:sessionId/questionnaires', async (req, res) => {
     }
 
     if (req.body.alternativeUses) {
+      console.log('Received alternativeUses data:', req.body.alternativeUses);
       session.alternativeUses = req.body.alternativeUses.map(use => ({
         text: use.idea || use.text,
         timestamp: use.timestamp ? new Date(use.timestamp) : new Date()
       }));
+      console.log('Saved alternativeUses to session:', session.alternativeUses);
     }
 
     // Save all updates
@@ -603,15 +607,18 @@ app.get('/api/admin/sessions', authenticateAdmin, async (req, res) => {
       .exec();
 
     // Format the sessions
-    const formattedSessions = sessions.map(session => ({
-      ...session,
-      sbsvs: session.sbsvs ? {
-        ...session.sbsvs,
-        responses: session.sbsvs.responses || {}
-      } : {},
-      attitudeSurvey: session.attitudeSurvey || {},
-      events: session.events || []
-    }));
+    const formattedSessions = sessions.map(session => {
+      console.log('Session demographicsPart2:', session.demographicsPart2);
+      return {
+        ...session,
+        sbsvs: session.sbsvs ? {
+          ...session.sbsvs,
+          responses: session.sbsvs.responses || {}
+        } : {},
+        attitudeSurvey: session.attitudeSurvey || {},
+        events: session.events || []
+      };
+    });
 
     res.json(formattedSessions);
   } catch (error) {

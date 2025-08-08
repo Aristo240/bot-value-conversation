@@ -284,8 +284,18 @@ function MainApp() {
     setSubmitError('');
     
     try {
+      console.log('Submitting all responses including demographicsPart2:', {
+        demographicsPart2: demographicResponsesPart2
+      });
+      
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         demographics: demographicResponses,
+        demographicsPart2: {
+          education: demographicResponsesPart2.education,
+          race: demographicResponsesPart2.race,
+          politicalViews: demographicResponsesPart2.politicalViews,
+          timestamp: new Date()
+        },
         pvq21: pvq21Responses,
         initialAssessment: initialAttitudeResponses,
         chat: messages,
@@ -425,10 +435,14 @@ function MainApp() {
 
   const saveAlternativeUses = async () => {
     try {
+      console.log('Saving alternative uses:', autResponses);
+      
       const formattedResponses = autResponses.map(response => ({
         text: response.idea || response,
         timestamp: new Date()
       }));
+      
+      console.log('Formatted alternative uses:', formattedResponses);
 
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         alternativeUses: formattedResponses
@@ -463,6 +477,8 @@ function MainApp() {
 
   const saveDemographicsPart2 = async () => {
     try {
+      console.log('Saving demographics part 2:', demographicResponsesPart2);
+      
       await axios.post(`${API_URL}/sessions/${sessionId}/questionnaires`, {
         demographicsPart2: {
           education: demographicResponsesPart2.education,
@@ -1118,38 +1134,18 @@ function MainApp() {
             <h2 className="text-2xl font-bold mb-4">Thank You!</h2>
             <p className="mb-6">Your responses have been recorded successfully.</p>
             
-            {prolificId && prolificId !== 'DEV_TEST_ID' ? (
-              // For Prolific participants
-              <div>
-                <p className="mb-4">You will now be redirected back to Prolific.</p>
-                <p className="text-sm text-gray-600 mb-4">
-                  If you are not automatically redirected, please click the button below:
-                </p>
-                <button
-                  onClick={() => window.location.href = COMPLETION_URL}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-                >
-                  Return to Prolific
-                </button>
-              </div>
-            ) : (
-              // For development testing
-              <div>
-                <p className="mb-4">Development Mode</p>
-                <p className="text-sm text-gray-600 mb-4">
-                  Completion URL for testing:
-                </p>
-                <div className="bg-gray-100 p-4 rounded-lg mb-4 break-all">
-                  <code>{COMPLETION_URL}</code>
-                </div>
-                <button
-                  onClick={() => window.location.href = COMPLETION_URL}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
-                >
-                  Test Completion URL
-                </button>
-              </div>
-            )}
+            <div>
+              <p className="mb-4">You will now be redirected back to Prolific.</p>
+              <p className="text-sm text-gray-600 mb-4">
+                If you are not automatically redirected, please click the button below:
+              </p>
+              <button
+                onClick={() => window.location.href = COMPLETION_URL}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold"
+              >
+                Return to Prolific
+              </button>
+            </div>
           </div>
         );
 
@@ -1198,13 +1194,14 @@ function MainApp() {
 
   // Add an effect to handle automatic redirect for Prolific participants
   useEffect(() => {
-    if (currentStep === 12 && prolificId && prolificId !== 'DEV_TEST_ID') {
-      const redirectTimer = setTimeout(() => {
-        window.location.href = COMPLETION_URL;
-      }, 3000); // Redirect after 3 seconds
-      
-      return () => clearTimeout(redirectTimer);
-    }
+    // Remove automatic redirect - let participants complete all steps
+    // if (currentStep === 12 && prolificId && prolificId !== 'DEV_TEST_ID') {
+    //   const redirectTimer = setTimeout(() => {
+    //     window.location.href = COMPLETION_URL;
+    //   }, 3000); // Redirect after 3 seconds
+    //   
+    //   return () => clearTimeout(redirectTimer);
+    // }
   }, [currentStep, prolificId]);
 
   if (isExperimentTerminated) {

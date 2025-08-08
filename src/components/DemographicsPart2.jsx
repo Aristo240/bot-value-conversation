@@ -30,11 +30,14 @@ const politicalViewsOptions = [
 
 const DemographicsPart2 = ({ responses, setResponses, onSubmit }) => {
   const handleChange = (field, value) => {
+    console.log('DemographicsPart2 - Setting', field, 'to', value);
     setResponses(prev => ({ ...prev, [field]: value }));
   };
 
   const isFormComplete = () => {
-    return responses.education && responses.race && responses.politicalViews;
+    const complete = responses.education && responses.race && responses.politicalViews;
+    console.log('DemographicsPart2 - Form complete:', complete, responses);
+    return complete;
   };
 
   return (
@@ -99,7 +102,10 @@ const DemographicsPart2 = ({ responses, setResponses, onSubmit }) => {
         </div>
 
         <button
-          onClick={onSubmit}
+          onClick={() => {
+            console.log('DemographicsPart2 - Submitting with responses:', responses);
+            onSubmit();
+          }}
           disabled={!isFormComplete()}
           className={`w-full mt-6 bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-semibold transition duration-300 ${
             !isFormComplete() ? 'opacity-50 cursor-not-allowed' : ''

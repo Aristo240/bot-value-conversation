@@ -606,6 +606,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
             {/* Demographics Part 2 */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Demographics (Part 2):</h4>
+              {console.log('Session demographicsPart2:', session.demographicsPart2)}
               <p>Education: {session.demographicsPart2?.education || 'N/A'}</p>
               <p>Race: {session.demographicsPart2?.race || 'N/A'}</p>
               <p>Political Views: {session.demographicsPart2?.politicalViews || 'N/A'}</p>
@@ -682,6 +683,7 @@ ${(session.alternativeUses || []).map(use => use.text).join('\n') || 'N/A'}
             {/* Alternative Uses */}
             <div className="bg-gray-50 p-4 rounded">
               <h4 className="font-semibold mb-2">Alternative Uses:</h4>
+              {console.log('Session alternativeUses:', session.alternativeUses)}
               <div className="space-y-2">
                 {(session.alternativeUses || []).map((use, i) => (
                   <div key={i} className="bg-white p-2 rounded">
