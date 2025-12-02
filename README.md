@@ -13,6 +13,30 @@ Unlike standard survey tools (like Qualtrics), this study required a custom-buil
 2.  **State Management:** Tracking participant progress through 13+ distinct stages (consent, pre-tests, chat, post-tests).
 3.  **Data Integrity:** Custom attention checks and bot detection mechanisms.
 
+
+## Application Screenshots
+
+### The Participant Experience
+The application guides users through a structured flow designed to minimize order effects and maximize engagement.
+Example of two surveys:
+| **1. Value Assessment (PVQ)** | **2. Stance Assignment** |
+|:---:|:---:|
+| ![PVQ Questionnaire](./screenshots/PVQ_questionnaire_screenshot.png) | ![Stance Agreement](./screenshots/Stance_agreement_screenshot.png) |
+| *Counterbalanced value surveys* | *Post conversation agreement* |
+
+| **3. AI Chat Intervention** | **4. Essay & Reflection** |
+|:---:|:---:|
+| ![Chat Interface](./screenshots/Discussion_AI_screenshot.png) | ![Essay Interface](./screenshots/Essay_screenshot.png) |
+| *Real-time, timed discussion with AI* | *Post-chat argumentative essay* |
+
+### Cognitive Tasks & Administration
+
+| **5. Alternative Uses Task** | **6. Researcher Dashboard** |
+|:---:|:---:|
+| ![AUT Task](./screenshots/Alternative_uses_screenshot.png) | ![Admin Dashboard](./screenshots/Admin_screenshot.png) |
+| *Creativity assessment (AUT)* | *Live session tracking and export* |
+
+
 ## The Tech Stack
 
 * **Frontend:** React (Vite), Tailwind CSS
