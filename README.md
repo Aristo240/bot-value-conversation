@@ -26,7 +26,7 @@ Example of two surveys:
 
 | **3. AI Chat Intervention** | **4. Essay & Reflection** |
 |:---:|:---:|
-| ![Chat Interface](./screenshots/Discussion_AI_screenshot.png) | ![Essay Interface](./screenshots/Essay_screenshot.png) |
+| ![Chat Interface](./screenshots/Discussion_AI_screenshot_3.png) | ![Essay Interface](./screenshots/Essay_screenshot.png) |
 | *Real-time, timed discussion with AI* | *Post-chat argumentative essay* |
 
 ### Cognitive Tasks & Administration
